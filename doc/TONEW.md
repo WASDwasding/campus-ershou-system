@@ -2,7 +2,7 @@
 
 > 第一次用 git 或 GitHub 的同学，从这里开始，按顺序做完即可。
 > 已经熟悉 git 的同学直接看 [README 的协作规范](../README.md#协作规范) 就行。
-> clone 之后如何安装 JDK、连数据库、启动前后端，看 [SETUP.md](./SETUP.md)。
+> clone 之后怎么启动，看 [SETUP.md](./SETUP.md)。
 >
 > 实在看不明白，也可以把这份文档丢给 AI agent 让它看着办。
 
