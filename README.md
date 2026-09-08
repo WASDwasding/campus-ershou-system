@@ -60,7 +60,8 @@ export PATH="$JAVA_HOME/bin:$PATH"
 
 | 文档 | 内容 |
 | --- | --- |
-| [doc/SETUP.md](./doc/SETUP.md) | **环境安装、启动、OSS/云库、排错、代码写在哪** |
+| [doc/COURSE_PLAN.md](./doc/COURSE_PLAN.md) | **14 周课程开发计划**（对齐得分节点） |
+| [doc/SETUP.md](./doc/SETUP.md) | 环境安装、启动、OSS/云库、排错、代码写在哪 |
 | [doc/ARCH.md](./doc/ARCH.md) | 模块、下单支付约定、部署要点 |
 | [doc/TONEW.md](./doc/TONEW.md) | Git 新手教程 |
 
