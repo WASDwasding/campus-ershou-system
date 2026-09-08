@@ -25,46 +25,37 @@ doc/         文档
 
 ## 本地启动
 
-需要：**JDK 17+**、**Node 18+**、**MySQL 8**、**Redis**。没有 Docker 也可以，把数据库指到云服务器。
+逐步说明（JDK、Docker / 云数据库、OSS、启动、排错、代码写在哪）见 **[doc/SETUP.md](./doc/SETUP.md)**。
 
-本机若 `java -version` 报找不到 Runtime，Homebrew 的 JDK 需要先导出：
-
-```bash
-export JAVA_HOME=/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home
-export PATH="$JAVA_HOME/bin:$PATH"
-```
-
-### 1. 数据库
-
-有 Docker 时：
+最短路径：
 
 ```bash
+# 1. 数据库：有 Docker 则在仓库根目录
 docker compose up -d
-```
+# 没有 Docker：用云服务器 MySQL/Redis，或本机安装后执行 sql/init.sql
 
-没有 Docker：在 MySQL 里建库 `campus_ershou`，再执行 `sql/init.sql`。Redis 本机或云上开着即可。
-
-### 2. 后端
-
-```bash
+# 2. 后端
 cd backend
 cp src/main/resources/application-local.yml.example src/main/resources/application-local.yml
-# 填写 MySQL / Redis / OSS / JWT / 大模型 Key
+# 填写数据库、OSS、JWT
 mvn spring-boot:run
-```
 
-健康检查：<http://127.0.0.1:8080/api/health>
-
-### 3. 前端
-
-```bash
+# 3. 另开终端
 cd frontend
 cp .env.example .env
 npm install
 npm run dev
 ```
 
-浏览器打开 <http://127.0.0.1:5173>。开发时 `/api` 会代理到后端 8080。
+macOS 若 `java -version` 报找不到 Runtime：
+
+```bash
+export JAVA_HOME=/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home
+export PATH="$JAVA_HOME/bin:$PATH"
+```
+
+健康检查：<http://127.0.0.1:8080/api/health>  
+前端：<http://127.0.0.1:5173>
 
 ## 云服务器与 OSS
 
@@ -80,6 +71,7 @@ npm run dev
 
 | 文档 | 内容 |
 | --- | --- |
+| [doc/SETUP.md](./doc/SETUP.md) | **环境安装、启动、OSS/云库、排错、代码写在哪** |
 | [doc/ARCH.md](./doc/ARCH.md) | 模块、下单支付约定、部署要点 |
 | [doc/TONEW.md](./doc/TONEW.md) | Git 新手教程 |
 
