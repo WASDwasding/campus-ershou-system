@@ -391,6 +391,10 @@ git reset --hard origin/main
 
 ---
 
+---
+当然你也可以把这个README.md文档丢给AI agent让它看着办 
+---
+
 # 协作规范
 
 `main` 是受保护分支，不允许直接 push，所有改动都通过 Pull Request 合并，需 1 个 approve。
