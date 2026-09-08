@@ -1,0 +1,24 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: campus-ershou-mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: campus
+      MYSQL_DATABASE: campus_ershou
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - campus-ershou-mysql:/var/lib/mysql
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  redis:
+    image: redis:7-alpine
+    container_name: campus-ershou-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+volumes:
+  campus-ershou-mysql:

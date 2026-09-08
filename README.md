@@ -1,28 +1,87 @@
-# 校园二手交易系统 (campus-ershou-system)
+# 校园智能二手交易平台 (campus-ershou-system)
 
-面向校园场景的二手物品交易平台。
+对抗赛题目：同题竞技 + 安全攻防。后端 Spring Boot，前端 Vue3，图片走 OSS。
 
 ## 技术栈
-待定
 
-## 本地启动
-待定
+| 层 | 技术 |
+| --- | --- |
+| 后端 | Java 17、Spring Boot 3.4、Spring Security、MyBatis-Plus、WebSocket |
+| 前端 | Vue 3、Vite、Vue Router、Pinia |
+| 数据 | MySQL 8、Redis |
+| 对象存储 | 阿里云 OSS |
+| AI | 大模型 HTTP API（配置后接入） |
 
-## 快速开始
+更细的模块划分和安全约定见 [doc/ARCH.md](./doc/ARCH.md)。
 
-```bash
-git clone git@github.com:WASDwasding/campus-ershou-system.git
-cd campus-ershou-system
+## 仓库结构
+
+```
+backend/     Spring Boot
+frontend/    Vue3
+sql/         建表脚本
+doc/         文档
 ```
 
-> 国内网络对 `github.com` 的 HTTPS 有干扰，请用上面的 SSH 地址。
-> 没配过 SSH 的同学看 [新手上手教程 · 第 2 步](./doc/TONEW.md#第-2-步配置-ssh国内网络几乎必须)。
+## 本地启动
+
+需要：**JDK 17+**、**Node 18+**、**MySQL 8**、**Redis**。没有 Docker 也可以，把数据库指到云服务器。
+
+本机若 `java -version` 报找不到 Runtime，Homebrew 的 JDK 需要先导出：
+
+```bash
+export JAVA_HOME=/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home
+export PATH="$JAVA_HOME/bin:$PATH"
+```
+
+### 1. 数据库
+
+有 Docker 时：
+
+```bash
+docker compose up -d
+```
+
+没有 Docker：在 MySQL 里建库 `campus_ershou`，再执行 `sql/init.sql`。Redis 本机或云上开着即可。
+
+### 2. 后端
+
+```bash
+cd backend
+cp src/main/resources/application-local.yml.example src/main/resources/application-local.yml
+# 填写 MySQL / Redis / OSS / JWT / 大模型 Key
+mvn spring-boot:run
+```
+
+健康检查：<http://127.0.0.1:8080/api/health>
+
+### 3. 前端
+
+```bash
+cd frontend
+cp .env.example .env
+npm install
+npm run dev
+```
+
+浏览器打开 <http://127.0.0.1:5173>。开发时 `/api` 会代理到后端 8080。
+
+## 云服务器与 OSS
+
+- MySQL、Redis 可以装在云服务器上，把 `application-local.yml` 的地址改过去。
+- OSS 的 endpoint、Bucket、AccessKey 填进同一份 local 配置。**不要提交真实密钥**。
+- 上线时 Nginx 反代 `/api`、`/ws`，前端 `npm run build` 后的 `dist` 作静态站点。
+
+## 当前进度
+
+空骨架：统一响应、JWT 过滤器、CORS、OSS 上传封装、WebSocket 端点、实体与 Mapper、各业务接口返回 501。登录、下单、支付、IM、AI 待实现。
 
 ## 文档
 
 | 文档 | 内容 |
 | --- | --- |
-| [doc/TONEW.md](./doc/TONEW.md) | **新手上手教程**。第一次用 git 的同学从这里开始：概念、环境配置、SSH、克隆、日常开发循环、命令速查、常见问题急救 |
+| [doc/ARCH.md](./doc/ARCH.md) | 模块、下单支付约定、部署要点 |
+| [doc/TONEW.md](./doc/TONEW.md) | Git 新手教程 |
 
 ---
 
@@ -75,17 +134,17 @@ update            # 改了什么？
 
 - **一个 PR 只做一件事**。混着改三个功能的 PR 没人看得动，也没法单独回滚。
 - 描述里写清**改动内容**和**怎么验证**。
-- 改了数据库结构，把 SQL 迁移脚本一并提交，并在描述里明确说明，方便队友同步本地数据库。
+- 改动数据库结构时，把 SQL 迁移脚本一并提交，并在 PR 描述里说明。
 - 指派至少一位 reviewer。
 - 所有 review 评论都要点 **Resolve conversation** 才能合并。
 
 ## 团队约定
 
-- **绝对不要提交敏感信息**。本仓库是公开的，数据库密码、OSS/短信密钥、JWT secret 一律放本地 `.env` 或 `application-local.yml`，这些路径已在 `.gitignore` 里忽略。需要共享配置结构时，提交一份去掉了真实值的 `.env.example`。
-  > 一旦密钥被提交并推送，即使后续删掉，它仍然留在 git 历史里可被检索。真的推上去了，立刻在对应服务里吊销/更换该密钥，并告知全组。
+- **绝对不要提交敏感信息**。本仓库是公开的，数据库密码、OSS/短信密钥、JWT secret、大模型 Key 一律放本地 `.env` 或 `application-local.yml`。仓库里只放 `.example`。
+  > 一旦密钥被提交并推送，即使后续删掉，它仍然留在 git 历史里可被检索。立刻去对应服务里更换密钥。
 - **不要提交依赖和构建产物**：`node_modules/`、`target/`、`dist/` 已忽略。
 - **不要提交 IDE 个人配置**：`.idea/`、`.vscode/` 已忽略。
-- 每天开工前先 `git switch main && git pull`，让自己的代码基于最新的主线。
+- 每天开工前先 `git switch main && git pull`。
 
 ## 许可证
 

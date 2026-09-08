@@ -1,0 +1,38 @@
+# 复制为本目录下的 application-local.yml 后再填写。
+# application-local.yml 已被 gitignore，不会进仓库。
+#
+#   cp src/main/resources/application-local.yml.example src/main/resources/application-local.yml
+
+spring:
+  datasource:
+    # 本机 Docker：保持默认即可
+    # 云服务器 MySQL：改成 jdbc:mysql://<公网或内网IP>:3306/campus_ershou?...
+    url: jdbc:mysql://127.0.0.1:3306/campus_ershou?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: campus
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      # password:
+
+app:
+  jwt:
+    secret: PleaseChangeThisJwtSecretKeyToAtLeast32Chars!!
+  cors:
+    allowed-origins:
+      - http://localhost:5173
+      # 云服务器部署前端后把下面改成你的域名
+      # - https://your-domain.example
+  oss:
+    endpoint: oss-cn-hangzhou.aliyuncs.com
+    bucket: your-bucket-name
+    access-key-id: ""
+    access-key-secret: ""
+    # 绑定了自定义域名或 Bucket 域名就填，例如 https://cdn.example.com
+    custom-domain: ""
+    dir-prefix: campus-ershou/
+  ai:
+    base-url: https://api.deepseek.com
+    api-key: ""
+    model: deepseek-chat
