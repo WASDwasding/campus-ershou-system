@@ -20,6 +20,7 @@
 ```
 backend/     Spring Boot
 frontend/    Vue3
+sql/         数据库（表结构、脚本、说明）
 doc/         文档
 ```
 
@@ -63,6 +64,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 | [doc/COURSE_PLAN.md](./doc/COURSE_PLAN.md) | 课程大致进度（对齐已知得分节点） |
 | [doc/SETUP.md](./doc/SETUP.md) | 环境安装、启动、OSS/云库、排错、代码写在哪 |
 | [doc/ARCH.md](./doc/ARCH.md) | 模块、下单支付约定、部署要点 |
+| [sql/](./sql/) | 数据库：表结构、脚本、说明 |
 | [doc/TONEW.md](./doc/TONEW.md) | Git 新手教程 |
 
 ---

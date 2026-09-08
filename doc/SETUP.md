@@ -84,7 +84,7 @@ npm run dev
 docker compose up -d
 ```
 
-会起空的 MySQL（库 `campus_ershou`，root / `campus`）和 Redis，**不会建业务表**。表等写登录/商品时再设计。
+会起空的 MySQL（库 `campus_ershou`，root / `campus`）和 Redis，**不会建业务表**。表结构和说明写在 [`sql/`](../sql/)。
 
 **云服务器：** 先有一台能连的 MySQL/Redis 即可，建表以后再说。开发期建议 SSH 隧道，避免 3306 对公网开放：
 
