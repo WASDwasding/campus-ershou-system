@@ -6,11 +6,11 @@
 
 | 层 | 技术 |
 | --- | --- |
-| 后端 | Java 17、Spring Boot 3.4、Spring Security、MyBatis-Plus、WebSocket |
-| 前端 | Vue 3、Vite、Vue Router、Pinia |
-| 数据 | MySQL 8、Redis |
+| 后端 | Java 17、Spring Boot 3.4（Security / MyBatis / Redis 实现功能时再加） |
+| 前端 | Vue 3、Vite |
+| 数据 | MySQL 8、Redis（写业务时再连） |
 | 对象存储 | 阿里云 OSS |
-| AI | 大模型 HTTP API（配置后接入） |
+| AI | 大模型 HTTP API |
 
 更细的模块划分和安全约定见 [doc/ARCH.md](./doc/ARCH.md)。
 
@@ -27,24 +27,13 @@ doc/         文档
 
 逐步说明（JDK、Docker / 云数据库、OSS、启动、排错、代码写在哪）见 **[doc/SETUP.md](./doc/SETUP.md)**。
 
-最短路径：
+最短路径（现在不需要数据库也能启动）：
 
 ```bash
-# 1. 数据库：有 Docker 则在仓库根目录
-docker compose up -d
-# 没有 Docker：用云服务器 MySQL/Redis，或本机安装后执行 sql/init.sql
+cd backend && mvn spring-boot:run
 
-# 2. 后端
-cd backend
-cp src/main/resources/application-local.yml.example src/main/resources/application-local.yml
-# 填写数据库、OSS、JWT
-mvn spring-boot:run
-
-# 3. 另开终端
-cd frontend
-cp .env.example .env
-npm install
-npm run dev
+# 另开终端
+cd frontend && npm install && npm run dev
 ```
 
 macOS 若 `java -version` 报找不到 Runtime：
@@ -65,7 +54,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 
 ## 当前进度
 
-空骨架：统一响应、JWT 过滤器、CORS、OSS 上传封装、WebSocket 端点、实体与 Mapper、各业务接口返回 501。登录、下单、支付、IM、AI 待实现。
+目录骨架。后端仅 `GET /api/health`；`auth` / `goods` / `order` 等包是空的，登录、下单、支付尚未实现。
 
 ## 文档
 
