@@ -16,7 +16,6 @@ backend/src/main/java/com/campus/ershou/
   im/       即时通讯
   ai/       定价 / 议价
   common/   鉴权、OSS、统一响应
-sql/init.sql
 frontend/                       Vue3 单页
 ```
 
