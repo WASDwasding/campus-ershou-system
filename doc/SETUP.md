@@ -127,7 +127,7 @@ git switch main && git pull
 git switch -c feat/你的功能
 ```
 
-`main` 不能直接 push，流程见 [TONEW 第 4 步](./TONEW.md#第-4-步日常开发循环)。
+`main` 不要直接 push。开 PR 后跟管理员说一声再合，流程见 [TONEW 第 4 步](./TONEW.md#第-4-步日常开发循环)。
 
 安全约定（价格、超卖、越权、支付、SQL、XSS）写在 [ARCH.md](./ARCH.md)，实现对应功能时必须遵守。
 

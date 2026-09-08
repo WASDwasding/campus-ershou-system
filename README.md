@@ -71,7 +71,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 
 # 协作规范
 
-`main` 是受保护分支，不允许直接 push，所有改动都通过 Pull Request 合并，需 1 个 approve。
+`main` 不要直接 push。开自己的分支，改完开 Pull Request，要合进 `main` 时跟仓库管理员说一声，由管理员合并。
 
 完整操作步骤见 [新手上手教程 · 第 4 步](./doc/TONEW.md#第-4-步日常开发循环)。
 
@@ -119,12 +119,11 @@ update            # 改了什么？
 - **一个 PR 只做一件事**。混着改三个功能的 PR 没人看得动，也没法单独回滚。
 - 描述里写清**改动内容**和**怎么验证**。
 - 改动数据库结构时，把 SQL 迁移脚本一并提交，并在 PR 描述里说明。
-- 指派至少一位 reviewer。
-- 所有 review 评论都要点 **Resolve conversation** 才能合并。
+- 开完 PR 在群里跟管理员说一声，**不要自己点合并、也不要推 `main`**。
 
 ## 团队约定
 
-- **绝对不要提交敏感信息**。本仓库是公开的，数据库密码、OSS/短信密钥、JWT secret、大模型 Key 一律放本地 `.env` 或 `application-local.yml`。仓库里只放 `.example`。
+- **绝对不要提交敏感信息**。仓库已是 private，密钥仍不要进 git：数据库密码、OSS/短信密钥、JWT secret、大模型 Key 一律放本地 `.env` 或 `application-local.yml`。仓库里只放 `.example`。
   > 一旦密钥被提交并推送，即使后续删掉，它仍然留在 git 历史里可被检索。立刻去对应服务里更换密钥。
 - **不要提交依赖和构建产物**：`node_modules/`、`target/`、`dist/` 已忽略。
 - **不要提交 IDE 个人配置**：`.idea/`、`.vscode/` 已忽略。
