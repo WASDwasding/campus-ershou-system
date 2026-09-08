@@ -84,9 +84,9 @@ npm run dev
 docker compose up -d
 ```
 
-会起 MySQL（库 `campus_ershou`，root / `campus`）和 Redis，并自动执行 `sql/init.sql`。
+会起空的 MySQL（库 `campus_ershou`，root / `campus`）和 Redis，**不会建业务表**。表等写登录/商品时再设计。
 
-**云服务器：** 建库后导入 `sql/init.sql`。开发期建议 SSH 隧道，避免 3306 对公网开放：
+**云服务器：** 先有一台能连的 MySQL/Redis 即可，建表以后再说。开发期建议 SSH 隧道，避免 3306 对公网开放：
 
 ```bash
 ssh -N -L 3306:127.0.0.1:3306 -L 6379:127.0.0.1:6379 root@<云服务器IP>

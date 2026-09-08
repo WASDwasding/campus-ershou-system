@@ -20,7 +20,6 @@
 ```
 backend/     Spring Boot
 frontend/    Vue3
-sql/         建表脚本
 doc/         文档
 ```
 
@@ -55,7 +54,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 
 ## 当前进度
 
-目录骨架。后端仅 `GET /api/health`；`auth` / `goods` / `order` 等包是空的，登录、下单、支付尚未实现。
+目录骨架。前后端空壳可启动（健康检查）；未连数据库和 OSS，表结构尚未建。
 
 ## 文档
 
