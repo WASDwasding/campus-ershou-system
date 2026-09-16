@@ -2,7 +2,7 @@
 
 Git 不会用先看 [TONEW.md](./TONEW.md)。
 
-需要：Git、JDK 17+、Maven、Node 18+。现在不需要数据库。
+需要：Git、JDK 17+、Maven、Node 18+、[微信开发者工具](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html)。现在不需要数据库。
 
 ```bash
 git clone git@github.com:WASDwasding/campus-ershou-system.git
@@ -18,7 +18,7 @@ mvn spring-boot:run
 
 `curl http://127.0.0.1:8080/api/health` 应返回 `{"service":"campus-ershou","status":"UP"}`。
 
-前端另开终端：
+前端（uni-app → 微信小程序）另开终端：
 
 ```bash
 cd frontend
@@ -26,7 +26,11 @@ npm install
 npm run dev
 ```
 
-打开 http://127.0.0.1:5173 。
+编译产物在 `frontend/dist/dev/mp-weixin`（已 gitignore，不要提交）。用微信开发者工具「导入项目」，目录选这一层。
+
+开发者工具里勾选：**不校验合法域名、web-view（业务域名）、TLS 版本以及 HTTPS 证书**。否则请求不到本机 `http://127.0.0.1:8080`。
+
+真机预览时，把 `frontend/src/config.js` 里的地址改成电脑的局域网 IP，不要改完提交。微信 AppID 只在本机填写，仓库里保持空。
 
 macOS 若 `java` 报找不到 Runtime：
 

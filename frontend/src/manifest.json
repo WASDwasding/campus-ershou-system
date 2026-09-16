@@ -1,0 +1,19 @@
+{
+  "name": "校园智能二手",
+  "appid": "",
+  "description": "校园智能二手交易平台",
+  "versionName": "0.0.1",
+  "versionCode": "100",
+  "transformPx": false,
+  "mp-weixin": {
+    "appid": "",
+    "setting": {
+      "urlCheck": false
+    },
+    "usingComponents": true
+  },
+  "uniStatistics": {
+    "enable": false
+  },
+  "vueVersion": "3"
+}

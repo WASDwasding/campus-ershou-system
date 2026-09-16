@@ -34,10 +34,11 @@ out/
 hs_err_pid*
 replay_pid*
 
-# ---------- Node / Vue 前端 ----------
+# ---------- Node / uni-app / 微信开发者工具 ----------
 node_modules/
 dist/
 dist-ssr/
+unpackage/
 .output/
 .nuxt/
 .vite/
@@ -55,6 +56,8 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+project.private.config.json
+.hbuilderx/
 
 # ---------- 日志与运行时产物 ----------
 logs/
