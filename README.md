@@ -38,7 +38,6 @@ doc/         文档
 | [doc/校园智能二手交易平台软件项目计划.docx](./doc/校园智能二手交易平台软件项目计划.docx) | 项目计划书 |
 | [doc/技术过程.txt](./doc/技术过程.txt) | 计划书第 4 部分 |
 | [doc/tree.html](./doc/tree.html) | 底座与项目 A、B 的分叉 |
-| [doc/UI_material/](./doc/UI_material/) | 界面参考 |
 | [sql/](./sql/) | 数据库 |
 | [doc/TONEW.md](./doc/TONEW.md) | Git 新手教程 |
 
