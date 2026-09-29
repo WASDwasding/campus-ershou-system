@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>同一底座，末端分叉</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --fg: #1c1c1c;
+      --muted: #5c5c5c;
+      --line: #1c1c1c;
+      --card: #fff;
+      --blue-bg: #e8f1fb;
+      --blue: #185fa5;
+      --purple-bg: #f3e8fb;
+      --purple: #6b3fa0;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --fg: #f2f2f2;
+        --muted: #b5b5b5;
+        --line: #f2f2f2;
+        --card: #1e1e1e;
+        --blue-bg: #16324a;
+        --blue: #9ec7ef;
+        --purple-bg: #2e2140;
+        --purple: #d4b6ef;
+      }
+    }
+    body {
+      margin: 0;
+      padding: 24px 16px 48px;
+      font: 15px/1.45 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+      color: var(--fg);
+      background: transparent;
+    }
+    h1 { font-size: 20px; font-weight: 500; margin: 0 0 4px; }
+    .sub { color: var(--muted); margin: 0 0 16px; }
+    .legend { display: flex; gap: 16px; margin-bottom: 16px; font-size: 13px; }
+    .swatch { width: 10px; height: 10px; display: inline-block; margin-right: 6px; vertical-align: middle; }
+    .swatch.base { background: var(--muted); }
+    .swatch.a { background: var(--blue); }
+    .swatch.b { background: var(--purple); }
+    .trunk { display: flex; flex-direction: column; align-items: center; }
+    .node {
+      width: min(100%, 440px);
+      box-sizing: border-box;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px 14px;
+      background: var(--card);
+    }
+    .node h2 { font-size: 15px; font-weight: 500; margin: 0 0 6px; display: flex; align-items: center; gap: 8px; }
+    .node p { margin: 0; font-size: 13px; color: var(--muted); }
+    .step {
+      width: 1.25rem; height: 1.25rem;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid var(--line); border-radius: 999px; font-size: 12px; color: var(--fg);
+    }
+    .stem { width: 1.5px; height: 16px; background: var(--line); }
+    .split {
+      width: min(100%, 760px);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      position: relative;
+      padding-top: 20px;
+    }
+    .split::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 25%; right: 25%; height: 16px;
+      border: 1.5px solid var(--line);
+      border-bottom: none;
+    }
+    .a { background: var(--blue-bg); border-color: var(--blue); }
+    .a h2 { color: var(--blue); }
+    .b { background: var(--purple-bg); border-color: var(--purple); }
+    .b h2 { color: var(--purple); }
+    .pending { margin-top: 6px; }
+    @media (max-width: 560px) {
+      .split { grid-template-columns: 1fr; padding-top: 0; }
+      .split::before { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <h1>同一底座，末端分叉</h1>
+  <p class="sub">交易内核共用，能力末端分开</p>
+  <div class="legend">
+    <span><i class="swatch base"></i>底座</span>
+    <span><i class="swatch a"></i>项目 A</span>
+    <span><i class="swatch b"></i>项目 B</span>
+  </div>
+  <div class="trunk">
+    <article class="node">
+      <h2><span class="step">1</span>接入</h2>
+      <p>uni-app 编译为微信小程序</p>
+      <p>pages.json · uni.request</p>
+      <p>Nginx 反代 Spring Boot</p>
+    </article>
+    <div class="stem"></div>
+    <article class="node">
+      <h2><span class="step">2</span>模块化单体</h2>
+      <p>一个进程：auth user goods order pay im common</p>
+      <p>模块之间只走接口</p>
+    </article>
+    <div class="stem"></div>
+    <article class="node">
+      <h2><span class="step">3</span>数据</h2>
+      <p>MySQL：用户、商品、订单、消息</p>
+      <p>Redis：缓存、短锁、限流</p>
+      <p>成交以 MySQL 为准</p>
+    </article>
+    <div class="stem"></div>
+    <article class="node">
+      <h2><span class="step">4</span>交易内核</h2>
+      <p>微信登录；校园身份人工审核</p>
+      <p>发布、列表、详情、下架；标价写入商品</p>
+      <p>下单只收 goodsId、quantity</p>
+      <p>金额按库内标价重算</p>
+      <p>UPDATE stock WHERE stock &gt;= n，0 行失败</p>
+      <p>有效订单唯一约束；Redis 短锁</p>
+      <p>在售 → 已预约 → 待面交 → 已完成</p>
+      <p>待支付可取消；已支付不可由客户端改回</p>
+      <p>沙箱回调：验签、幂等、回查金额</p>
+      <p>无用户余额；对象级权限；SQL 参数化</p>
+      <p>站内 IM；状态枚举含「申诉中」</p>
+    </article>
+    <div class="stem"></div>
+    <div class="split">
+      <article class="node a">
+        <h2>项目 A · AI 议价</h2>
+        <p>大模型 API，密钥只在服务端</p>
+        <p>发布：模型填表，失败改手填</p>
+        <p>议价：话术 + 建议价</p>
+        <p>建议价限制在服务端区间</p>
+        <p>越界丢弃；超时改规则话术</p>
+        <p>下单不读模型输出</p>
+        <p>详情分开显示建议价和标价</p>
+        <p>议价接口按用户限流</p>
+      </article>
+      <article class="node b">
+        <h2>项目 B · 成色与仲裁</h2>
+        <p>成色记录附在商品上</p>
+        <p>人工评定或模型评定</p>
+        <p>评定结果不写成交价</p>
+        <p>「申诉中」进入仲裁案件</p>
+        <p>证据、裁决再回写订单</p>
+        <p>同一 MySQL，只加表</p>
+        <p class="pending">评分规则、裁决人、结案状态待定</p>
+      </article>
+    </div>
+  </div>
+</body>
+</html>

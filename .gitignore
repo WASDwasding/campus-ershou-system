@@ -89,9 +89,6 @@ logs/
 *.sublime-workspace
 *.sublime-project
 
-# iOS 只在本机用 Xcode 开，不进组里仓库
-ios/
-
 # ---------- 操作系统 ----------
 .DS_Store
 .DS_Store?
