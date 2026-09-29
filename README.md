@@ -6,15 +6,6 @@
 
 项目 A（AI 议价）和项目 B（成色与仲裁）共用这套底座，分叉关系见 [doc/tree.html](./doc/tree.html)。
 
-## 启动
-
-```bash
-cd backend && mvn spring-boot:run
-
-# 另开终端
-cd frontend && npm install && npm run dev
-```
-
 环境说明见 [doc/SETUP.md](./doc/SETUP.md)。  
 小程序默认请求 `https://simpleyi.site`。服务器健康检查：<https://simpleyi.site/api/health>  
 小程序：用微信开发者工具打开 `frontend/dist/dev/mp-weixin`。
