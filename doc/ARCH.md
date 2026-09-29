@@ -21,7 +21,7 @@ backend/src/main/java/com/campus/ershou/
 sql/                            数据库（表结构、脚本、说明）
 frontend/                       uni-app（微信小程序）
   src/pages/                    小程序页面（pages.json 登记）
-  src/config.js                 后端地址（本机默认 127.0.0.1:8080）
+  src/config.js                 后端地址（默认 https://simpleyi.site）
 ```
 
 实现某个模块时，在对应包新建 `controller` / `service` / `mapper`，并在 `backend/pom.xml` 按需加入 MyBatis、Security、Redis 等依赖。前端在 `frontend/src/pages/` 加页面，并写入 `pages.json`。字段、错误码和状态以 `base-API.md` 为准，这里只留必须一起遵守的几条。

@@ -54,42 +54,41 @@ A、B 分叉后各写一份 `A-API.md`、`B-API.md`，只写新增的接口和�
 
 ### 2.1 环境
 
-
-| 环境    | 用途           | HTTP 基址                 | WebSocket                   | Spring profile | 数据                                                  |
-| ----- | ------------ | ----------------------- | --------------------------- | -------------- | --------------------------------------------------- |
-| local | 个人开发         | `http://127.0.0.1:8080` | `ws://127.0.0.1:8080/ws/im` | `local`        | 本机库 `campus_ershou`；Redis 前缀 `campus:local:`        |
-| test  | 联调、Apifox 回归 | `https://{测试域名}`        | `wss://{测试域名}/ws/im`        | `test`         | 服务器库 `campus_ershou_test`；前缀 `campus:test:`         |
-| demo  | 原型评审、彩排、展示   | `https://{展示域名}`        | `wss://{展示域名}/ws/im`        | `demo`         | 服务器库 `campus_ershou_demo`；前缀 `campus:demo:`；展示前一周冻结 |
+当前只有一套给小程序用的服务器，不再拆 test、demo 两个环境。
 
 
-文中的 Redis 键都省略环境前缀，例如 `lock:goods:{goodsId}` 在 test 环境实际是 `campus:test:lock:goods:{goodsId}`。
+| 环境 | 用途 | HTTP 基址 | WebSocket | 数据 |
+| --- | --- | --- | --- | --- |
+| server | 前端联调、Apifox、展示 | `https://simpleyi.site` | `wss://simpleyi.site/ws/im` | 服务器库 `ershou`；Redis 前缀 `campus:` |
+| local | 只有后端在本机写接口时用 | `http://127.0.0.1:8080` | `ws://127.0.0.1:8080/ws/im` | 本机自己的库；不给前端连 |
+
+文中的 Redis 键都省略环境前缀，例如 `lock:goods:{goodsId}` 在服务器上实际是 `campus:lock:goods:{goodsId}`。
 
 ### 2.2 各环境开关
 
 
-| 开关                         | local | test   | demo   | 说明                            |
-| -------------------------- | ----- | ------ | ------ | ----------------------------- |
-| `POST /api/auth/dev-login` | 开     | 关（404） | 关（404） | 免微信登录，只给本机造多账号                |
-| Knife4j / OpenAPI 页面       | 开     | 关      | 关      | 服务器上不暴露接口清单；Apifox 从 local 导出 |
-| 模拟支付网关 `pay.mock.enabled`  | 开     | 开      | 开      | 课程全程用模拟支付                     |
-| 错误响应带异常详情                  | 开     | 关      | 关      | 关掉后只返回错误码和 traceId            |
+| 开关 | local | server | 说明 |
+| --- | --- | --- | --- |
+| `POST /api/auth/dev-login` | 开 | 关（404） | 免微信登录，只给本机造多账号 |
+| Knife4j / OpenAPI 页面 | 开 | 关 | 服务器上不暴露接口清单 |
+| 模拟支付网关 `pay.mock.enabled` | 开 | 开 | 课程全程用模拟支付 |
+| 错误响应带异常详情 | 开 | 关 | 关掉后只返回错误码和 traceId |
 
 
 ### 2.3 小程序端
 
-- 地址写在 `frontend/src/config.js`：已有 `API_BASE`，需要新增 `WS_BASE`（本机为 `ws://127.0.0.1:8080`）。
-- 开发者工具：详情 → 本地设置 → 勾选「不校验合法域名、web-view（业务域名）、TLS 版本以及 HTTPS 证书」，才能访问 `http://127.0.0.1`。
-- 真机预览：手机访问不到 `127.0.0.1`，改成电脑的局域网 IP，或者直接用 test 环境域名。改过的地址不要提交。
-- 体验版、正式版：在小程序后台「开发管理 → 开发设置 → 服务器域名」配置 request、socket、uploadFile、downloadFile 四类合法域名；必须是 HTTPS / WSS，域名要已备案。
+- 地址写在 `frontend/src/config.js`。仓库里的默认值是 `https://simpleyi.site` 和 `wss://simpleyi.site`。前端不要改。后端在本机调试时可以临时改成 `127.0.0.1`，测完改回去，不要提交。
+- 开发者工具：详情 → 本地设置 → 勾选「不校验合法域名、web-view（业务域名）、TLS 版本以及 HTTPS 证书」。正式 AppID 配好之前都勾着。
+- 体验版、正式版：在小程序后台「开发管理 → 开发设置 → 服务器域名」把 `simpleyi.site` 配进 request、socket、uploadFile、downloadFile。域名已备案，证书已有。
 - 小程序的 `wx.request` 不支持 `PATCH`，所以本文件的修改接口只用 `PUT` 和 `POST`。
 
 ### 2.4 服务器（和已有项目同机）
 
 服务器上已有 MySQL、Redis、Nginx，课设不另装：
 
-- MySQL：每个环境一个库（§2.1），各用独立账号，只授权本库。
-- Redis：只监听 `127.0.0.1` 并设密码；课设的键都带 `campus:{env}:` 前缀，不和已有项目混用。
-- Spring Boot：只监听 `127.0.0.1`，由 Nginx 对外。test、demo 各一个进程、各一个端口。
+- MySQL：课设使用库 `ershou`，账号只允许从本机连接。原来的 `simpleyi` 库留着，不使用。
+- Redis：只监听 `127.0.0.1`。课设的键加 `campus:` 前缀。
+- Spring Boot：只监听 `127.0.0.1:8080`，由 Nginx 把 `simpleyi.site` 转进来。部署是替换 `/opt/campus-ershou/campus-ershou.jar` 后执行 `sudo systemctl restart campus-ershou`。
 
 Nginx 示例（每个环境一份，端口换成对应进程的端口）：
 
@@ -2420,8 +2419,8 @@ base 不接微信订阅消息（计划书未排入），通知只在小程序里
 `frontend/src/config.js` 需要补上 WebSocket 地址：
 
 ```js
-export const API_BASE = 'http://127.0.0.1:8080'
-export const WS_BASE = 'ws://127.0.0.1:8080'
+export const API_BASE = 'https://simpleyi.site'
+export const WS_BASE = 'wss://simpleyi.site'
 ```
 
 ### 18.1 请求封装
@@ -2804,17 +2803,16 @@ Object.keys(fields).forEach((key) => pm.variables.set('notify_' + key, String(fi
 已确认（2026-09-29）：
 
 - 支付：用后端自建的模拟网关，不接第三方沙箱（§11）。
-- 域名：已有备案域名和 HTTPS 证书，体验版、正式版的合法域名要求能满足（§2.3）。
+- 域名：小程序和 Apifox 都连 `https://simpleyi.site`。证书已有。不另拆测试域名。
+- 数据库：服务器上的库名是 `ershou`。
 - 小程序 AppID：还没注册。注册前的做法和对联调的影响见 §6.2。
 
 还要定，定下来后改对应章节：
 
-1. 具体域名：test、demo 用同一个域名下的两个子域名，还是两个域名（§2.1、§2.4）。
-2. 管理端做成网页还是小程序里的页面。接口一样，影响的是部署和 CORS（§15）。
-3. 学号格式、楼栋和面交点、区域、商品分类的初始数据（§5.3、§5.4、§6.4）。
-4. 几个数值：待支付 15 分钟、待支付最多 3 单、24 小时内 3 次超时就限制下单、价格上限 99,999 元、图片最多 9 张且每张 5 MB（§5.2）。
-5. 图片存服务器磁盘还是对象存储。只影响地址的样子，不影响接口（§8）。
-6. test、demo 在同一台服务器上各用哪个端口和库名（§2.1、§2.4）。
+1. 管理端做成网页还是小程序里的页面。接口一样，影响的是部署和 CORS（§15）。
+2. 学号格式、楼栋和面交点、区域、商品分类的初始数据（§5.3、§5.4、§6.4）。
+3. 几个数值：待支付 15 分钟、待支付最多 3 单、24 小时内 3 次超时就限制下单、价格上限 99,999 元、图片最多 9 张且每张 5 MB（§5.2）。
+4. 图片存服务器磁盘还是对象存储。只影响地址的样子，不影响接口（§8）。
 
 ---
 
@@ -2823,5 +2821,6 @@ Object.keys(fields).forEach((key) => pm.variables.set('notify_' + key, String(fi
 | 版本 | 日期 | 说明 |
 | --- | --- | --- |
 | v0.1 | 2026-09-29 | 初稿：base 全部接口、商品和订单状态机、支付回调签名、聊天推送、管理端、错误码、攻防用例 |
+| v0.2 | 2026-09-29 | 小程序默认连 `https://simpleyi.site`；服务器库名定为 `ershou` |
 
 

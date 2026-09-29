@@ -16,10 +16,10 @@ cd frontend && npm install && npm run dev
 ```
 
 环境说明见 [doc/SETUP.md](./doc/SETUP.md)。  
-健康检查：<http://127.0.0.1:8080/api/health>  
+小程序默认请求 `https://simpleyi.site`。服务器健康检查：<https://simpleyi.site/api/health>  
 小程序：用微信开发者工具打开 `frontend/dist/dev/mp-weixin`。
 
-每人先在本机开发。联调和展示用云服务器上的 test、demo 环境，地址和库不要和本机混用，见接口文档第 2 节。
+前端只跑小程序，连服务器上的后端。后端在本机把接口测通后，由一个人把 jar 部署到服务器并重启，不要把没测完的包传上去。
 
 ## 目录
 
@@ -46,7 +46,7 @@ doc/         文档
 
 `main` 不要直接 push。开分支、开 PR，要合的时候跟管理员说一声。Git 不会用看 [TONEW](./doc/TONEW.md)。
 
-密钥和微信 AppID 不要提交，只放本地 `application-local.yml` / `.env`，或只在本机改 `manifest.json`。`config.js` 改成局域网 IP 后也不要提交。
+密钥和微信 AppID 不要提交，只放本地 `application-local.yml` / `.env`，或只在本机改 `manifest.json`。后端如果把 `config.js` 临时改成 `127.0.0.1`，不要提交。
 
 ## 许可证
 
