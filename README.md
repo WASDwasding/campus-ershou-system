@@ -26,6 +26,7 @@ doc/         文档
 | [doc/SETUP.md](./doc/SETUP.md) | 怎么跑起来 |
 | [doc/ARCH.md](./doc/ARCH.md) | 模块和约定 |
 | [doc/base-API.md](./doc/base-API.md) | 底座接口（设计稿，除健康检查外尚未实现） |
+| [doc/STATUE.md](./doc/STATUE.md) | 已开发接口 |
 | [doc/校园智能二手交易平台软件项目计划.docx](./doc/校园智能二手交易平台软件项目计划.docx) | 项目计划书 |
 | [doc/技术过程.txt](./doc/技术过程.txt) | 计划书第 4 部分 |
 | [doc/tree.html](./doc/tree.html) | 底座与项目 A、B 的分叉 |
