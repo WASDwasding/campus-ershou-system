@@ -10,6 +10,8 @@ application-local.properties
 application-dev.yml
 application-prod.yml
 *.pem
+# ---------- 本机独立 MySQL 数据目录（端口 3307）----------
+.data/
 *.key
 *.jks
 *.p12
