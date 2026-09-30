@@ -1,12 +1,12 @@
 # 校园二手交易平台 · Base API
 
-v0.3 设计稿（2026-09-29）。项目 A（AI 议价）、项目 B（成色与仲裁）分叉前的公共底座。技术栈：Spring Boot 3.4 / Java 17、MySQL 8、Redis、uni-app 微信小程序。
+v0.4 设计稿（2026-09-30）。项目 A（AI 议价）、项目 B（成色与仲裁）分叉前的公共底座。技术栈：Spring Boot 3.4 / Java 17、MySQL 8、Redis、uni-app 微信小程序。
 
-除 `GET /api/health` 外都还没实现。A、B 只加接口和可选字段，不改这里的字段含义、状态机和错误码。改底座先改本文件。
+第一批已实现：健康检查、注册/登录/登出、`GET /api/me`、`GET /api/meta`、分类、楼栋。其余尚未实现。A、B 只加接口和可选字段，不改这里的字段含义、状态机和错误码。改底座先改本文件。
 
 ## 1. 范围
 
-**包含：** 微信登录与校园身份人工审核；资料、公开主页、评价；商品发布/改价/上下架/搜索/就近/收藏/浏览记录；下单不超卖、订单状态机、面交、申诉入口；模拟支付（验签、防重放、回查金额、幂等、模拟退款）；站内聊天与 WebSocket；通知、举报；管理端（审核、封禁、下架、申诉简版、举报、审计）。
+**包含：** 学号 + 邮箱验证码注册、学号 + 密码登录；校园身份人工审核；资料、公开主页、评价；商品发布/改价/上下架/搜索/就近/收藏/浏览记录；下单不超卖、订单状态机、面交、申诉入口；模拟支付（验签、防重放、回查金额、幂等、模拟退款）；站内聊天与 WebSocket；通知、举报；管理端（审核、封禁、下架、申诉简版、举报、审计）。
 
 **不包含：**
 
@@ -26,17 +26,20 @@ v0.3 设计稿（2026-09-29）。项目 A（AI 议价）、项目 B（成色与�
 | 环境 | 谁用 | 地址 | 数据 |
 | --- | --- | --- | --- |
 | server | 小程序、Apifox、展示 | `https://simpleyi.site`，WebSocket `wss://simpleyi.site/ws/im` | 库 `ershou`；Redis 前缀 `campus:` |
-| local | 只给后端在本机写接口 | `http://127.0.0.1:8080` | 本机库。前端不要连 |
+| local | 只给后端在本机写接口 | `http://127.0.0.1:8080` | 本机库 `campus_ershou`。推荐 `sql/start-local-mysql.sh`（端口 3307）。前端不要连 |
 
 `frontend/src/config.js` 默认是服务器地址。后端临时改成 `127.0.0.1` 时不要提交。开发者工具勾选「不校验合法域名」。体验版再把 `simpleyi.site` 配进 request、socket、uploadFile、downloadFile。
 
 服务器：Spring Boot 只听 `127.0.0.1:8080`，Nginx 转发 `/api/`、`/ws/`、`/files/public/`。部署是替换 `/opt/campus-ershou/campus-ershou.jar` 后 `sudo systemctl restart campus-ershou`。库账号只允许本机连接。原来的 `simpleyi` 库不使用。只信 Nginx 写入的 `X-Real-IP`，不信客户端自己带的 `X-Forwarded-For`。
 
-密钥放服务器或本机的 `application-local.yml`，不进仓库：数据库、Redis、`wx.app-id` / `wx.app-secret`、`auth.jwt.secret`（≥32 字节）、`auth.student-no.hmac-key`、`pay.mock.secret`、`file.sign-key`、`admin.init-password`。
+密钥放服务器或本机的 `application-local.yml`，不进仓库：数据库、Redis、`app.jwt.secret`（≥32 字节）、`app.student-no.hmac-key`、以及后续的 `wx.app-id` / `wx.app-secret`、`pay.mock.secret`、`file.sign-key`、`admin.init-password`。
+
+第一批表（`areas`、`buildings`、`categories`、`users`）见 [../sql/README.md](../sql/README.md)。验证码和 JWT 黑名单在 Redis，前缀 `campus:`。
 
 | 开关 | local | server |
 | --- | --- | --- |
 | `POST /api/auth/dev-login` | 开 | 404 |
+| 注册响应里的 `debugCode` | 仅 mail 未启用时 | 禁止 |
 | OpenAPI 页面 | 开 | 关 |
 | 模拟支付 | 开 | 开 |
 | 错误响应带异常栈 | 开 | 关，只返回错误码和 traceId |
@@ -44,7 +47,7 @@ v0.3 设计稿（2026-09-29）。项目 A（AI 议价）、项目 B（成色与�
 ## 3. 通用约定
 
 - JSON，`camelCase`。上传用 `multipart/form-data`。小程序不用 `PATCH`。查询里多个值用逗号：`status=PENDING_PAY,PAID`。多出来的查询参数忽略。
-- 登录头：`Authorization: Bearer <token>`。JWT 固定 HS256，拒绝 `alg: none`。载荷：`sub`、`typ`（`user` / `admin`）、`ver`、`jti`、`iat`、`exp`。用户 7 天，管理员 12 小时。两种 token 不能互调。登出或封禁（`ver` 加一）后旧 token 失效。401 时小程序重新 `uni.login`，只重试一次。
+- 登录头：`Authorization: Bearer <token>`。JWT 固定 HS256，拒绝 `alg: none`。载荷：`sub`、`typ`（`user` / `admin`）、`ver`、`jti`、`iat`、`exp`。用户 7 天，管理员 12 小时。两种 token 不能互调。登出或封禁（`ver` 加一）后旧 token 失效。401 时走学号密码重新登录，只重试一次。
 - 除健康检查、私有图片本体、支付回调外，响应都是：
 
 ```json
@@ -84,7 +87,9 @@ QQ：   (?:qq|扣扣|企鹅)[\s:：]*[1-9]\d{4,10}
 
 | 限流 | 上限 |
 | --- | --- |
-| 微信登录 | 每 IP 每分钟 10 次 |
+| 注册发验证码 | 同一邮箱 60 秒 1 次；每 IP 每分钟 10 次 |
+| 登录失败 | 15 分钟 5 次后锁 15 分钟 |
+| 微信登录 | 每 IP 每分钟 10 次（后续） |
 | 管理员登录失败 | 15 分钟 5 次后锁 15 分钟 |
 | 提交校园认证 | 每人每天 3 次 |
 | 上传 | 每人每小时 60 个 |
@@ -99,7 +104,7 @@ QQ：   (?:qq|扣扣|企鹅)[\s:：]*[1-9]\d{4,10}
 
 | 谁 | 能做什么 |
 | --- | --- |
-| 公开 | 健康检查、元数据、楼栋、分类、微信登录、管理员登录 |
+| 公开 | 健康检查、元数据、楼栋、分类、注册、登录、管理员登录 |
 | 登录（`status=ACTIVE`） | 浏览、资料、收藏、浏览记录、通知、举报、提交认证 |
 | 已认证（`verifyStatus=VERIFIED`） | 发布、下单、支付、聊天、面交、申诉、评价 |
 | 资源方 | 在上一级之外，还必须是卖家本人、订单买家或卖家、会话成员 |
@@ -117,11 +122,15 @@ QQ：   (?:qq|扣扣|企鹅)[\s:：]*[1-9]\d{4,10}
 | 系统 | GET | `/api/meta` | 公开。枚举中文名 + 下面的 limits |
 | 基础 | GET | `/api/campus/buildings?type=&meetupOnly=` | 公开 |
 | 基础 | GET | `/api/categories` | 公开。只有一级 |
-| 认证 | POST | `/api/auth/wx-login` | 公开。`{ "code" }` |
-| 认证 | POST | `/api/auth/dev-login` | 仅 local。`{ "devOpenid" }` 匹配 `^dev-[a-z0-9-]{3,32}$` |
+| 认证 | POST | `/api/auth/register` | 公开。`{ "studentNo", "username", "email" }`，发邮箱验证码 |
+| 认证 | POST | `/api/auth/register/verify-code` | 公开。`{ "email", "code" }` |
+| 认证 | POST | `/api/auth/register/set-password` | 公开。`{ "setupToken", "password" }`，完成后发 JWT |
+| 认证 | POST | `/api/auth/login` | 公开。`{ "studentNo", "password" }` |
 | 认证 | POST | `/api/auth/logout` | 登录 |
-| 认证 | POST | `/api/auth/campus-verification` | 登录，且未认证或已驳回 |
-| 认证 | GET | `/api/auth/campus-verification` | 登录 |
+| 认证 | POST | `/api/auth/wx-login` | 后续（AppID 未就绪） |
+| 认证 | POST | `/api/auth/dev-login` | 仅 local。`{ "devOpenid" }` 匹配 `^dev-[a-z0-9-]{3,32}$` |
+| 认证 | POST | `/api/auth/campus-verification` | 登录，且未认证或已驳回。本批未实现 |
+| 认证 | GET | `/api/auth/campus-verification` | 登录。本批未实现 |
 | 用户 | GET | `/api/me` | 登录 |
 | 用户 | PUT | `/api/me/profile` | 登录。只改传入字段 |
 | 用户 | GET | `/api/me/stats` | 登录 |
@@ -196,7 +205,7 @@ QQ：   (?:qq|扣扣|企鹅)[\s:：]*[1-9]\d{4,10}
 | 管理 | GET、POST | `/api/admin/buildings` | 管理员 |
 | 管理 | PUT | `/api/admin/buildings/{id}` | 管理员 |
 
-主流程：微信登录 → 填资料 → 校园认证 → 管理员通过 → 卖家上传图片并发布 → 买家浏览 → 开会话 → 下单 → 创建支付单 → 模拟付款 → 约面交 → 双方确认 → 评价。出问题走申诉，管理员 `resolve`。
+主流程：注册（学号 + 用户名 + 邮箱验证码 + 设密码）→ 学号密码登录 → 填资料 → 校园认证 → 管理员通过 → 卖家上传图片并发布 → 买家浏览 → 开会话 → 下单 → 创建支付单 → 模拟付款 → 约面交 → 双方确认 → 评价。出问题走申诉，管理员 `resolve`。
 
 ## 5. 枚举与上限
 
@@ -227,13 +236,23 @@ limits：`payTimeoutMinutes` 15，`maxPendingPayOrders` 3，`priceMin` 1，`pric
 
 ## 6. 认证、用户、文件
 
-**微信登录** `{ "code" }` → `token`、`expiresAt`、`isNewUser`、`user`。`openid` 唯一，首次建号。不返回 `openid` 和 `session_key`。已封禁：403 `USER_BANNED`，`data.reason`、`data.until`（`null` 为永久）。code 无效：`WX_LOGIN_FAILED`。微信超时：503 `UPSTREAM_UNAVAILABLE`。
+当前底座登录方式是 **学号 + 密码**。注册用邮箱验证码，不依赖微信 AppID。`wx-login` / `dev-login` 仍留在清单里，本批不实现。
 
-**dev-login** 只在 local。服务器上有人调用仍返回 404，并记 `DEV_LOGIN_BLOCKED`。
+**注册分三步。**
 
-**校园认证** `{ "studentNo", "dormBuildingId", "cardImageFileId" }`。学号默认 `^\d{8,12}$`，只存 `HMAC-SHA256(密钥, 学号)` 和脱敏串（前 4 后 2）。一个学号只能绑一个账号，冲突 409 `STUDENT_NO_TAKEN`。证件照审核结束 30 天后删除。已认证：`ALREADY_VERIFIED`；审核中：`VERIFICATION_PENDING`。进度接口在未提交时 `status=UNVERIFIED`。
+1. `POST /api/auth/register` `{ "studentNo", "username", "email" }` → `{ emailMasked, expiresInSeconds }`。学号 `^\d{8,12}$`；用户名 1–16 字，仅中文/字母/数字/下划线，且不能含联系方式；邮箱唯一、存小写。学号已绑定：409 `STUDENT_NO_TAKEN`。用户名占用：409 `USERNAME_TAKEN`。邮箱已注册：409 `EMAIL_TAKEN`。同一邮箱 60 秒只能发 1 次；同一 IP 每分钟 10 次。本机未启用 SMTP 时，`data.debugCode` 返回 6 位验证码，方便联调；服务器禁止该字段。
+2. `POST /api/auth/register/verify-code` `{ "email", "code" }` → `{ setupToken, expiresInSeconds }`。验证码 6 位数字，10 分钟有效，最多试 5 次。错误：400 `INVALID_CODE`。过期或不存在：400 `CODE_EXPIRED`。
+3. `POST /api/auth/register/set-password` `{ "setupToken", "password" }` → `{ token, expiresAt, isNewUser: true, user }`。密码 8–64 位。`setupToken` 15 分钟有效，失效：400 `SETUP_TOKEN_INVALID`。成功后发用户 JWT。新用户 `status=ACTIVE`，`verifyStatus=UNVERIFIED`（邮箱只证明邮箱，校园认证仍要走证件审核）。
 
-**资料** 本人可见学号脱敏和宿舍楼。别人的主页只有 `verified`、`relation.sameBuilding/sameArea`、评分、成交数、在售数。不返回学号和楼名。`PUT /api/me/profile` 可改 `nickname`（1–16）、`avatarFileId`、`bio`（≤60）、`dormBuildingId`（必须是 `DORM`）。不能用外部图片 URL。
+**登录** `POST /api/auth/login` `{ "studentNo", "password" }` → `{ token, expiresAt, isNewUser: false, user }`。学号或密码错一律 401 `BAD_CREDENTIALS`，不区分哪一项。封禁：403 `USER_BANNED`，`data.reason`、`data.until`（`null` 为永久）。15 分钟内失败 5 次后锁 15 分钟：429 `LOGIN_LOCKED`，响应头 `Retry-After`。
+
+**登出** `POST /api/auth/logout`。令牌版本加一，当前 `jti` 进 Redis 黑名单，旧 token 失效。
+
+学号只存 `HMAC-SHA256(密钥, 学号)` 和脱敏串（前 4 后 2）。接口不返回明文学号、密码、完整邮箱。`user` / `GET /api/me` 含 `id`、`username`、`nickname`、`emailMasked`、`studentNoMasked`、`avatarUrl`、`bio`、`status`、`verifyStatus`、`dormBuilding`、`createdAt`。
+
+**校园认证** `{ "dormBuildingId", "cardImageFileId" }`（学号在注册时已绑定，不再改）。证件照审核结束 30 天后删除。已认证：`ALREADY_VERIFIED`；审核中：`VERIFICATION_PENDING`。进度接口在未提交时 `status=UNVERIFIED`。本批未实现。
+
+**资料** 本人可见学号脱敏和宿舍楼。别人的主页只有 `verified`、`relation.sameBuilding/sameArea`、评分、成交数、在售数。不返回学号和楼名。`PUT /api/me/profile` 可改 `nickname`（1–16）、`avatarFileId`、`bio`（≤60）、`dormBuildingId`（必须是 `DORM`）。不能用外部图片 URL。本批只实现 `GET /api/me`。
 
 **上传** 只收 JPEG、PNG、WebP，≤5 MB。按文件头判断，转成 JPEG（最长边 1600，缩略图 400），去掉 EXIF，文件名随机。公开用途直接给 URL；私有用途的 URL 是 10 分钟临时地址，业务里只存 `fileId`。引用 `fileId` 必须同时满足：存在、本人上传、用途匹配，否则 400 `FILE_NOT_USABLE`。私有图签名：`HMAC-SHA256(file.sign-key, fileId + "|" + size + "|" + exp)`，`size` 为空或 `thumb`。
 
@@ -411,12 +430,15 @@ Redis 键都加 `campus:`：`lock:goods:{id}` 5 秒；`idem:{userId}:{key}` 10 �
 | `VALIDATION_FAILED` | 400 | 字段不合法，看 `fieldErrors` |
 | `UNKNOWN_FIELD` | 400 | 请求体有文档外字段 |
 | `CONTACT_INFO_NOT_ALLOWED` | 400 | 文本含联系方式 |
+| `INVALID_CODE` | 400 | 邮箱验证码错误 |
+| `CODE_EXPIRED` | 400 | 验证码已过期，请重新获取 |
+| `SETUP_TOKEN_INVALID` | 400 | 设置密码凭证无效或已过期 |
 | `WX_LOGIN_FAILED` | 400 | 微信 code 无效或已用过 |
 | `FILE_TYPE_NOT_ALLOWED` | 400 | 不是 JPEG、PNG、WebP |
 | `FILE_NOT_USABLE` | 400 | fileId 不能用 |
 | `PAY_CHANNEL_UNSUPPORTED` | 400 | 渠道不是 `MOCK` |
 | `UNAUTHORIZED` | 401 | 未登录或 token 失效 |
-| `BAD_CREDENTIALS` | 401 | 管理员账号或密码错 |
+| `BAD_CREDENTIALS` | 401 | 学号/密码错误，或管理员账号/密码错 |
 | `FORBIDDEN` | 403 | 不是资源所属人，或没有管理权限 |
 | `NOT_VERIFIED` | 403 | 需要校园认证 |
 | `USER_BANNED` | 403 | 已封禁，`data.reason`、`data.until` |
@@ -427,6 +449,8 @@ Redis 键都加 `campus:`：`lock:goods:{id}` 5 秒；`idem:{userId}:{key}` 10 �
 | `ALREADY_VERIFIED` | 409 | 已经认证 |
 | `VERIFICATION_PENDING` | 409 | 认证审核中 |
 | `STUDENT_NO_TAKEN` | 409 | 学号已被绑定 |
+| `USERNAME_TAKEN` | 409 | 用户名已被占用 |
+| `EMAIL_TAKEN` | 409 | 邮箱已被注册 |
 | `GOODS_NOT_EDITABLE` | 409 | 当前商品状态不能改 |
 | `GOODS_NOT_AVAILABLE` | 409 | 已被预约、售出或下架。可带 `myOrderId` |
 | `CANNOT_BUY_OWN_GOODS` | 409 | 不能买自己的商品 |
@@ -444,7 +468,7 @@ Redis 键都加 `campus:`：`lock:goods:{id}` 5 秒；`idem:{userId}:{key}` 10 �
 | `REPORT_ALREADY_HANDLED` | 409 | 举报已处理 |
 | `FILE_TOO_LARGE` | 413 | 超过 5 MB |
 | `RATE_LIMITED` | 429 | 看 `Retry-After` |
-| `LOGIN_LOCKED` | 429 | 管理员登录锁定 |
+| `LOGIN_LOCKED` | 429 | 登录失败次数过多已锁定 |
 | `INTERNAL_ERROR` | 500 | 服务器错误 |
 | `UPSTREAM_UNAVAILABLE` | 503 | 微信等上游不可用 |
 
@@ -454,9 +478,9 @@ Redis 键都加 `campus:`：`lock:goods:{id}` 5 秒；`idem:{userId}:{key}` 10 �
 
 ## 13. 待确认
 
-已定：模拟网关、域名 `simpleyi.site`、库名 `ershou`、小程序默认连服务器。AppID 还没注册，注册前服务器上不能走微信登录，本机用 `dev-login`。
+已定：模拟网关、域名 `simpleyi.site`、库名 `ershou`、小程序默认连服务器。当前登录走学号 + 密码；微信登录等 AppID。
 
-未定：管理端是网页还是小程序页；学号格式、楼栋、区域、分类初始数据；§5 里的数值上限；图片放磁盘还是对象存储。
+未定：管理端是网页还是小程序页；学号格式是否收紧到本校规则；图片放磁盘还是对象存储。
 
 ## 变更记录
 
@@ -465,3 +489,4 @@ Redis 键都加 `campus:`：`lock:goods:{id}` 5 秒；`idem:{userId}:{key}` 10 �
 | v0.1 | 2026-09-29 | 初稿 |
 | v0.2 | 2026-09-29 | 小程序默认连 `https://simpleyi.site`；库名 `ershou` |
 | v0.3 | 2026-09-29 | 压缩篇幅。接口、字段、状态机、签名和错误码不变 |
+| v0.4 | 2026-09-30 | 注册改为学号+用户名+邮箱验证码，登录改为学号+密码；本批实现 auth / me / meta / 分类 / 楼栋；表结构见 `sql/` |

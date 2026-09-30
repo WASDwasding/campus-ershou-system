@@ -1,6 +1,72 @@
 server:
   port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
 
 spring:
   application:
     name: campus-ershou
+  profiles:
+    default: local
+  jackson:
+    time-zone: Asia/Shanghai
+    deserialization:
+      fail-on-unknown-properties: true
+  web:
+    resources:
+      add-mappings: false
+  mvc:
+    throw-exception-if-no-handler-found: true
+  datasource:
+    # 会被 application-local.yml 覆盖。本机推荐 3307（见 sql/start-local-mysql.sh），不要拿系统 3306 去套 campus 密码。
+    url: jdbc:mysql://127.0.0.1:3306/campus_ershou?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+    username: root
+    password: campus
+    hikari:
+      connection-timeout: 5000
+      maximum-pool-size: 10
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    encoding: UTF-8
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+    default-fetch-size: 100
+
+app:
+  jwt:
+    secret: local-only-please-override-jwt-secret-key-32
+    user-ttl: 7d
+  student-no:
+    hmac-key: local-only-student-no-hmac-key-32b
+  mail:
+    enabled: false
+    expose-code: true
+    from: campus-ershou@localhost
+  register:
+    code-ttl: 10m
+    setup-token-ttl: 15m
+    send-cooldown: 60s
+    code-attempts: 5
+    ip-send-limit-per-minute: 10
+  login:
+    fail-window: 15m
+    fail-limit: 5
+    lock-ttl: 15m
+
+logging:
+  pattern:
+    level: "%5p [%X{traceId:-}]"
+  level:
+    com.campus.ershou: INFO
+    org.springframework.security: WARN
+
