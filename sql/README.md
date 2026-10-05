@@ -1,6 +1,6 @@
 # 数据库
 
-当前进度对应 **第一批接口**：注册 / 登录、当前用户、分类、楼栋。表结构以本目录为准。
+当前进度：注册登录、资料、校园认证申请、上传、商品、收藏。表结构以本目录为准。服务器库 `ershou` 已由 Flyway 建到 v2。
 
 不建 `user_balance`。以后订单表名用 `orders`。
 
@@ -8,8 +8,8 @@
 
 | 环境 | 库名 | 怎么建表 |
 | --- | --- | --- |
-| 本机 | `campus_ershou` | 推荐 `bash sql/start-local-mysql.sh`（`127.0.0.1:3307`，root / campus）。启动时 Flyway 执行 `backend/src/main/resources/db/migration/V1__init.sql`，与 `schema.sql` + `seed.sql` 一致 |
-| 服务器 | `ershou` | 尚未建表。部署带 Flyway 的 jar 后会自动建；也可按下面手动执行 |
+| 本机 | `campus_ershou` | 推荐 `bash sql/start-local-mysql.sh`（`127.0.0.1:3307`，root / campus）。启动时 Flyway 执行 `V1__init.sql`、`V2__catalog.sql`，与 `schema.sql` + `seed.sql` 一致 |
+| 服务器 | `ershou` | 2026-10-05 部署后 Flyway 已执行到 v2。已上线的库不要再手动导入 `schema.sql` |
 
 建库：
 
@@ -45,16 +45,23 @@ areas 1──n buildings
               ▲
               └── users.dorm_building_id（可空）
 categories     （独立）
+users 1──n stored_files / campus_verifications / goods
+goods 1──n goods_images
+users + goods → favorites
 ```
 
 | 表 | 用途 | 谁在用 |
 | --- | --- | --- |
 | `areas` | 校区区域（东区 / 西区） | 楼栋归属；`GET /api/campus/buildings` 带出 `areaId` / `areaName` |
-| `buildings` | 楼栋 | `GET /api/campus/buildings`；用户宿舍外键（本批资料接口未改宿舍） |
-| `categories` | 商品一级分类 | `GET /api/categories` |
-| `users` | 账号 | 注册、登录、`GET /api/me` |
+| `buildings` | 楼栋 | 楼栋列表、资料里的宿舍、商品面交点 |
+| `categories` | 商品一级分类 | `GET /api/categories`、发布商品 |
+| `users` | 账号 | 注册、登录、资料、公开主页 |
+| `stored_files` | 上传后的图片 | `POST /api/files` |
+| `campus_verifications` | 校园认证申请 | `POST/GET /api/auth/campus-verification` |
+| `goods` / `goods_images` | 商品和图片 | 商品列表、详情、发布 |
+| `favorites` | 收藏 | 收藏接口 |
 
-验证码、设置密码凭证、登录失败计数、JWT 黑名单在 **Redis**（前缀 `campus:`），不建表。
+验证码、设置密码凭证、登录失败计数、JWT 黑名单、浏览记录、每日浏览去重在 **Redis**（前缀 `campus:`），不建表。
 
 ## `areas`
 
@@ -105,7 +112,7 @@ categories     （独立）
 | `nickname` | VARCHAR(16) | 展示名，注册时复制用户名 |
 | `email` | VARCHAR(128) UNIQUE | 小写 |
 | `password_hash` | VARCHAR(72) | BCrypt |
-| `avatar_file_id` | VARCHAR(64) NULL | 本批未接文件，接口里 `avatarUrl` 为 null |
+| `avatar_file_id` | VARCHAR(64) NULL | 头像 fileId；`GET /api/me` 的 `avatarUrl` 指向公开图 |
 | `bio` | VARCHAR(60) NULL | 简介 |
 | `dorm_building_id` | BIGINT NULL FK → buildings | 宿舍楼 |
 | `status` | VARCHAR(16) | `ACTIVE` / `BANNED` |

@@ -1,6 +1,6 @@
 # 架构说明
 
-单体仓库：`backend`（Spring Boot）+ `frontend`（uni-app，编译为微信小程序）。第一批已实现：学号 + 邮箱验证码注册、学号 + 密码登录、当前用户、元数据、分类、楼栋。表结构见 [../sql/README.md](../sql/README.md)。其余业务按 [base-API.md](./base-API.md) 继续做。
+单体仓库：`backend`（Spring Boot）+ `frontend`（uni-app，编译为微信小程序）。已实现：学号邮箱注册、学号密码登录、资料、校园认证提交、上传、商品浏览和发布。表结构见 [../sql/README.md](../sql/README.md)。订单、支付、聊天、管理端按 [base-API.md](./base-API.md) 继续做。给前端的参数见 [STATUE.md](./STATUE.md)。
 
 项目 A 的大模型填表和议价、项目 B 的成色与仲裁都不在底座接口里。`ai/` 包留给项目 A，现在是空的。
 
@@ -10,14 +10,15 @@
 backend/src/main/java/com/campus/ershou/
   CampusErshouApplication.java
   HealthController.java          GET /api/health
-  auth/     注册登录（已实现）
-  user/     用户资料（已实现 GET /api/me）
-  goods/    商品
+  auth/     注册登录、校园认证提交（已实现）
+  user/     资料、统计、公开主页（已实现）
+  common/file/  上传（已实现）
+  goods/    商品列表、发布、收藏、浏览记录（已实现）
   order/    下单与库存
   pay/      模拟支付
   im/       即时通讯
   ai/       项目 A：定价 / 议价（底座先不实现）
-  common/   鉴权、统一响应、元数据、分类、楼栋
+  common/   鉴权、统一响应、元数据、分类、楼栋、上传
 sql/
   README.md                     表说明
   schema.sql                    建表
@@ -28,7 +29,7 @@ frontend/                       uni-app（微信小程序）
   src/config.js                 后端地址（默认 https://simpleyi.site）
 ```
 
-第一批已用到的表：`areas`、`buildings`、`categories`、`users`。验证码和 JWT 黑名单在 Redis，不建表。
+已用到的表：`areas`、`buildings`、`categories`、`users`、`stored_files`、`campus_verifications`、`goods`、`goods_images`、`favorites`。验证码、JWT 黑名单和浏览记录在 Redis，不建表。
 
 实现某个模块时，在对应包新建 `controller` / `service` / `mapper`。改表先改 `sql/`，再补 Flyway。前端在 `frontend/src/pages/` 加页面，并写入 `pages.json`。字段、错误码和状态以 `base-API.md` 为准，这里只留必须一起遵守的几条。
 

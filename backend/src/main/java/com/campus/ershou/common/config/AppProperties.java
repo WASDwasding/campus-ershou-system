@@ -18,6 +18,8 @@ public class AppProperties {
     private final Register register = new Register();
     @NestedConfigurationProperty
     private final Login login = new Login();
+    @NestedConfigurationProperty
+    private final FileStorage file = new FileStorage();
 
     public Jwt getJwt() {
         return jwt;
@@ -37,6 +39,10 @@ public class AppProperties {
 
     public Login getLogin() {
         return login;
+    }
+
+    public FileStorage getFile() {
+        return file;
     }
 
     public static class Jwt {
@@ -177,6 +183,45 @@ public class AppProperties {
 
         public void setLockTtl(Duration lockTtl) {
             this.lockTtl = lockTtl;
+        }
+    }
+
+    public static class FileStorage {
+        private String dir = ".data/files";
+        private String signKey = "";
+        private String publicBaseUrl = "http://127.0.0.1:8080";
+        private Duration privateUrlTtl = Duration.ofMinutes(10);
+
+        public String getDir() {
+            return dir;
+        }
+
+        public void setDir(String dir) {
+            this.dir = dir;
+        }
+
+        public String getSignKey() {
+            return signKey;
+        }
+
+        public void setSignKey(String signKey) {
+            this.signKey = signKey;
+        }
+
+        public String getPublicBaseUrl() {
+            return publicBaseUrl;
+        }
+
+        public void setPublicBaseUrl(String publicBaseUrl) {
+            this.publicBaseUrl = publicBaseUrl;
+        }
+
+        public Duration getPrivateUrlTtl() {
+            return privateUrlTtl;
+        }
+
+        public void setPrivateUrlTtl(Duration privateUrlTtl) {
+            this.privateUrlTtl = privateUrlTtl;
         }
     }
 }

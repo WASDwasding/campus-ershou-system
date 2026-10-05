@@ -20,6 +20,10 @@ spring:
       add-mappings: false
   mvc:
     throw-exception-if-no-handler-found: true
+  servlet:
+    multipart:
+      max-file-size: 6MB
+      max-request-size: 6MB
   datasource:
     # 会被 application-local.yml 覆盖。本机推荐 3307（见 sql/start-local-mysql.sh），不要拿系统 3306 去套 campus 密码。
     url: jdbc:mysql://127.0.0.1:3306/campus_ershou?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
@@ -62,6 +66,13 @@ app:
     fail-window: 15m
     fail-limit: 5
     lock-ttl: 15m
+  file:
+    # 从 backend 目录启动时，文件落在仓库的 .data/files（已 gitignore）。
+    # 服务器在 application-local.yml 里改成 /opt/campus-ershou/files，并把 public-base-url 设为 https://simpleyi.site。
+    dir: ${user.dir}/../.data/files
+    sign-key: local-only-file-sign-key-32b-change
+    public-base-url: http://127.0.0.1:8080
+    private-url-ttl: 10m
 
 logging:
   pattern:

@@ -35,3 +35,8 @@ app:
     enabled: false
     expose-code: true
     from: "你的QQ邮箱@qq.com"
+  file:
+    # 服务器示例。本机用 application.yml 的默认值即可。
+    # dir: /opt/campus-ershou/files
+    # public-base-url: https://simpleyi.site
+    sign-key: PleaseChangeFileSignKeyToAtLeast16Chars

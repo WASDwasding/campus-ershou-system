@@ -33,6 +33,9 @@ public class SecretGuard implements ApplicationRunner {
         if (hmac.length < 16) {
             throw new IllegalStateException("app.student-no.hmac-key 至少 16 字节");
         }
+        if (props.getFile().getSignKey().getBytes(StandardCharsets.UTF_8).length < 16) {
+            throw new IllegalStateException("app.file.sign-key 至少 16 字节");
+        }
         boolean local = Arrays.asList(env.getActiveProfiles()).contains("local")
                 || (env.getActiveProfiles().length == 0 && "local".equals(env.getProperty("spring.profiles.default")));
         if (!local && (props.getJwt().getSecret().startsWith("local-only")

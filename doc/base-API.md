@@ -2,7 +2,7 @@
 
 v0.4 设计稿（2026-09-30）。项目 A（AI 议价）、项目 B（成色与仲裁）分叉前的公共底座。技术栈：Spring Boot 3.4 / Java 17、MySQL 8、Redis、uni-app 微信小程序。
 
-第一批已实现：健康检查、注册/登录/登出、`GET /api/me`、`GET /api/meta`、分类、楼栋。其余尚未实现。A、B 只加接口和可选字段，不改这里的字段含义、状态机和错误码。改底座先改本文件。
+已实现：健康检查、注册/登录/登出、资料、统计角标、公开主页、校园认证提交与进度、上传、商品浏览/发布/上下架/收藏/浏览记录。订单、支付、聊天、举报、管理端尚未实现。参数速查见 [STATUE.md](./STATUE.md)。A、B 只加接口和可选字段，不改这里的字段含义、状态机和错误码。改底座先改本文件。
 
 ## 1. 范围
 
@@ -250,9 +250,9 @@ limits：`payTimeoutMinutes` 15，`maxPendingPayOrders` 3，`priceMin` 1，`pric
 
 学号只存 `HMAC-SHA256(密钥, 学号)` 和脱敏串（前 4 后 2）。接口不返回明文学号、密码、完整邮箱。`user` / `GET /api/me` 含 `id`、`username`、`nickname`、`emailMasked`、`studentNoMasked`、`avatarUrl`、`bio`、`status`、`verifyStatus`、`dormBuilding`、`createdAt`。
 
-**校园认证** `{ "dormBuildingId", "cardImageFileId" }`（学号在注册时已绑定，不再改）。证件照审核结束 30 天后删除。已认证：`ALREADY_VERIFIED`；审核中：`VERIFICATION_PENDING`。进度接口在未提交时 `status=UNVERIFIED`。本批未实现。
+**校园认证** `{ "dormBuildingId", "cardImageFileId" }`（学号在注册时已绑定，不再改）。证件照审核结束 30 天后删除。已认证：`ALREADY_VERIFIED`；审核中：`VERIFICATION_PENDING`。进度接口在未提交时 `status=UNVERIFIED`。提交和进度已实现；管理员通过/驳回尚未实现，因此提交后停在 `PENDING`。
 
-**资料** 本人可见学号脱敏和宿舍楼。别人的主页只有 `verified`、`relation.sameBuilding/sameArea`、评分、成交数、在售数。不返回学号和楼名。`PUT /api/me/profile` 可改 `nickname`（1–16）、`avatarFileId`、`bio`（≤60）、`dormBuildingId`（必须是 `DORM`）。不能用外部图片 URL。本批只实现 `GET /api/me`。
+**资料** 本人可见学号脱敏和宿舍楼。别人的主页有 `nickname`、`avatarUrl`、`bio`、`verified`、`relation.sameBuilding/sameArea`、`rating`（暂为 null）、成交数、在售数。不返回学号和楼名。`PUT /api/me/profile` 可改 `nickname`（1–16）、`avatarFileId`、`bio`（≤60）、`dormBuildingId`（必须是 `DORM`）。不能用外部图片 URL。`GET /api/me`、`PUT /api/me/profile`、`GET /api/me/stats`、`GET /api/me/badges`、`GET /api/users/{userId}` 已实现。角标和统计里的订单数目前为 0。
 
 **上传** 只收 JPEG、PNG、WebP，≤5 MB。按文件头判断，转成 JPEG（最长边 1600，缩略图 400），去掉 EXIF，文件名随机。公开用途直接给 URL；私有用途的 URL 是 10 分钟临时地址，业务里只存 `fileId`。引用 `fileId` 必须同时满足：存在、本人上传、用途匹配，否则 400 `FILE_NOT_USABLE`。私有图签名：`HMAC-SHA256(file.sign-key, fileId + "|" + size + "|" + exp)`，`size` 为空或 `thumb`。
 
@@ -490,3 +490,4 @@ Redis 键都加 `campus:`：`lock:goods:{id}` 5 秒；`idem:{userId}:{key}` 10 �
 | v0.2 | 2026-09-29 | 小程序默认连 `https://simpleyi.site`；库名 `ershou` |
 | v0.3 | 2026-09-29 | 压缩篇幅。接口、字段、状态机、签名和错误码不变 |
 | v0.4 | 2026-09-30 | 注册改为学号+用户名+邮箱验证码，登录改为学号+密码；本批实现 auth / me / meta / 分类 / 楼栋；表结构见 `sql/` |
+| v0.5 | 2026-10-05 | 资料、认证提交、上传、商品浏览/发布/收藏/浏览记录已实现并部署到 `simpleyi.site`。参数见 `STATUE.md`。订单、支付、聊天、管理端未做 |

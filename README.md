@@ -2,7 +2,7 @@
 
 对抗赛题目：同题竞技 + 安全攻防。后端 Spring Boot，前端 uni-app（微信小程序）。
 
-当前进度：后端第一批接口已写好（学号邮箱注册、学号密码登录、当前用户、元数据、分类、楼栋）。表结构在 [sql/](./sql/)。小程序仍是空壳。接口约定见 [doc/base-API.md](./doc/base-API.md)。服务器上目前只有健康检查。
+当前进度：后端已有注册登录、资料、上传、校园认证提交、商品浏览和发布，并已部署到 `https://simpleyi.site`。表结构在 [sql/](./sql/)。小程序仍是空壳。给前端的参数说明见 [doc/STATUE.md](./doc/STATUE.md)。
 
 项目 A（AI 议价）和项目 B（成色与仲裁）共用这套底座，分叉关系见 [doc/tree.html](./doc/tree.html)。
 
@@ -25,11 +25,11 @@ doc/         文档
 | --- | --- |
 | [doc/SETUP.md](./doc/SETUP.md) | 怎么跑起来 |
 | [doc/ARCH.md](./doc/ARCH.md) | 模块和约定 |
-| [doc/base-API.md](./doc/base-API.md) | 底座接口约定；第一批（注册登录 / me / meta / 分类 / 楼栋）已在本仓库实现，尚未部署 |
-| [doc/STATUE.md](./doc/STATUE.md) | 服务器已部署 vs 本仓库已实现 |
+| [doc/base-API.md](./doc/base-API.md) | 底座接口约定。已实现的范围和参数见 [doc/STATUE.md](./doc/STATUE.md) |
+| [doc/STATUE.md](./doc/STATUE.md) | 线上现状和给前端的接口参数 |
 | [doc/校园智能二手交易平台软件项目计划.docx](./doc/校园智能二手交易平台软件项目计划.docx) | 项目计划书 |
 | [doc/技术过程.txt](./doc/技术过程.txt) | 计划书第 4 部分 |
-| [sql/](./sql/) | 第一批表结构、初始数据和说明 |
+| [sql/](./sql/) | 表结构、初始数据和说明 |
 | [doc/TONEW.md](./doc/TONEW.md) | Git 新手教程 |
 
 ## 协作

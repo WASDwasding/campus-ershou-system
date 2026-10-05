@@ -38,4 +38,12 @@ public final class RedisKeys {
     public static String loginLock(String studentNoHash) {
         return PREFIX + "rl:login-lock:" + studentNoHash;
     }
+
+    public static String goodsDailyViews(long goodsId, String day) {
+        return PREFIX + "goods:view:" + goodsId + ":" + day;
+    }
+
+    public static String history(long userId) {
+        return PREFIX + "history:" + userId;
+    }
 }

@@ -44,7 +44,7 @@ mvn spring-boot:run
 
 停掉项目 MySQL：`bash sql/stop-local-mysql.sh`。
 
-接口测通后，由一个人部署到服务器：把 jar 传到 `/opt/campus-ershou/campus-ershou.jar`，然后 `sudo systemctl restart campus-ershou`。服务器上的数据库密码在 `/opt/campus-ershou/application-local.yml`，不要用本机整份配置覆盖（库名是 `ershou`，和本机 `campus_ershou` 不同）。第一次部署时把本机 `application-local.yml` 里的 `spring.mail` 和 `app.mail`（`enabled: true`，`expose-code: false`）合并进服务器那份配置即可。没测完的包不要先传上去。
+线上已在 2026-10-05 部署。再更新时：把 jar 传到 `/opt/campus-ershou/campus-ershou.jar`，然后 `sudo systemctl restart campus-ershou`。服务器配置在 `/opt/campus-ershou/application-local.yml`，不要用本机整份覆盖（库名是 `ershou`，和本机 `campus_ershou` 不同）。邮件、图片目录 `/opt/campus-ershou/files` 和 `public-base-url: https://simpleyi.site` 已经写在那份配置里。没测完的包不要先传上去。
 
 macOS 若 `java` 报找不到 Runtime：
 
