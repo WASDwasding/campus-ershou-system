@@ -60,6 +60,7 @@ users + goods → favorites
 | `campus_verifications` | 校园认证申请 | `POST/GET /api/auth/campus-verification` |
 | `goods` / `goods_images` | 商品和图片 | 商品列表、详情、发布 |
 | `favorites` | 收藏 | 收藏接口 |
+| `admins` | 管理员，与 `users` 分开 | `POST /api/admin/auth/login`。不使用学号 |
 
 验证码、设置密码凭证、登录失败计数、JWT 黑名单、浏览记录、每日浏览去重在 **Redis**（前缀 `campus:`），不建表。
 

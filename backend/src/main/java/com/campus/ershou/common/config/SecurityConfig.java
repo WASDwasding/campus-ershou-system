@@ -60,9 +60,11 @@ public class SecurityConfig {
                                 "/api/auth/register",
                                 "/api/auth/register/verify-code",
                                 "/api/auth/register/set-password",
-                                "/api/auth/login"
+                                "/api/auth/login",
+                                "/api/admin/auth/login"
                         ).permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .anyRequest().hasRole("USER")
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, e) ->

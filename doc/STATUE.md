@@ -26,7 +26,20 @@
 
 还没做、先不要调：订单、支付、聊天、WebSocket、通知、举报、管理端审核。  
 `GET /api/me/badges` 三个数字目前固定是 `0`。`stats` 里的订单数也是 `0`。  
-校园认证提交后停在 `PENDING`。管理员通过/驳回还没做，所以普通注册用户发不了商品（`403 NOT_VERIFIED`）。
+校园认证提交后停在 `PENDING`。管理员账号已经可以登录，但通过/驳回接口还没做，所以普通注册用户发不了商品（`403 NOT_VERIFIED`）。
+
+### 管理员
+
+和管理员登录用的不是学号，而是用户名 + 密码。令牌 12 小时，不能调用普通用户接口。
+
+| 方法 | 路径 | 登录 | 请求 | 成功时 data |
+| --- | --- | --- | --- | --- |
+| POST | `/api/admin/auth/login` | 否 | `{ username, password }` | `{ token, expiresAt, mustChangePassword, admin: { id, username, emailMasked } }` |
+| POST | `/api/admin/auth/logout` | 管理员 | 无 body | `{}` |
+| GET | `/api/admin/me` | 管理员 | 无 | `{ id, username, emailMasked, mustChangePassword }` |
+| POST | `/api/admin/auth/password` | 管理员 | `{ oldPassword, newPassword }`，新密码 12–64 位 | `{}`。旧 token 失效 |
+
+账号或密码错都是 `401 BAD_CREDENTIALS`。普通用户 token 调管理接口是 `403`。
 
 ### 注册登录
 

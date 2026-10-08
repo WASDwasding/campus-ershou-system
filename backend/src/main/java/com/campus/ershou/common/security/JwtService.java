@@ -49,28 +49,74 @@ public class JwtService {
         return new IssuedToken(token, jti, OffsetDateTime.ofInstant(exp, ZoneOffset.ofHours(8)));
     }
 
+    public IssuedToken issueAdmin(long adminId, int tokenVersion) {
+        Instant now = Instant.now();
+        Instant exp = now.plus(props.getJwt().getAdminTtl());
+        String jti = Randoms.hex(16);
+        String token = Jwts.builder()
+                .subject(String.valueOf(adminId))
+                .claim("typ", "admin")
+                .claim("ver", tokenVersion)
+                .id(jti)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(exp))
+                .signWith(key)
+                .compact();
+        return new IssuedToken(token, jti, OffsetDateTime.ofInstant(exp, ZoneOffset.ofHours(8)));
+    }
+
+    public Object parsePrincipal(String token) {
+        Claims claims = parseClaims(token);
+        String typ = claims.get("typ", String.class);
+        if ("user".equals(typ)) {
+            return toLoginUser(claims);
+        }
+        if ("admin".equals(typ)) {
+            return toLoginAdmin(claims);
+        }
+        throw ApiException.of(ErrorCode.UNAUTHORIZED);
+    }
+
     public LoginUser parseUser(String token) {
+        Object principal = parsePrincipal(token);
+        if (principal instanceof LoginUser loginUser) {
+            return loginUser;
+        }
+        throw ApiException.of(ErrorCode.UNAUTHORIZED);
+    }
+
+    private Claims parseClaims(String token) {
         try {
-            Claims claims = Jwts.parser()
+            return Jwts.parser()
                     .verifyWith(key)
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
-            if (!"user".equals(claims.get("typ", String.class))) {
-                throw ApiException.of(ErrorCode.UNAUTHORIZED);
-            }
-            long userId = Long.parseLong(claims.getSubject());
-            Number ver = claims.get("ver", Number.class);
-            if (ver == null || claims.getId() == null || claims.getExpiration() == null) {
-                throw ApiException.of(ErrorCode.UNAUTHORIZED);
-            }
-            OffsetDateTime expiresAt = OffsetDateTime.ofInstant(claims.getExpiration().toInstant(), ZoneOffset.ofHours(8));
-            return new LoginUser(userId, ver.intValue(), claims.getId(), expiresAt);
         } catch (ExpiredJwtException ex) {
             throw ApiException.of(ErrorCode.UNAUTHORIZED);
         } catch (JwtException | IllegalArgumentException ex) {
             log.warn("TOKEN_INVALID");
             throw ApiException.of(ErrorCode.UNAUTHORIZED);
         }
+    }
+
+    private static LoginUser toLoginUser(Claims claims) {
+        long userId = Long.parseLong(claims.getSubject());
+        Number ver = claims.get("ver", Number.class);
+        if (ver == null || claims.getId() == null || claims.getExpiration() == null) {
+            throw ApiException.of(ErrorCode.UNAUTHORIZED);
+        }
+        OffsetDateTime expiresAt = OffsetDateTime.ofInstant(claims.getExpiration().toInstant(), ZoneOffset.ofHours(8));
+        return new LoginUser(userId, ver.intValue(), claims.getId(), expiresAt);
+    }
+
+    private static LoginAdmin toLoginAdmin(Claims claims) {
+        long adminId = Long.parseLong(claims.getSubject());
+        Number ver = claims.get("ver", Number.class);
+        if (ver == null || claims.getId() == null || claims.getExpiration() == null) {
+            throw ApiException.of(ErrorCode.UNAUTHORIZED);
+        }
+        OffsetDateTime expiresAt = OffsetDateTime.ofInstant(claims.getExpiration().toInstant(), ZoneOffset.ofHours(8));
+        return new LoginAdmin(adminId, ver.intValue(), claims.getId(), expiresAt);
     }
 }

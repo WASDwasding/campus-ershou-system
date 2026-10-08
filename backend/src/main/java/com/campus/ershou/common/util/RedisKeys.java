@@ -39,6 +39,14 @@ public final class RedisKeys {
         return PREFIX + "rl:login-lock:" + studentNoHash;
     }
 
+    public static String adminLoginFail(String username) {
+        return PREFIX + "rl:admin-login-fail:" + username;
+    }
+
+    public static String adminLoginLock(String username) {
+        return PREFIX + "rl:admin-login-lock:" + username;
+    }
+
     public static String goodsDailyViews(long goodsId, String day) {
         return PREFIX + "goods:view:" + goodsId + ":" + day;
     }

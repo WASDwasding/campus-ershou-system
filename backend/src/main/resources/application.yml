@@ -50,6 +50,7 @@ app:
   jwt:
     secret: local-only-please-override-jwt-secret-key-32
     user-ttl: 7d
+    admin-ttl: 12h
   student-no:
     hmac-key: local-only-student-no-hmac-key-32b
   mail:

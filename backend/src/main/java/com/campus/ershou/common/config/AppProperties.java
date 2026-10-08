@@ -48,6 +48,7 @@ public class AppProperties {
     public static class Jwt {
         private String secret = "";
         private Duration userTtl = Duration.ofDays(7);
+        private Duration adminTtl = Duration.ofHours(12);
 
         public String getSecret() {
             return secret;
@@ -63,6 +64,14 @@ public class AppProperties {
 
         public void setUserTtl(Duration userTtl) {
             this.userTtl = userTtl;
+        }
+
+        public Duration getAdminTtl() {
+            return adminTtl;
+        }
+
+        public void setAdminTtl(Duration adminTtl) {
+            this.adminTtl = adminTtl;
         }
     }
 
