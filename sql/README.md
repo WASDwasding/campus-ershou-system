@@ -1,6 +1,6 @@
 # 数据库
 
-当前进度：注册登录、资料、校园认证申请、上传、商品、收藏。表结构以本目录为准。服务器库 `ershou` 已由 Flyway 建到 v2。
+当前进度：注册登录、资料、校园认证申请和审核、通知、上传、商品、收藏、订单、模拟支付、聊天、举报、管理端。表结构以本目录为准。Flyway 迁移到 `V5__trade.sql`。
 
 不建 `user_balance`。以后订单表名用 `orders`。
 
@@ -8,8 +8,8 @@
 
 | 环境 | 库名 | 怎么建表 |
 | --- | --- | --- |
-| 本机 | `campus_ershou` | 推荐 `bash sql/start-local-mysql.sh`（`127.0.0.1:3307`，root / campus）。启动时 Flyway 执行 `V1__init.sql`、`V2__catalog.sql`，与 `schema.sql` + `seed.sql` 一致 |
-| 服务器 | `ershou` | 2026-10-05 部署后 Flyway 已执行到 v2。已上线的库不要再手动导入 `schema.sql` |
+| 本机 | `campus_ershou` | 推荐 `bash sql/start-local-mysql.sh`（`127.0.0.1:3307`，root / campus）。启动时 Flyway 执行 `V1` 到 `V5`，结果与 `schema.sql` + `seed.sql` 一致 |
+| 服务器 | `ershou` | 已上线的库由应用启动时的 Flyway 继续迁移，不要再手动导入 `schema.sql` |
 
 建库：
 
@@ -26,7 +26,7 @@ mysql -u root -p campus_ershou < sql/schema.sql
 mysql -u root -p campus_ershou < sql/seed.sql
 ```
 
-改表时：**先改本目录，再同步改 Flyway 迁移**（已上线后用新的 `V2__*.sql`，不要改已经执行过的 `V1`）。
+改表时：**先改本目录，再同步改 Flyway 迁移**（已上线后新增 `V5__*.sql` 这类文件，不要改已经执行过的迁移）。
 
 ## 文件
 
@@ -45,9 +45,10 @@ areas 1──n buildings
               ▲
               └── users.dorm_building_id（可空）
 categories     （独立）
-users 1──n stored_files / campus_verifications / goods
+users 1──n stored_files / campus_verifications / goods / notifications
 goods 1──n goods_images
 users + goods → favorites
+admins         （独立；审核时写入 campus_verifications.reviewed_by 和 audit_logs）
 ```
 
 | 表 | 用途 | 谁在用 |
@@ -57,10 +58,12 @@ users + goods → favorites
 | `categories` | 商品一级分类 | `GET /api/categories`、发布商品 |
 | `users` | 账号 | 注册、登录、资料、公开主页 |
 | `stored_files` | 上传后的图片 | `POST /api/files` |
-| `campus_verifications` | 校园认证申请 | `POST/GET /api/auth/campus-verification` |
+| `campus_verifications` | 校园认证申请 | 用户提交；管理员通过 / 驳回 |
 | `goods` / `goods_images` | 商品和图片 | 商品列表、详情、发布 |
 | `favorites` | 收藏 | 收藏接口 |
 | `admins` | 管理员，与 `users` 分开 | `POST /api/admin/auth/login`。不使用学号 |
+| `notifications` | 站内通知 | 审核结果；`GET /api/notifications` |
+| `audit_logs` | 审计 | 通过 / 驳回时写入，不记驳回原因原文 |
 
 验证码、设置密码凭证、登录失败计数、JWT 黑名单、浏览记录、每日浏览去重在 **Redis**（前缀 `campus:`），不建表。
 
@@ -124,3 +127,20 @@ users + goods → favorites
 | `created_at` / `updated_at` | DATETIME(3) | 时间 |
 
 不存明文学号、明文密码。日志也不要打完整学号。
+
+## `campus_verifications` 补充
+
+审核列：`reviewed_at`、`reviewed_by`（管理员 ID）。状态 `PENDING` / `APPROVED` / `REJECTED`。用户侧的 `verify_status` 在通过时变为 `VERIFIED`，驳回时变为 `REJECTED`。
+
+## `notifications`
+
+| 列 | 说明 |
+| --- | --- |
+| `type` | 如 `VERIFICATION_APPROVED`、`VERIFICATION_REJECTED` |
+| `title` / `content` | 展示文案。驳回通知的内容是驳回原因 |
+| `ref_type` / `ref_id` | 可空。认证通知不填 |
+| `read_at` | 空表示未读 |
+
+## `audit_logs`
+
+`category` 为 `ADMIN` 时，审核事件是 `ADMIN_VERIFY_APPROVE`、`ADMIN_VERIFY_REJECT`。`detail` 只记申请 ID 和用户 ID。

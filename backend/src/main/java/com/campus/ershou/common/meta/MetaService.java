@@ -58,6 +58,38 @@ public class MetaService {
                 item("GATE", "校门"),
                 item("OTHER", "其他")
         ));
+        enums.put("disputeReason", List.of(
+                item("NOT_AS_DESCRIBED", "与描述不符"),
+                item("NO_SHOW", "对方未到"),
+                item("DAMAGED", "商品损坏"),
+                item("OTHER", "其他")
+        ));
+        enums.put("disputeStatus", List.of(
+                item("OPEN", "处理中"),
+                item("WITHDRAWN", "已撤回"),
+                item("RESOLVED", "已处理")
+        ));
+        enums.put("reportTargetType", List.of(
+                item("GOODS", "商品"),
+                item("USER", "用户"),
+                item("MESSAGE", "消息")
+        ));
+        enums.put("reportReason", List.of(
+                item("FAKE", "虚假信息"),
+                item("FRAUD", "欺诈"),
+                item("HARASSMENT", "骚扰"),
+                item("ILLEGAL", "违规"),
+                item("OTHER", "其他")
+        ));
+        enums.put("reportStatus", List.of(
+                item("PENDING", "待处理"),
+                item("HANDLED", "已处理")
+        ));
+        enums.put("messageType", List.of(
+                item("TEXT", "文字"),
+                item("IMAGE", "图片"),
+                item("SYSTEM", "系统")
+        ));
 
         Map<String, Object> limits = new LinkedHashMap<>();
         limits.put("payTimeoutMinutes", 15);
@@ -79,6 +111,10 @@ public class MetaService {
         limits.put("reviewContentMax", 200);
         limits.put("passwordMin", 8);
         limits.put("passwordMax", 64);
+        limits.put("disputeDescriptionMin", 10);
+        limits.put("disputeDescriptionMax", 500);
+        limits.put("evidenceMaxCount", 6);
+        limits.put("reportDescriptionMax", 300);
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("enums", enums);

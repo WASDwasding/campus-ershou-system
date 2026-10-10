@@ -1,11 +1,11 @@
 # 现状（本机 vs 服务器）
 
-核对时间：2026-10-05。  
+核对时间：2026-10-10。  
 约定全文见 [base-API.md](./base-API.md)。下面的参数是给前端对接用的。
 
-**2026-10-05 已部署到 `https://simpleyi.site`。** 健康检查、分类、楼栋、注册登录、资料、上传、商品接口已在线上。订单、支付、聊天、管理端审核还没有。
+**2026-10-10 已部署到 `https://simpleyi.site`。** 注册登录、资料、上传、商品、校园认证审核、通知、订单、模拟支付、聊天、举报和管理端动作都在线上。微信登录 `POST /api/auth/wx-login` 仍要等 AppID。`POST /api/auth/dev-login` 只在本机打开，服务器返回 404。
 
-统一响应：`{ "code", "message", "data", "traceId" }`。成功时 `code` 为 `OK`。下面只写 `data`。  
+统一响应：`{ "code", "message", "data", "traceId" }`。成功时 `code` 为 `OK`。支付回调 `POST /api/pay/notify/mock` 例外，成功是 `{ "code": "SUCCESS", "message": "OK" }`。  
 登录后请求头：`Authorization: Bearer <token>`。  
 金额单位是**分**。图片地址拼在 `public-base-url` 上（本机 `http://127.0.0.1:8080`，上线后是 `https://simpleyi.site`）。
 
@@ -16,17 +16,19 @@
 | | 本机 | 服务器 |
 | --- | --- | --- |
 | 入口 | `http://127.0.0.1:8080` | `https://simpleyi.site` |
-| 代码 | 当前仓库 | `/opt/campus-ershou/campus-ershou.jar`（2026-10-05 已换新包，旧包留了 bak） |
-| MySQL | `127.0.0.1:3307` / `campus_ershou` | `127.0.0.1:3306` / `ershou`，Flyway 已建到 v2 |
+| 代码 | 当前仓库 | `/opt/campus-ershou/campus-ershou.jar`（2026-10-10 交易包，上一版留在 bak-20261010-trade） |
+| MySQL | `127.0.0.1:3307` / `campus_ershou` | `127.0.0.1:3306` / `ershou`，Flyway 已建到 v5 |
 | 图片 | `.data/files` | `/opt/campus-ershou/files`，公网 `https://simpleyi.site` |
 
 ---
 
 ## 给前端的接口
 
-还没做、先不要调：订单、支付、聊天、WebSocket、通知、举报、管理端审核。  
-`GET /api/me/badges` 三个数字目前固定是 `0`。`stats` 里的订单数也是 `0`。  
-校园认证提交后停在 `PENDING`。管理员账号已经可以登录，但通过/驳回接口还没做，所以普通注册用户发不了商品（`403 NOT_VERIFIED`）。
+订单、支付、聊天、举报和管理端的路径、字段、状态机以 [base-API.md](./base-API.md) 第 4 节和第 8–11 节为准。`GET /api/me/badges` 的未读消息、未读通知、买家待办，以及 `stats` 里的订单数，都按库内真实数据返回。卖家评分没有评价时是 `null`。
+
+WebSocket 地址是 `/ws/im`，请求头带 `Authorization: Bearer <token>`，不要把 token 放在 URL 里。客户端发 `{"type":"PING"}`，服务端回 `{"type":"PONG"}`。
+
+管理员可以通过或驳回校园认证。通过后用户即可发布商品。
 
 ### 管理员
 
@@ -39,7 +41,37 @@
 | GET | `/api/admin/me` | 管理员 | 无 | `{ id, username, emailMasked, mustChangePassword }` |
 | POST | `/api/admin/auth/password` | 管理员 | `{ oldPassword, newPassword }`，新密码 12–64 位 | `{}`。旧 token 失效 |
 
-账号或密码错都是 `401 BAD_CREDENTIALS`。普通用户 token 调管理接口是 `403`。
+账号或密码错都是 `401 BAD_CREDENTIALS`。普通用户 token 调管理接口是 `403`。  
+`mustChangePassword=true` 时，除 `POST /api/admin/auth/password` 外都是 `403 PASSWORD_CHANGE_REQUIRED`。
+
+### 管理员审核
+
+`mustChangePassword=false` 的管理员 token。列表：`{ list, page, size, total, hasMore }`。
+
+| 方法 | 路径 | 请求 | 成功时 data |
+| --- | --- | --- | --- |
+| GET | `/api/admin/dashboard` | 无 | `pendingVerifications`。`pendingReports`、`openDisputes` 目前固定 `0` |
+| GET | `/api/admin/verifications` | `status` 可选：`PENDING` `APPROVED` `REJECTED`；`page`、`size` | 列表项见下 |
+| GET | `/api/admin/verifications/{id}` | 无 | 列表项，另有 `user.verifyStatus`、`cardImage`、`history` |
+| POST | `/api/admin/verifications/{id}/approve` | 无 body | 同详情。用户变为 `VERIFIED` |
+| POST | `/api/admin/verifications/{id}/reject` | `{ reason }`，2–100 字 | 同详情。用户变为 `REJECTED`，可重新提交 |
+
+列表项：`id`、`status`、`rejectReason`、`user`（`id`、`username`、`nickname`、`studentNoMasked`、`emailMasked`）、`dormBuilding`（`{id,name}`）、`submittedAt`、`reviewedAt`、`reviewedBy`（管理员 ID，未审为 null）。
+
+`cardImage`：`{ fileId, url, thumbUrl }`。地址约 10 分钟有效。`history` 是同一用户的其他申请，不含当前这条，字段为 `id`、`status`、`rejectReason`、`submittedAt`、`reviewedAt`。
+
+不存在：`404`。已经通过或驳回再操作：`409 VERIFICATION_NOT_PENDING`。多出来的字段：`400 UNKNOWN_FIELD`。
+
+通过或驳回会给用户写一条通知。
+
+### 通知
+
+| 方法 | 路径 | 请求 | data |
+| --- | --- | --- | --- |
+| GET | `/api/notifications` | `unreadOnly` 可选，`true` 只看未读；`page`、`size` | 列表：`id`、`type`、`title`、`content`、`ref`（现在为 null）、`read`、`createdAt` |
+| POST | `/api/notifications/read` | `{ "ids": [1, 2] }` 或 `{ "all": true }`。`ids` 最多 100 个 | `{ updated }`。只能标自己的，重复标也成功 |
+
+认证通过的 `type` 是 `VERIFICATION_APPROVED`，驳回是 `VERIFICATION_REJECTED`，驳回的 `content` 就是驳回原因。
 
 ### 注册登录
 
@@ -64,7 +96,7 @@
 | GET | `/api/me` | 无 | 见上 |
 | PUT | `/api/me/profile` | 只传要改的字段：`nickname`（1–16）、`avatarFileId`、`bio`（≤60，`null` 或 `""` 清空）、`dormBuildingId`（须是宿舍，`null` 清空） | 同 `GET /api/me` |
 | GET | `/api/me/stats` | 无 | `onSaleCount`、`offShelfCount`、`soldCount`、`favoriteCount`、`pendingOrderCount`、`sellingOrderCount` |
-| GET | `/api/me/badges` | 无 | `unreadMessages`、`unreadNotifications`、`buyerTodos`。现在都是 0 |
+| GET | `/api/me/badges` | 无 | `unreadMessages`、`unreadNotifications`、`buyerTodos`。未读通知为真实数量，另外两个仍是 0 |
 | GET | `/api/users/{userId}` | 无 | `id`、`nickname`、`avatarUrl`、`bio`、`verified`、`relation: {sameBuilding, sameArea}`、`rating`（现在 null）、`soldCount`、`onSaleCount`。不返回学号和楼名 |
 
 ### 校园认证
@@ -148,4 +180,6 @@ data：`{ fileId, purpose, url, thumbUrl }`。私有图的 `url` 约 10 分钟�
 
 ## 这次部署做了什么
 
-服务器库名和数据库账号没改。邮件已合并进服务器配置，`expose-code` 为 false。图片目录是 `/opt/campus-ershou/files`，公网地址是 `https://simpleyi.site`。JWT、学号 HMAC、文件签名用的是服务器上新生成的密钥，和本机不是同一套。Nginx 的 `/files/public/` 改为转发到后端。旧 jar 和旧配置都留了 `bak-20261005`。
+2026-10-10 换上带审核和通知的包。服务器库 `ershou` 由 Flyway 从 v3 迁到 v4（通知表、审计表、认证申请增加审核人）。服务器配置、邮件和图片目录没改。旧 jar 留在 `/opt/campus-ershou/campus-ershou.jar.bak-20261010`。
+
+上一次（2026-10-05）留下的说明：服务器库名和数据库账号没改。邮件已合并进服务器配置，`expose-code` 为 false。图片目录是 `/opt/campus-ershou/files`，公网地址是 `https://simpleyi.site`。JWT、学号 HMAC、文件签名用的是服务器上的密钥，和本机不是同一套。Nginx 的 `/files/public/` 转发到后端。更早的包留了 `bak-20261005`。

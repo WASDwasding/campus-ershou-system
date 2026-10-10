@@ -173,6 +173,55 @@ public interface GoodsMapper {
             @Param("toStatus") String toStatus
     );
 
+    @Update("""
+            UPDATE goods
+            SET status = 'RESERVED', stock = stock - 1, version = version + 1
+            WHERE id = #{id} AND status = 'ON_SALE' AND stock >= 1
+            """)
+    int reserve(long id);
+
+    @Update("""
+            UPDATE goods
+            SET status = 'ON_SALE', stock = 1, version = version + 1
+            WHERE id = #{id} AND status = 'RESERVED'
+            """)
+    int releaseReserved(long id);
+
+    @Update("""
+            UPDATE goods
+            SET status = 'SOLD', version = version + 1
+            WHERE id = #{id} AND status = 'RESERVED'
+            """)
+    int markSold(long id);
+
+    @Update("""
+            UPDATE goods
+            SET status = 'OFF_SHELF', stock = 1, version = version + 1
+            WHERE id = #{id} AND status = 'RESERVED'
+            """)
+    int offShelfReserved(long id);
+
+    @Update("""
+            UPDATE goods
+            SET status = 'REMOVED', removed_reason = #{reason}, version = version + 1
+            WHERE id = #{id} AND status = #{fromStatus}
+            """)
+    int removeFrom(@Param("id") long id, @Param("fromStatus") String fromStatus, @Param("reason") String reason);
+
+    @Update("""
+            UPDATE goods
+            SET status = 'OFF_SHELF', removed_reason = NULL, version = version + 1
+            WHERE id = #{id} AND status = 'REMOVED'
+            """)
+    int restoreRemoved(long id);
+
+    @Update("""
+            UPDATE goods
+            SET status = 'OFF_SHELF', version = version + 1
+            WHERE seller_id = #{sellerId} AND status = 'ON_SALE'
+            """)
+    int offShelfOnSaleBySeller(long sellerId);
+
     @Update("UPDATE goods SET view_count = view_count + 1 WHERE id = #{id}")
     int incrementView(long id);
 
@@ -239,4 +288,36 @@ public interface GoodsMapper {
             </script>
             """)
     List<GoodsImageRow> listImages(@Param("goodsIds") Collection<Long> goodsIds);
+
+    @Select("""
+            <script>
+            SELECT
+            """ + GOODS_COLUMNS + """
+            FROM goods g
+            WHERE 1 = 1
+            <if test="status != null">AND g.status = #{status}</if>
+            <if test="sellerId != null">AND g.seller_id = #{sellerId}</if>
+            <if test="keyword != null">AND g.title LIKE #{keyword} ESCAPE '\\\\'</if>
+            ORDER BY g.id DESC
+            LIMIT #{limit} OFFSET #{offset}
+            </script>
+            """)
+    List<GoodsRow> adminList(
+            @Param("status") String status,
+            @Param("keyword") String keyword,
+            @Param("sellerId") Long sellerId,
+            @Param("offset") int offset,
+            @Param("limit") int limit
+    );
+
+    @Select("""
+            <script>
+            SELECT COUNT(*) FROM goods g
+            WHERE 1 = 1
+            <if test="status != null">AND g.status = #{status}</if>
+            <if test="sellerId != null">AND g.seller_id = #{sellerId}</if>
+            <if test="keyword != null">AND g.title LIKE #{keyword} ESCAPE '\\\\'</if>
+            </script>
+            """)
+    long adminCount(@Param("status") String status, @Param("keyword") String keyword, @Param("sellerId") Long sellerId);
 }

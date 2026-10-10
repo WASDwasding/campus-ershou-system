@@ -74,6 +74,12 @@ app:
     sign-key: local-only-file-sign-key-32b-change
     public-base-url: http://127.0.0.1:8080
     private-url-ttl: 10m
+  pay:
+    mock:
+      secret: local-only-pay-mock-secret-32b-change
+    timeout: 15m
+  dev-login:
+    enabled: false
 
 logging:
   pattern:

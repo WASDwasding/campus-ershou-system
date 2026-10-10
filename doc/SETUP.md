@@ -44,7 +44,7 @@ mvn spring-boot:run
 
 停掉项目 MySQL：`bash sql/stop-local-mysql.sh`。
 
-线上已在 2026-10-05 部署。再更新时：把 jar 传到 `/opt/campus-ershou/campus-ershou.jar`，然后 `sudo systemctl restart campus-ershou`。服务器配置在 `/opt/campus-ershou/application-local.yml`，不要用本机整份覆盖（库名是 `ershou`，和本机 `campus_ershou` 不同）。邮件、图片目录 `/opt/campus-ershou/files` 和 `public-base-url: https://simpleyi.site` 已经写在那份配置里。没测完的包不要先传上去。
+线上已在 2026-10-10 部署。再更新时：把 jar 传到 `/opt/campus-ershou/campus-ershou.jar`，然后 `sudo systemctl restart campus-ershou`。服务器配置在 `/opt/campus-ershou/application-local.yml`，不要用本机整份覆盖（库名是 `ershou`，和本机 `campus_ershou` 不同）。邮件、图片目录 `/opt/campus-ershou/files` 和 `public-base-url: https://simpleyi.site` 已经写在那份配置里。没测完的包不要先传上去。启动时 Flyway 会自己迁到当前版本，不要在服务器上手动导入 `schema.sql`。
 
 macOS 若 `java` 报找不到 Runtime：
 

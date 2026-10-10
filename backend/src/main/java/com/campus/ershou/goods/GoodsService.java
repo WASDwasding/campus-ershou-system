@@ -12,6 +12,8 @@ import com.campus.ershou.common.file.FileUrls;
 import com.campus.ershou.common.util.ContactInfo;
 import com.campus.ershou.common.util.RedisKeys;
 import com.campus.ershou.goods.dto.GoodsWriteRequest;
+import com.campus.ershou.order.OrderRecord;
+import com.campus.ershou.order.OrderService;
 import com.campus.ershou.user.UserEntity;
 import com.campus.ershou.user.UserMapper;
 import com.campus.ershou.user.UserService;
@@ -52,6 +54,7 @@ public class GoodsService {
     private final FileService fileService;
     private final FileUrls fileUrls;
     private final StringRedisTemplate redis;
+    private final OrderService orderService;
 
     public GoodsService(
             GoodsMapper goodsMapper,
@@ -61,7 +64,8 @@ public class GoodsService {
             UserService userService,
             FileService fileService,
             FileUrls fileUrls,
-            StringRedisTemplate redis
+            StringRedisTemplate redis,
+            OrderService orderService
     ) {
         this.goodsMapper = goodsMapper;
         this.categoryMapper = categoryMapper;
@@ -71,6 +75,7 @@ public class GoodsService {
         this.fileService = fileService;
         this.fileUrls = fileUrls;
         this.redis = redis;
+        this.orderService = orderService;
     }
 
     public Map<String, Object> list(long viewerId, GoodsListQuery query) {
@@ -477,7 +482,9 @@ public class GoodsService {
         viewerView.put("favorited", catalog.favorited.contains(goods.getId()));
         viewerView.put("canBuy", onSale && !mine && verified);
         viewerView.put("canChat", onSale && !mine && verified);
-        viewerView.put("activeOrderId", null);
+        OrderRecord active = orderService.findActive(goods.getId());
+        viewerView.put("activeOrderId", active != null && active.getBuyerId() != null && active.getBuyerId().equals(viewer.getId())
+                ? active.getId() : null);
         data.put("viewer", viewerView);
         if (mine && "REMOVED".equals(goods.getStatus())) {
             data.put("removedReason", goods.getRemovedReason());
@@ -561,7 +568,7 @@ public class GoodsService {
         data.put("verified", "VERIFIED".equals(user.getVerifyStatus()));
         data.put("relation", relation(viewer, user));
         if (withRating) {
-            data.put("rating", null);
+            data.put("rating", orderService.rating(user.getId()));
         }
         return data;
     }

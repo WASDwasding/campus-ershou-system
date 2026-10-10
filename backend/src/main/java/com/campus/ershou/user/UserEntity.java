@@ -19,6 +19,7 @@ public class UserEntity {
     private String banReason;
     private LocalDateTime banUntil;
     private int tokenVersion;
+    private String devOpenid;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -140,6 +141,14 @@ public class UserEntity {
 
     public void setTokenVersion(int tokenVersion) {
         this.tokenVersion = tokenVersion;
+    }
+
+    public String getDevOpenid() {
+        return devOpenid;
+    }
+
+    public void setDevOpenid(String devOpenid) {
+        this.devOpenid = devOpenid;
     }
 
     public LocalDateTime getCreatedAt() {

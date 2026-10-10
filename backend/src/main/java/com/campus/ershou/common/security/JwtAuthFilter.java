@@ -116,12 +116,21 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
+        if (Boolean.TRUE.equals(admin.getMustChangePassword()) && !isAdminPasswordChange(request)) {
+            errorWriter.write(response, ErrorCode.PASSWORD_CHANGE_REQUIRED, Map.of());
+            return;
+        }
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
                 loginAdmin,
                 null,
                 List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
         ));
         filterChain.doFilter(request, response);
+    }
+
+    private static boolean isAdminPasswordChange(HttpServletRequest request) {
+        return "POST".equalsIgnoreCase(request.getMethod())
+                && "/api/admin/auth/password".equals(request.getServletPath());
     }
 
     private static Map<String, Object> bannedData(UserEntity user) {

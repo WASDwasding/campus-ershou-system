@@ -1,5 +1,6 @@
 package com.campus.ershou.auth;
 
+import com.campus.ershou.admin.AuditService;
 import com.campus.ershou.auth.dto.AuthTokenResponse;
 import com.campus.ershou.auth.dto.LoginRequest;
 import com.campus.ershou.auth.dto.RegisterRequest;
@@ -59,6 +60,7 @@ public class AuthService {
     private final StudentNoHasher studentNoHasher;
     private final RateLimitService rateLimitService;
     private final AppProperties props;
+    private final AuditService auditService;
 
     public AuthService(
             UserMapper userMapper,
@@ -70,7 +72,8 @@ public class AuthService {
             PasswordEncoder passwordEncoder,
             StudentNoHasher studentNoHasher,
             RateLimitService rateLimitService,
-            AppProperties props
+            AppProperties props,
+            AuditService auditService
     ) {
         this.userMapper = userMapper;
         this.userService = userService;
@@ -82,6 +85,7 @@ public class AuthService {
         this.studentNoHasher = studentNoHasher;
         this.rateLimitService = rateLimitService;
         this.props = props;
+        this.auditService = auditService;
     }
 
     public RegisterSentResponse register(RegisterRequest request, String clientIp) {
@@ -194,6 +198,56 @@ public class AuthService {
         IssuedToken issued = jwtService.issueUser(user.getId(), user.getTokenVersion());
         UserEntity created = userMapper.findById(user.getId());
         return new AuthTokenResponse(issued.token(), issued.expiresAt(), true, userService.toMe(created));
+    }
+
+    public AuthTokenResponse devLogin(String devOpenid, String host, String ip) {
+        boolean localHost = "127.0.0.1".equals(host) || "localhost".equalsIgnoreCase(host) || "::1".equals(host);
+        if (!props.getDevLogin().isEnabled() || !localHost) {
+            auditService.record("SECURITY", "DEV_LOGIN_BLOCKED", null, null, ip, "{}");
+            throw ApiException.of(ErrorCode.NOT_FOUND);
+        }
+        if (devOpenid == null || !devOpenid.matches("dev-[a-z0-9-]{3,32}")) {
+            throw ApiException.validation(List.of(new com.campus.ershou.common.api.FieldErrorItem("devOpenid", "格式应为 dev- 加 3–32 位小写字母、数字或连字符")));
+        }
+        UserEntity user = userMapper.findByDevOpenid(devOpenid);
+        boolean createdNow = false;
+        if (user == null) {
+            user = new UserEntity();
+            user.setStudentNoHash(studentNoHasher.hash("dev:" + devOpenid));
+            user.setStudentNoMasked("dev");
+            String compact = ("d" + devOpenid.substring(4).replace("-", ""));
+            if (compact.length() > 16) {
+                compact = compact.substring(0, 16);
+            }
+            String username = compact;
+            int suffix = 0;
+            while (userMapper.findByUsername(username) != null && suffix < 50) {
+                String tail = Integer.toString(suffix++);
+                username = compact.substring(0, Math.min(compact.length(), 16 - tail.length())) + tail;
+            }
+            user.setUsername(username);
+            user.setNickname(username);
+            user.setEmail(devOpenid + "@dev.local");
+            user.setPasswordHash(passwordEncoder.encode(Randoms.hex(16)));
+            user.setStatus("ACTIVE");
+            user.setVerifyStatus("VERIFIED");
+            user.setTokenVersion(1);
+            user.setDevOpenid(devOpenid);
+            try {
+                userMapper.insertDev(user);
+            } catch (DuplicateKeyException ex) {
+                user = userMapper.findByDevOpenid(devOpenid);
+                if (user == null) {
+                    throw mapDuplicate(ex);
+                }
+            }
+            createdNow = user.getId() != null;
+        }
+        if ("BANNED".equals(user.getStatus())) {
+            throw ApiException.of(ErrorCode.USER_BANNED);
+        }
+        IssuedToken issued = jwtService.issueUser(user.getId(), user.getTokenVersion());
+        return new AuthTokenResponse(issued.token(), issued.expiresAt(), createdNow, userService.toMe(userMapper.findById(user.getId())));
     }
 
     public AuthTokenResponse login(LoginRequest request) {

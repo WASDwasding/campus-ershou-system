@@ -2,7 +2,7 @@
 
 v0.4 设计稿（2026-09-30）。项目 A（AI 议价）、项目 B（成色与仲裁）分叉前的公共底座。技术栈：Spring Boot 3.4 / Java 17、MySQL 8、Redis、uni-app 微信小程序。
 
-已实现：健康检查、注册/登录/登出、资料、统计角标、公开主页、校园认证提交与进度、上传、商品浏览/发布/上下架/收藏/浏览记录。订单、支付、聊天、举报、管理端尚未实现。参数速查见 [STATUE.md](./STATUE.md)。A、B 只加接口和可选字段，不改这里的字段含义、状态机和错误码。改底座先改本文件。
+已实现：健康检查、注册/登录/登出、资料、统计角标、公开主页、校园认证提交与进度、管理员审核认证、上传、商品浏览/发布/上下架/收藏/浏览记录、通知列表和已读。订单、支付、聊天、举报、其余管理端尚未实现。参数速查见 [STATUE.md](./STATUE.md)。A、B 只加接口和可选字段，不改这里的字段含义、状态机和错误码。改底座先改本文件。
 
 ## 1. 范围
 
@@ -236,7 +236,7 @@ limits：`payTimeoutMinutes` 15，`maxPendingPayOrders` 3，`priceMin` 1，`pric
 
 ## 6. 认证、用户、文件
 
-当前底座登录方式是 **学号 + 密码**。注册用邮箱验证码，不依赖微信 AppID。`wx-login` / `dev-login` 仍留在清单里，本批不实现。
+当前底座登录方式是 **学号 + 密码**。注册用邮箱验证码，不依赖微信 AppID。`wx-login` 等 AppID。`dev-login` 仅本机，且 `app.dev-login.enabled=true`；服务器保持关闭，返回 404。
 
 **注册分三步。**
 
@@ -250,7 +250,7 @@ limits：`payTimeoutMinutes` 15，`maxPendingPayOrders` 3，`priceMin` 1，`pric
 
 学号只存 `HMAC-SHA256(密钥, 学号)` 和脱敏串（前 4 后 2）。接口不返回明文学号、密码、完整邮箱。`user` / `GET /api/me` 含 `id`、`username`、`nickname`、`emailMasked`、`studentNoMasked`、`avatarUrl`、`bio`、`status`、`verifyStatus`、`dormBuilding`、`createdAt`。
 
-**校园认证** `{ "dormBuildingId", "cardImageFileId" }`（学号在注册时已绑定，不再改）。证件照审核结束 30 天后删除。已认证：`ALREADY_VERIFIED`；审核中：`VERIFICATION_PENDING`。进度接口在未提交时 `status=UNVERIFIED`。提交和进度已实现；管理员通过/驳回尚未实现，因此提交后停在 `PENDING`。
+**校园认证** `{ "dormBuildingId", "cardImageFileId" }`（学号在注册时已绑定，不再改）。证件照审核结束 30 天后删除。已认证：`ALREADY_VERIFIED`；审核中：`VERIFICATION_PENDING`。进度接口在未提交时 `status=UNVERIFIED`。提交、进度、管理员通过/驳回已实现。通过后 `verifyStatus=VERIFIED`，驳回后为 `REJECTED` 并可重新提交。已处理再审：409 `VERIFICATION_NOT_PENDING`。
 
 **资料** 本人可见学号脱敏和宿舍楼。别人的主页有 `nickname`、`avatarUrl`、`bio`、`verified`、`relation.sameBuilding/sameArea`、`rating`（暂为 null）、成交数、在售数。不返回学号和楼名。`PUT /api/me/profile` 可改 `nickname`（1–16）、`avatarFileId`、`bio`（≤60）、`dormBuildingId`（必须是 `DORM`）。不能用外部图片 URL。`GET /api/me`、`PUT /api/me/profile`、`GET /api/me/stats`、`GET /api/me/badges`、`GET /api/users/{userId}` 已实现。角标和统计里的订单数目前为 0。
 
@@ -401,7 +401,7 @@ WebSocket：`/ws/im`，请求头带 token，不要把 token 放在 URL 里。无
 
 举报：`targetType`、`targetId`、`reason`、`description`（0–300，不拦联系方式）、`evidenceFileIds`（0–6）。目标必须是我看得到的，不能举报自己。24 小时内同一目标重复：`DUPLICATE_REPORT`。举报消息时保存隐藏前的原文，只给管理员看。
 
-管理员登录失败记 `LOGIN_FAIL`，不说明是账号错还是密码错。`mustChangePassword=true` 时，除改密码外都返回 403 `PASSWORD_CHANGE_REQUIRED`。改密后旧 token 失效。
+管理员登录失败记 `LOGIN_FAIL`，不说明是账号错还是密码错。`mustChangePassword=true` 时，除改密码外都返回 403 `PASSWORD_CHANGE_REQUIRED`。改密后旧 token 失效。审核通过记 `ADMIN_VERIFY_APPROVE`，驳回记 `ADMIN_VERIFY_REJECT`，`detail` 只含申请 ID 和用户 ID。
 
 封禁：令牌版本加一；在售商品改为下架；待支付订单取消（`by=ADMIN`），商品回在售。已付款订单不自动处理。解封后商品不自动上架。
 
@@ -492,3 +492,5 @@ Redis 键都加 `campus:`：`lock:goods:{id}` 5 秒；`idem:{userId}:{key}` 10 �
 | v0.4 | 2026-09-30 | 注册改为学号+用户名+邮箱验证码，登录改为学号+密码；本批实现 auth / me / meta / 分类 / 楼栋；表结构见 `sql/` |
 | v0.5 | 2026-10-05 | 资料、认证提交、上传、商品浏览/发布/收藏/浏览记录已实现并部署到 `simpleyi.site`。参数见 `STATUE.md`。订单、支付、聊天、管理端未做 |
 | v0.6 | 2026-10-08 | 管理员独立成 `admins` 表。已实现管理员登录、登出、当前管理员、改密。审核接口仍未做 |
+| v0.7 | 2026-10-10 | 管理员可看待办、审核校园认证（通过/驳回）。用户可拉通知并标已读。角标里的未读通知改为真实数量。已部署到 `simpleyi.site` |
+| v0.8 | 2026-10-10 | 订单、模拟支付、面交、申诉、评价、聊天 HTTP/WebSocket、举报，以及用户封禁、商品下架/恢复、分类楼栋维护、审计查询。角标和评分改为真实数据。`wx-login` 仍未做。已部署到 `simpleyi.site` |

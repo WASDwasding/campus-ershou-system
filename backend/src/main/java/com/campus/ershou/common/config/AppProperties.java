@@ -20,6 +20,10 @@ public class AppProperties {
     private final Login login = new Login();
     @NestedConfigurationProperty
     private final FileStorage file = new FileStorage();
+    @NestedConfigurationProperty
+    private final Pay pay = new Pay();
+    @NestedConfigurationProperty
+    private final DevLogin devLogin = new DevLogin();
 
     public Jwt getJwt() {
         return jwt;
@@ -43,6 +47,14 @@ public class AppProperties {
 
     public FileStorage getFile() {
         return file;
+    }
+
+    public Pay getPay() {
+        return pay;
+    }
+
+    public DevLogin getDevLogin() {
+        return devLogin;
     }
 
     public static class Jwt {
@@ -231,6 +243,48 @@ public class AppProperties {
 
         public void setPrivateUrlTtl(Duration privateUrlTtl) {
             this.privateUrlTtl = privateUrlTtl;
+        }
+    }
+
+    public static class DevLogin {
+        private boolean enabled = false;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+    }
+
+    public static class Pay {
+        private Duration timeout = Duration.ofMinutes(15);
+        @NestedConfigurationProperty
+        private final Mock mock = new Mock();
+
+        public Duration getTimeout() {
+            return timeout;
+        }
+
+        public void setTimeout(Duration timeout) {
+            this.timeout = timeout;
+        }
+
+        public Mock getMock() {
+            return mock;
+        }
+    }
+
+    public static class Mock {
+        private String secret = "";
+
+        public String getSecret() {
+            return secret;
+        }
+
+        public void setSecret(String secret) {
+            this.secret = secret;
         }
     }
 }

@@ -27,4 +27,16 @@ public final class ContactInfo {
                 || QQ.matcher(normalized).find()
                 || EMAIL.matcher(normalized).find();
     }
+
+    public static String mask(String text) {
+        if (text == null) {
+            return null;
+        }
+        String normalized = Normalizer.normalize(text, Normalizer.Form.NFKC);
+        String masked = MOBILE.matcher(normalized).replaceAll("[联系方式已隐藏]");
+        masked = WECHAT.matcher(masked).replaceAll("[联系方式已隐藏]");
+        masked = QQ.matcher(masked).replaceAll("[联系方式已隐藏]");
+        masked = EMAIL.matcher(masked).replaceAll("[联系方式已隐藏]");
+        return masked;
+    }
 }

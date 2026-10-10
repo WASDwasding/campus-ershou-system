@@ -54,4 +54,20 @@ public final class RedisKeys {
     public static String history(long userId) {
         return PREFIX + "history:" + userId;
     }
+
+    public static String goodsLock(long goodsId) {
+        return PREFIX + "lock:goods:" + goodsId;
+    }
+
+    public static String idempotency(long userId, String key) {
+        return PREFIX + "idem:" + userId + ":" + key;
+    }
+
+    public static String payNonce(String nonce) {
+        return PREFIX + "pay:nonce:" + nonce;
+    }
+
+    public static String orderTimeouts(long userId) {
+        return PREFIX + "order:timeouts:" + userId;
+    }
 }

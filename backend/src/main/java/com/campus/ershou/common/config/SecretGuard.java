@@ -36,12 +36,17 @@ public class SecretGuard implements ApplicationRunner {
         if (props.getFile().getSignKey().getBytes(StandardCharsets.UTF_8).length < 16) {
             throw new IllegalStateException("app.file.sign-key 至少 16 字节");
         }
+        if (props.getPay().getMock().getSecret().getBytes(StandardCharsets.UTF_8).length < 16) {
+            throw new IllegalStateException("app.pay.mock.secret 至少 16 字节");
+        }
         boolean local = Arrays.asList(env.getActiveProfiles()).contains("local")
                 || (env.getActiveProfiles().length == 0 && "local".equals(env.getProperty("spring.profiles.default")));
         if (!local && (props.getJwt().getSecret().startsWith("local-only")
                 || props.getStudentNo().getHmacKey().startsWith("local-only")
                 || props.getJwt().getSecret().contains("PleaseChange")
-                || props.getStudentNo().getHmacKey().contains("PleaseChange"))) {
+                || props.getStudentNo().getHmacKey().contains("PleaseChange")
+                || props.getFile().getSignKey().startsWith("local-only")
+                || props.getPay().getMock().getSecret().startsWith("local-only"))) {
             throw new IllegalStateException("非 local 环境必须覆盖 JWT 与学号 HMAC 密钥");
         }
         if (props.getMail().isEnabled() && props.getMail().isExposeCode()) {

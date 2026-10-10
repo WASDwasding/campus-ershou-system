@@ -12,6 +12,7 @@ public class CampusVerification {
     private String rejectReason;
     private LocalDateTime createdAt;
     private LocalDateTime reviewedAt;
+    private Long reviewedBy;
 
     public Long getId() {
         return id;
@@ -75,5 +76,13 @@ public class CampusVerification {
 
     public void setReviewedAt(LocalDateTime reviewedAt) {
         this.reviewedAt = reviewedAt;
+    }
+
+    public Long getReviewedBy() {
+        return reviewedBy;
+    }
+
+    public void setReviewedBy(Long reviewedBy) {
+        this.reviewedBy = reviewedBy;
     }
 }

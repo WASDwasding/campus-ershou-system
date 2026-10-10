@@ -1,5 +1,6 @@
 package com.campus.ershou.auth;
 
+import com.campus.ershou.auth.dto.DevLoginRequest;
 import com.campus.ershou.auth.dto.AuthTokenResponse;
 import com.campus.ershou.auth.dto.LoginRequest;
 import com.campus.ershou.auth.dto.RegisterRequest;
@@ -55,5 +56,10 @@ public class AuthController {
     public ApiResponse<Map<String, Object>> logout(@AuthenticationPrincipal LoginUser loginUser) {
         authService.logout(loginUser);
         return ApiResponse.ok();
+    }
+
+    @PostMapping("/api/auth/dev-login")
+    public ApiResponse<AuthTokenResponse> devLogin(@RequestBody DevLoginRequest request, HttpServletRequest httpRequest) {
+        return ApiResponse.ok(authService.devLogin(request.devOpenid(), httpRequest.getServerName(), ClientIp.resolve(httpRequest)));
     }
 }
