@@ -2,9 +2,12 @@
 
 对抗赛题目：同题竞技 + 安全攻防。后端 Spring Boot，前端 uni-app（微信小程序）。
 
-当前进度：后端已有注册登录、资料、上传、校园认证审核、通知、商品、订单、模拟支付、聊天、举报和管理端。线上范围以 [doc/STATUE.md](./doc/STATUE.md) 为准。表结构在 [sql/](./sql/)。小程序仍是空壳。微信登录还要等 AppID。
+当前进度：仓库处在底座（base）。后端已有注册登录、资料、上传、校园认证审核、通知、商品、订单、模拟支付、聊天、举报和管理端。线上范围以 [doc/STATUE.md](./doc/STATUE.md) 为准。表结构在 [sql/](./sql/)。小程序仍是空壳。微信登录还要等 AppID。
 
-项目 A（AI 议价）和项目 B（成色与仲裁）共用这套底座，分叉关系见 [doc/tree.html](./doc/tree.html)。
+底座之后分两条线，只加各自的接口，不改底座已有字段、状态机和错误码。分叉关系见 [doc/tree.html](./doc/tree.html)。
+
+1. **AI 模块**：大模型填表、建议价、议价。范围见 [doc/base-API.md](./doc/base-API.md) 第 1 节和 [doc/tree.html](./doc/tree.html)。
+2. **书籍图像质量评估**：在底座上单独加。针对校园里的实体书籍，用图像评估质量。接口和规则还没写，文档待整理。
 
 环境说明见 [doc/SETUP.md](./doc/SETUP.md)。  
 小程序默认请求 `https://simpleyi.site`。服务器健康检查：<https://simpleyi.site/api/health>  

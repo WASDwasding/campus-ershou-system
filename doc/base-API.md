@@ -1,8 +1,8 @@
 # 校园二手交易平台 · Base API
 
-v0.4 设计稿（2026-09-30）。项目 A（AI 议价）、项目 B（成色与仲裁）分叉前的公共底座。技术栈：Spring Boot 3.4 / Java 17、MySQL 8、Redis、uni-app 微信小程序。
+v0.4 设计稿（2026-09-30）。这是后续分叉前的公共底座。技术栈：Spring Boot 3.4 / Java 17、MySQL 8、Redis、uni-app 微信小程序。
 
-已实现：健康检查、注册/登录/登出、资料、统计角标、公开主页、校园认证提交与进度、管理员审核认证、上传、商品浏览/发布/上下架/收藏/浏览记录、通知列表和已读。订单、支付、聊天、举报、其余管理端尚未实现。参数速查见 [STATUE.md](./STATUE.md)。A、B 只加接口和可选字段，不改这里的字段含义、状态机和错误码。改底座先改本文件。
+已实现范围与 [STATUE.md](./STATUE.md) 一致：健康检查、注册登录、资料、统计角标、公开主页、校园认证提交和管理员审核、上传、商品、通知、订单、模拟支付、聊天、举报、管理端动作。微信登录仍等 AppID。AI 模块和书籍图像质量评估只加接口和可选字段，不改这里的字段含义、状态机和错误码。改底座先改本文件。
 
 ## 1. 范围
 
@@ -12,9 +12,8 @@ v0.4 设计稿（2026-09-30）。项目 A（AI 议价）、项目 B（成色与�
 
 | 内容 | 去向 |
 | --- | --- |
-| 大模型填表、建议价、议价话术、报价令牌 | 项目 A，路径 `/api/ai/**` |
-| 成色评估 | 项目 B，路径 `/api/condition/**` |
-| 仲裁立案、举证、裁决 | 项目 B，路径 `/api/arbitration/**`。底座只有 `DISPUTED` 和管理员二选一处理 |
+| 大模型填表、建议价、议价话术、报价令牌 | AI 模块，路径 `/api/ai/**` |
+| 用图像评估校园实体书籍的质量 | 书籍图像质量评估。在底座上单独加。路径、字段和评估规则待文档整理 |
 | 自然语言搜索、求购、候补、组合发布、校园专题、订阅消息、学校统一身份接口 | 不做 |
 | 价格为 0 的赠送 | 不做。价格最低 1 分，订单都走支付 |
 | 真实支付、站内钱包、`user_balance` | 不做 |
@@ -337,7 +336,7 @@ limits：`payTimeoutMinutes` 15，`maxPendingPayOrders` 3，`priceMin` 1，`pric
 
 **面交：** `{ "buildingId", "place", "time" }`。`place` 1–40 字。时间在未来 14 天内。双方都能改，后写覆盖。确认面交无请求体，按 token 区分角色，重复调用不报错。双方都确认后订单完成、商品售出。
 
-**申诉：** `{ "reason", "description", "evidenceFileIds" }`。说明 10–500 字。订单变 `DISPUTED`。撤回后回到 `PAID`。管理员 `COMPLETE`：订单完成、商品售出。`REFUND`：订单取消、模拟退款、商品下架。`remark` 2–300 字，双方可见。项目 B 以后替换这个处理接口。
+**申诉：** `{ "reason", "description", "evidenceFileIds" }`。说明 10–500 字。订单变 `DISPUTED`。撤回后回到 `PAID`。管理员 `COMPLETE`：订单完成、商品售出。`REFUND`：订单取消、模拟退款、商品下架。`remark` 2–300 字，双方可见。
 
 **评价：** `{ "score": 1-5, "content" }`。每方一次，完成后 30 天内。过期 `REVIEW_WINDOW_CLOSED`，重复 `ALREADY_REVIEWED`。
 
@@ -419,7 +418,7 @@ WebSocket：`/ws/im`，请求头带 token，不要把 token 放在 URL 里。无
 
 Redis 键都加 `campus:`：`lock:goods:{id}` 5 秒；`idem:{userId}:{key}` 10 分钟；`pay:nonce:{nonce}` 10 分钟；`jwt:deny:{jti}` 到 token 过期；`user:tokenver:{userId}`；`order:timeouts:{userId}` 24 小时；`rl:{规则}:{用户或IP}:{时间窗}`；`history:{userId}`；`goods:view:{id}:{yyyyMMdd}`；商品列表和详情短缓存。下单和支付只读 MySQL。释放锁用 Lua：值等于自己的 requestId 才删除。
 
-模块对应包：`/api/auth` → `auth`；`/api/me` 与 `/api/users` → `user`；元数据、楼栋、分类、文件 → `common`；商品 → `goods`；订单 → `order`；支付 → `pay`；聊天和通知 → `im`；举报 → `report`；管理端账号和审计 → `admin`，其余管理接口放在对应业务包。`ai` 包底座不用。下单改库存只能调商品模块的方法，不在订单包里直接 `UPDATE goods`。
+模块对应包：`/api/auth` → `auth`；`/api/me` 与 `/api/users` → `user`；元数据、楼栋、分类、文件 → `common`；商品 → `goods`；订单 → `order`；支付 → `pay`；聊天和通知 → `im`；举报 → `report`；管理端账号和审计 → `admin`，其余管理接口放在对应业务包。`ai` 包留给 AI 模块，底座不用。书籍图像质量评估的包等文档再定。下单改库存只能调商品模块的方法，不在订单包里直接 `UPDATE goods`。
 
 ## 12. 错误码
 

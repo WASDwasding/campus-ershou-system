@@ -90,8 +90,8 @@
   <p class="sub">交易内核共用，能力末端分开</p>
   <div class="legend">
     <span><i class="swatch base"></i>底座</span>
-    <span><i class="swatch a"></i>项目 A</span>
-    <span><i class="swatch b"></i>项目 B</span>
+    <span><i class="swatch a"></i>AI 模块</span>
+    <span><i class="swatch b"></i>书籍图像质量评估</span>
   </div>
   <div class="trunk">
     <article class="node">
@@ -131,7 +131,7 @@
     <div class="stem"></div>
     <div class="split">
       <article class="node a">
-        <h2>项目 A · AI 议价</h2>
+        <h2>AI 模块 · 议价</h2>
         <p>大模型 API，密钥只在服务端</p>
         <p>发布：模型填表，失败改手填</p>
         <p>议价：话术 + 建议价</p>
@@ -142,14 +142,12 @@
         <p>议价接口按用户限流</p>
       </article>
       <article class="node b">
-        <h2>项目 B · 成色与仲裁</h2>
-        <p>成色记录附在商品上</p>
-        <p>人工评定或模型评定</p>
-        <p>评定结果不写成交价</p>
-        <p>「申诉中」进入仲裁案件</p>
-        <p>证据、裁决再回写订单</p>
-        <p>同一 MySQL，只加表</p>
-        <p class="pending">评分规则、裁决人、结案状态待定</p>
+        <h2>书籍图像质量评估</h2>
+        <p>在现有底座上单独加一个模块</p>
+        <p>对象是校园里的实体书籍</p>
+        <p>用图像评估书籍质量</p>
+        <p>不改底座已有字段、状态机和错误码</p>
+        <p class="pending">路径、字段和评估规则待整理</p>
       </article>
     </div>
   </div>
