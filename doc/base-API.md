@@ -1,6 +1,6 @@
 # 校园二手交易平台 · Base API
 
-v0.4 设计稿（2026-09-30）。这是后续分叉前的公共底座。技术栈：Spring Boot 3.4 / Java 17、MySQL 8、Redis、uni-app 微信小程序。
+v0.4 设计稿（2026-09-30）。这是后续分叉前的公共底座。技术栈：Spring Boot 3.4 / Java 17、MySQL 8、Redis、原生微信小程序（`campus-trade/miniprogram`）。
 
 已实现范围与 [STATUE.md](./STATUE.md) 一致：健康检查、注册登录、资料、统计角标、公开主页、校园认证提交和管理员审核、上传、商品、通知、订单、模拟支付、聊天、举报、管理端动作。微信登录仍等 AppID。AI 模块和书籍图像质量评估只加接口和可选字段，不改这里的字段含义、状态机和错误码。改底座先改本文件。
 
@@ -27,7 +27,7 @@ v0.4 设计稿（2026-09-30）。这是后续分叉前的公共底座。技术�
 | server | 小程序、Apifox、展示 | `https://simpleyi.site`，WebSocket `wss://simpleyi.site/ws/im` | 库 `ershou`；Redis 前缀 `campus:` |
 | local | 只给后端在本机写接口 | `http://127.0.0.1:8080` | 本机库 `campus_ershou`。推荐 `sql/start-local-mysql.sh`（端口 3307）。前端不要连 |
 
-`frontend/src/config.js` 默认是服务器地址。后端临时改成 `127.0.0.1` 时不要提交。开发者工具勾选「不校验合法域名」。体验版再把 `simpleyi.site` 配进 request、socket、uploadFile、downloadFile。
+`campus-trade/miniprogram/utils/config.js` 默认是服务器地址。后端临时改成 `127.0.0.1` 时不要提交。开发者工具勾选「不校验合法域名」。体验版再把 `simpleyi.site` 配进 request、socket、uploadFile、downloadFile。
 
 服务器：Spring Boot 只听 `127.0.0.1:8080`，Nginx 转发 `/api/`、`/ws/`、`/files/public/`。部署是替换 `/opt/campus-ershou/campus-ershou.jar` 后 `sudo systemctl restart campus-ershou`。库账号只允许本机连接。原来的 `simpleyi` 库不使用。只信 Nginx 写入的 `X-Real-IP`，不信客户端自己带的 `X-Forwarded-For`。
 
