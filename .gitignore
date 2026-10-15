@@ -36,7 +36,7 @@ out/
 hs_err_pid*
 replay_pid*
 
-# ---------- Node / uni-app / 微信开发者工具 ----------
+# ---------- Node / 微信开发者工具 ----------
 node_modules/
 dist/
 dist-ssr/

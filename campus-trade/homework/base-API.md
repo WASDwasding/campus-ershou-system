@@ -28,7 +28,7 @@ v0.3 设计稿（2026-09-29）。项目 A（AI 议价）、项目 B（成色与�
 | server | 小程序、Apifox、展示 | `https://simpleyi.site`，WebSocket `wss://simpleyi.site/ws/im` | 库 `ershou`；Redis 前缀 `campus:` |
 | local | 只给后端在本机写接口 | `http://127.0.0.1:8080` | 本机库。前端不要连 |
 
-`frontend/src/config.js` 默认是服务器地址。后端临时改成 `127.0.0.1` 时不要提交。开发者工具勾选「不校验合法域名」。体验版再把 `simpleyi.site` 配进 request、socket、uploadFile、downloadFile。
+`campus-trade/miniprogram/utils/config.js` 默认是服务器地址。后端临时改成 `127.0.0.1` 时不要提交。开发者工具勾选「不校验合法域名」。体验版再把 `simpleyi.site` 配进 request、socket、uploadFile、downloadFile。
 
 服务器：Spring Boot 只听 `127.0.0.1:8080`，Nginx 转发 `/api/`、`/ws/`、`/files/public/`。部署是替换 `/opt/campus-ershou/campus-ershou.jar` 后 `sudo systemctl restart campus-ershou`。库账号只允许本机连接。原来的 `simpleyi` 库不使用。只信 Nginx 写入的 `X-Real-IP`，不信客户端自己带的 `X-Forwarded-For`。
 
