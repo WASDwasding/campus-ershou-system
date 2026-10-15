@@ -37,7 +37,7 @@ doc/         文档
 
 ## 协作
 
-`main` 不要直接 push。开分支、开 PR，要合的时候跟管理员说一声。Git 不会用看 [TONEW](./doc/TONEW.md)。
+仓库是公开的。`main` 不要直接 push。开分支、开 PR，要合的时候跟管理员说一声。Git 不会用看 [TONEW](./doc/TONEW.md)。GitHub 上还没有给 `main` 设分支保护，直推仍然靠约定拦住。
 
 密钥和微信 AppID 不要提交，只放本地 `application-local.yml` / `.env`，或只在本机改 `manifest.json`。后端如果把 `config.js` 临时改成 `127.0.0.1`，不要提交。
 
