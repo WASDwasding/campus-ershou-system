@@ -1,0 +1,19 @@
+<view class="page">
+  <view class="search" bindtap="goSearch">
+    <text class="ph">搜索商品标题或描述</text>
+  </view>
+  <scroll-view scroll-x class="cats">
+    <view class="chip {{categoryId === 0 ? 'chip-on' : ''}}" bindtap="setCat" data-id="0">全部</view>
+    <view class="chip {{categoryId === item.id ? 'chip-on' : ''}}" wx:for="{{categories}}" wx:key="id" bindtap="setCat" data-id="{{item.id}}">{{item.name}}</view>
+  </scroll-view>
+  <scroll-view scroll-x class="cats">
+    <view class="chip {{sort === item.id ? 'chip-on' : ''}}" wx:for="{{sorts}}" wx:key="id" bindtap="setSort" data-id="{{item.id}}">{{item.name}}</view>
+  </scroll-view>
+  <view class="grid">
+    <view class="cell" wx:for="{{list}}" wx:key="id">
+      <product-card item="{{item}}" bind:open="open" />
+    </view>
+  </view>
+  <view class="empty" wx:if="{{!loading && !list.length}}">还没有在售商品</view>
+  <view class="hint pad" wx:if="{{loading}}">加载中…</view>
+</view>

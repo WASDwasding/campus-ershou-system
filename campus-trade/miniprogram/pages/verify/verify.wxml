@@ -1,0 +1,19 @@
+<view class="page">
+  <view class="card box">
+    <view class="st">当前状态：{{statusLabel}}</view>
+    <view class="hint" wx:if="{{status === 'VERIFIED'}}">已通过，可以发布和下单。</view>
+    <view class="hint" wx:if="{{status === 'PENDING'}}">审核中，请等待管理员处理。</view>
+    <view class="hint" wx:if="{{rejectReason}}">驳回原因：{{rejectReason}}</view>
+    <block wx:if="{{status === 'UNVERIFIED' || status === 'REJECTED'}}">
+      <view class="label">学号（8–12 位数字）</view>
+      <input class="inp" type="number" maxlength="12" value="{{studentNo}}" bindinput="onNo" />
+      <view class="label">宿舍楼</view>
+      <picker range="{{dormNames}}" bindchange="onDorm">
+        <view class="inp">{{dormNames[dormIndex] || '请选择'}}</view>
+      </picker>
+      <view class="btn btn-ghost" bindtap="card">{{fileId ? '证件照已上传' : '上传校园卡照片'}}</view>
+      <view class="hint">证件照只给审核使用，审核结束后按平台规则删除。学号不会明文展示给其他同学。</view>
+      <view class="btn btn-primary" bindtap="submit">提交认证</view>
+    </block>
+  </view>
+</view>

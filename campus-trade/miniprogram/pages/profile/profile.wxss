@@ -1,0 +1,12 @@
+.hero { margin: 24rpx; padding: 28rpx; background: #3d7a5a; border-radius: 28rpx; display: flex; gap: 16rpx; color: #fff; align-items: center; }
+.ava { width: 96rpx; height: 96rpx; border-radius: 50%; background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font-size: 36rpx; }
+.info { flex: 1; }
+.n { font-size: 36rpx; font-weight: 800; }
+.m { font-size: 22rpx; opacity: .9; }
+.stats { display: flex; margin: 0 24rpx 16rpx; background: #fff; border-radius: 20rpx; padding: 20rpx 0; }
+.s { flex: 1; text-align: center; font-size: 22rpx; color: #8a8a8a; }
+.num { display: block; font-size: 32rpx; font-weight: 800; color: #2a2a2a; }
+.menu { margin: 16rpx 24rpx; }
+.mi { padding: 28rpx; border-bottom: 1rpx solid #f0ebe3; font-size: 30rpx; }
+.mi:last-child { border-bottom: none; }
+.out { margin: 24rpx; }

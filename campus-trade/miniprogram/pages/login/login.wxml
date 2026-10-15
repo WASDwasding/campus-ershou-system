@@ -1,0 +1,12 @@
+<view class="page">
+  <view class="hero">
+    <image class="logo" src="/images/logo.png" />
+    <view class="name">校园二手</view>
+    <view class="sub">微信登录 · 校园认证后交易</view>
+  </view>
+  <view class="card form">
+    <view class="btn btn-primary" bindtap="login">微信登录</view>
+    <view class="hint center">{{healthText}}</view>
+    <view class="hint center">登录后请填写资料并提交校园认证。认证通过才能发布和下单。</view>
+  </view>
+</view>

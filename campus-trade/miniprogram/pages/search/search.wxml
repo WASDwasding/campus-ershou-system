@@ -1,0 +1,19 @@
+<view class="page">
+  <view class="bar">
+    <input class="inp" focus maxlength="30" placeholder="标题或描述，1–30 字" value="{{keyword}}" bindinput="onQ" confirm-type="search" bindconfirm="go" />
+    <view class="go" bindtap="go">搜索</view>
+  </view>
+  <view class="filters">
+    <input class="mini" type="digit" placeholder="最低元" value="{{minYuan}}" bindinput="onMin" />
+    <input class="mini" type="digit" placeholder="最高元" value="{{maxYuan}}" bindinput="onMax" />
+  </view>
+  <view class="item" wx:for="{{list}}" wx:key="id" bindtap="open" data-id="{{item.id}}">
+    <image wx:if="{{item.coverUrl}}" class="thumb" src="{{item.coverUrl}}" mode="aspectFill" />
+    <view class="mid">
+      <view class="t">{{item.title}}</view>
+      <view class="m">{{item.meetupName}} · {{item.conditionLabel}}</view>
+    </view>
+    <view class="price">¥{{item.priceText}}</view>
+  </view>
+  <view class="empty" wx:if="{{searched && !list.length}}">没有匹配的在售商品</view>
+</view>

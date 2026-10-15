@@ -1,0 +1,14 @@
+<view class="page">
+  <scroll-view class="msgs" scroll-y scroll-into-view="{{anchor}}">
+    <view class="more" wx:if="{{hasMore}}" bindtap="older">更早的消息</view>
+    <view id="m{{item.id}}" class="msg {{item.mine ? 'mine' : (item.type === 'SYSTEM' ? 'sys' : 'peer')}}" wx:for="{{messages}}" wx:key="id">
+      <image wx:if="{{item.type === 'IMAGE' && item.imageUrl}}" class="pic" src="{{item.imageUrl}}" mode="widthFix" />
+      <view wx:else class="bubble"><text>{{item.content}}</text></view>
+    </view>
+    <view id="end"></view>
+  </scroll-view>
+  <view class="inputbar safe-bottom">
+    <input class="inp" maxlength="500" value="{{text}}" bindinput="onText" confirm-type="send" bindconfirm="send" disabled="{{!canSend}}" placeholder="{{canSend ? '只在站内沟通' : '认证通过后才能发消息'}}" />
+    <view class="btn btn-primary send" bindtap="send">发送</view>
+  </view>
+</view>

@@ -1,0 +1,45 @@
+<view class="page">
+  <view class="card box" wx:if="{{!verified}}">
+    <view class="section-title">发布前需要校园认证</view>
+    <view class="hint">登录用户可以浏览和收藏。认证通过后才能上传商品图并发布。</view>
+    <view class="btn btn-primary" bindtap="goVerify">去认证</view>
+  </view>
+  <block wx:else>
+    <view class="card box">
+      <view class="section-title">商品图片</view>
+      <view class="hint">1–9 张，JPEG / PNG / WebP，单张不超过 5 MB。第一张是封面。</view>
+      <view class="photos">
+        <view class="ph" wx:for="{{images}}" wx:key="fileId">
+          <image class="ph-img" src="{{item.url}}" mode="aspectFill" />
+          <view class="x" catchtap="delImg" data-i="{{index}}">×</view>
+        </view>
+        <view class="ph add" wx:if="{{images.length < 9}}" bindtap="choose">＋</view>
+      </view>
+    </view>
+    <view class="card box">
+      <view class="label">标题（2–30 字）</view>
+      <input class="inp" maxlength="30" value="{{form.title}}" bindinput="setF" data-k="title" />
+      <view class="label">描述（500 字以内）</view>
+      <textarea class="area" maxlength="500" value="{{form.description}}" bindinput="setF" data-k="description" />
+      <view class="label">标价（元）</view>
+      <input class="inp" type="digit" value="{{form.priceYuan}}" bindinput="setF" data-k="priceYuan" placeholder="例如 15.00" />
+      <view class="label">原价（元，可空）</view>
+      <input class="inp" type="digit" value="{{form.originalYuan}}" bindinput="setF" data-k="originalYuan" />
+      <view class="label">分类</view>
+      <picker range="{{categoryNames}}" bindchange="onCat">
+        <view class="inp pick">{{categoryNames[catIndex] || '请选择'}}</view>
+      </picker>
+      <view class="label">成色</view>
+      <picker range="{{conditionNames}}" bindchange="onCond">
+        <view class="inp pick">{{conditionNames[condIndex] || '请选择'}}</view>
+      </picker>
+      <view class="label">面交地点</view>
+      <picker range="{{meetupNames}}" bindchange="onMeetup">
+        <view class="inp pick">{{meetupNames[meetupIndex] || '请选择'}}</view>
+      </picker>
+      <view class="label">交易说明（100 字以内）</view>
+      <input class="inp" maxlength="100" value="{{form.tradeNote}}" bindinput="setF" data-k="tradeNote" />
+    </view>
+    <view class="btn btn-primary pub" bindtap="submit">{{goodsId ? '保存' : '发布'}}</view>
+  </block>
+</view>

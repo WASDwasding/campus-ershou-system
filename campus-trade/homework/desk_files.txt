@@ -1,0 +1,30 @@
+## C:\\Users\\15736\\Desktop\\code exists=True
+. / dirs=.vscode,Project1,Project2,test8_2,实训二-2,实训二-3,实训二-4,实训二-5,实训二—1
+C:\\Users\\15736\\Desktop\\code\.vscode\c_cpp_properties.json
+C:\\Users\\15736\\Desktop\\code\.vscode\launch.json
+C:\\Users\\15736\\Desktop\\code\.vscode\settings.json
+C:\\Users\\15736\\Desktop\\code\.vscode\tasks.json
+.vscode / dirs=
+Project1 / dirs=.vs,x64
+Project2 / dirs=.vs,Project2,x64
+test8_2 / dirs=.vs,test8_2,x64
+实训二-2 / dirs=.vs,x64,实训二-2
+实训二-3 / dirs=.vs,x64,实训二-3
+实训二-4 / dirs=.vs,x64,实训二-4
+实训二-5 / dirs=.vs,x64,实训二-5
+实训二—1 / dirs=.vs,x64,实训二—1
+## C:\\Users\\15736\\Desktop\\班级 exists=True
+. / dirs=
+## C:\\Users\\15736\\Desktop\\个人 exists=True
+. / dirs=Python-2版-电子教案,图像处理,实训,操作系统,数据库,数据结构,概率论PPT,组成原理,软件242付宇涵
+Python-2版-电子教案 / dirs=
+图像处理 / dirs=
+实训 / dirs=
+操作系统 / dirs=操作系统试卷
+数据库 / dirs=数据库系统概论
+数据结构 / dirs=Project1,算法与数据结构试卷,软件242 2406100405 付宇涵 数据结构第一次实验
+概率论PPT / dirs=
+组成原理 / dirs=计算机组成原理试卷
+软件242付宇涵 / dirs=
+## C:\\Users\\15736\\Desktop\\新建文件夹 exists=True
+. / dirs=

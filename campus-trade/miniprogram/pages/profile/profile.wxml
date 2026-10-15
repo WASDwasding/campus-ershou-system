@@ -1,0 +1,27 @@
+<view class="page" wx:if="{{user}}">
+  <view class="hero">
+    <image wx:if="{{user.avatarUrl}}" class="ava" src="{{user.avatarUrl}}" mode="aspectFill" />
+    <view wx:else class="ava">{{user.nickname0}}</view>
+    <view class="info">
+      <view class="n">{{user.nickname || '未命名'}}</view>
+      <view class="m">{{user.verifyLabel}} · {{user.studentNoMasked || '未绑定学号'}}</view>
+      <view class="m" wx:if="{{user.dormName}}">宿舍 {{user.dormName}}</view>
+    </view>
+  </view>
+  <view class="stats">
+    <view class="s"><text class="num">{{stats.onSale || 0}}</text>在售</view>
+    <view class="s"><text class="num">{{stats.sold || 0}}</text>卖出</view>
+    <view class="s"><text class="num">{{stats.bought || 0}}</text>买入</view>
+    <view class="s"><text class="num">{{stats.rating || '—'}}</text>评分</view>
+  </view>
+  <view class="menu card">
+    <view class="mi" bindtap="go" data-url="/pages/verify/verify">校园认证</view>
+    <view class="mi" bindtap="go" data-url="/pages/settings/settings">编辑资料</view>
+    <view class="mi" bindtap="go" data-url="/pages/my-goods/my-goods">我的商品</view>
+    <view class="mi" bindtap="go" data-url="/pages/orders/orders">订单</view>
+    <view class="mi" bindtap="go" data-url="/pages/favorite/favorite">收藏</view>
+    <view class="mi" bindtap="go" data-url="/pages/history/history">浏览记录</view>
+    <view class="mi" bindtap="go" data-url="/pages/notifications/notifications">通知</view>
+  </view>
+  <view class="btn btn-ghost out" bindtap="logout">退出登录</view>
+</view>

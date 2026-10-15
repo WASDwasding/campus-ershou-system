@@ -1,0 +1,40 @@
+<view class="page" wx:if="{{item.id}}">
+  <view class="cover">
+    <swiper wx:if="{{item.imageUrls.length}}" class="sw" indicator-dots>
+      <swiper-item wx:for="{{item.imageUrls}}" wx:key="*this" wx:for-item="img">
+        <image src="{{img}}" mode="aspectFill" class="img" bindtap="preview" data-src="{{img}}" />
+      </swiper-item>
+    </swiper>
+    <text wx:else class="big">📦</text>
+  </view>
+  <view class="card main">
+    <view class="row space">
+      <view class="price lg">¥{{item.priceText}}</view>
+      <view class="chip">{{item.conditionLabel}}</view>
+    </view>
+    <view class="title">{{item.title}}</view>
+    <view class="muted">{{item.categoryName}} · {{item.meetupName}} · {{item.statusLabel}}</view>
+    <view class="muted" wx:if="{{item.originalPriceText}}">原价 ¥{{item.originalPriceText}}</view>
+  </view>
+  <view class="card block">
+    <view class="section-title">描述</view>
+    <text>{{item.description || '卖家没有填写描述'}}</text>
+    <view class="hint" wx:if="{{item.tradeNote}}">交易说明：{{item.tradeNote}}</view>
+  </view>
+  <view class="card block seller" bindtap="openSeller">
+    <view>
+      <view class="sn">{{item.sellerName}}</view>
+      <view class="muted">{{item.seller.verified ? '已认证' : '未认证'}} · 评分 {{item.seller.rating || '—'}}</view>
+    </view>
+    <text class="muted">主页</text>
+  </view>
+  <view class="hint removed" wx:if="{{item.removedReason}}">下架原因：{{item.removedReason}}</view>
+  <view class="bar safe-bottom">
+    <view class="iconbtn" bindtap="fav">{{item.viewer.favorited ? '♥' : '♡'}}</view>
+    <view class="iconbtn" bindtap="report">报</view>
+    <view class="btn btn-ghost grow" wx:if="{{item.viewer.canChat}}" bindtap="chat">咨询</view>
+    <view class="btn btn-primary grow" wx:if="{{item.viewer.canBuy}}" bindtap="buy">下单</view>
+    <view class="btn btn-ghost grow" wx:if="{{item.viewer.activeOrderId}}" bindtap="openOrder">查看订单</view>
+    <view class="btn btn-ghost grow" wx:if="{{item.viewer.isMine}}" bindtap="edit">编辑</view>
+  </view>
+</view>

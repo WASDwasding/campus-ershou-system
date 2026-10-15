@@ -1,0 +1,10 @@
+.bar { display: flex; gap: 12rpx; padding: 20rpx 24rpx 8rpx; }
+.inp { flex: 1; height: 76rpx; background: #fff; border-radius: 16rpx; padding: 0 20rpx; }
+.go { width: 120rpx; height: 76rpx; background: #3d7a5a; color: #fff; border-radius: 16rpx; display: flex; align-items: center; justify-content: center; }
+.filters { display: flex; gap: 12rpx; padding: 8rpx 24rpx 16rpx; }
+.mini { flex: 1; height: 68rpx; background: #fff; border-radius: 12rpx; padding: 0 16rpx; }
+.item { margin: 0 24rpx 16rpx; background: #fff; border-radius: 16rpx; padding: 16rpx; display: flex; align-items: center; gap: 16rpx; }
+.thumb { width: 96rpx; height: 96rpx; border-radius: 12rpx; background: #efe8dc; }
+.mid { flex: 1; }
+.t { font-weight: 600; }
+.m { font-size: 22rpx; color: #8a8a8a; }

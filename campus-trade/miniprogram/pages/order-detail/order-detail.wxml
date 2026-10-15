@@ -1,0 +1,33 @@
+<view class="page" wx:if="{{order.id}}">
+  <view class="card box">
+    <view class="st">{{order.statusLabel}}</view>
+    <view class="t">{{order.goodsTitle}}</view>
+    <view class="price">¥{{order.amountText}}</view>
+    <view class="m">订单号 {{order.orderNo}}</view>
+    <view class="m">我是{{order.myRole === 'SELLER' ? '卖家' : '买家'}}</view>
+    <view class="m" wx:if="{{order.expireAt}}">支付截止 {{order.expireText}}</view>
+    <view class="m" wx:if="{{order.meetupText}}">面交 {{order.meetupText}}</view>
+    <view class="hint">按钮只按服务端 allowedActions 显示。金额以订单快照为准。</view>
+  </view>
+  <view class="btn btn-primary" wx:if="{{can.PAY}}" bindtap="pay">模拟付款</view>
+  <view class="btn btn-ghost" wx:if="{{can.UPDATE_MEETUP}}" bindtap="showMeetup">约定面交</view>
+  <view class="btn btn-primary" wx:if="{{can.CONFIRM_HANDOVER}}" bindtap="handover">确认已面交</view>
+  <view class="btn btn-warn" wx:if="{{can.OPEN_DISPUTE}}" bindtap="openDispute">申诉</view>
+  <view class="btn btn-ghost" wx:if="{{can.WITHDRAW_DISPUTE}}" bindtap="withdraw">撤回申诉</view>
+  <view class="btn btn-ghost" wx:if="{{can.REVIEW}}" bindtap="review">评价</view>
+  <view class="btn btn-warn" wx:if="{{can.CANCEL}}" bindtap="cancel">取消订单</view>
+
+  <view class="card box" wx:if="{{meetupOpen}}">
+    <picker mode="selector" range="{{buildingNames}}" bindchange="onBuilding">
+      <view class="inp">{{buildingNames[buildingIndex] || '选择面交点'}}</view>
+    </picker>
+    <input class="inp" maxlength="40" placeholder="具体位置，1–40 字" value="{{place}}" bindinput="onPlace" />
+    <picker mode="date" value="{{date}}" start="{{today}}" bindchange="onDate">
+      <view class="inp">{{date || '日期'}}</view>
+    </picker>
+    <picker mode="time" value="{{time}}" bindchange="onTime">
+      <view class="inp">{{time || '时间'}}</view>
+    </picker>
+    <view class="btn btn-primary" bindtap="saveMeetup">保存面交</view>
+  </view>
+</view>

@@ -1,0 +1,17 @@
+<view class="page">
+  <scroll-view scroll-x class="tabs">
+    <view class="chip {{status === item.value ? 'chip-on' : ''}}" wx:for="{{statuses}}" wx:key="value" bindtap="setStatus" data-id="{{item.value}}">{{item.label}}</view>
+  </scroll-view>
+  <view class="row" wx:for="{{list}}" wx:key="id">
+    <view class="grow">
+      <product-card item="{{item}}" bind:open="open" />
+    </view>
+    <view class="ops">
+      <view class="op" wx:if="{{item.status === 'ON_SALE'}}" catchtap="off" data-id="{{item.id}}">下架</view>
+      <view class="op" wx:if="{{item.status === 'OFF_SHELF'}}" catchtap="on" data-id="{{item.id}}">上架</view>
+      <view class="op" wx:if="{{item.status === 'ON_SALE' || item.status === 'OFF_SHELF'}}" catchtap="edit" data-id="{{item.id}}">编辑</view>
+      <view class="op danger" wx:if="{{item.status === 'ON_SALE' || item.status === 'OFF_SHELF'}}" catchtap="del" data-id="{{item.id}}">删除</view>
+    </view>
+  </view>
+  <view class="empty" wx:if="{{!list.length}}">这个状态下没有商品</view>
+</view>

@@ -1,0 +1,17 @@
+<view class="page">
+  <view class="tabs">
+    <view class="chip {{role === 'BUYER' ? 'chip-on' : ''}}" bindtap="setRole" data-id="BUYER">我买的</view>
+    <view class="chip {{role === 'SELLER' ? 'chip-on' : ''}}" bindtap="setRole" data-id="SELLER">我卖的</view>
+  </view>
+  <scroll-view scroll-x class="tabs">
+    <view class="chip {{status === item.value ? 'chip-on' : ''}}" wx:for="{{statuses}}" wx:key="value" bindtap="setStatus" data-id="{{item.value}}">{{item.label}}</view>
+  </scroll-view>
+  <view class="card item" wx:for="{{list}}" wx:key="id" bindtap="open" data-id="{{item.id}}">
+    <view class="mid">
+      <view class="t">{{item.goodsTitle}}</view>
+      <view class="m">{{item.statusLabel}} · {{item.orderNo}}</view>
+    </view>
+    <view class="price">¥{{item.amountText}}</view>
+  </view>
+  <view class="empty" wx:if="{{!list.length}}">暂无订单</view>
+</view>

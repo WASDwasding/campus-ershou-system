@@ -1,0 +1,60 @@
+.pcard {
+  background: #fff;
+  border-radius: 20rpx;
+  overflow: hidden;
+  box-shadow: 0 8rpx 20rpx rgba(61, 122, 90, 0.06);
+}
+.cover {
+  height: 220rpx;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cover-img {
+  width: 100%;
+  height: 100%;
+}
+.emoji {
+  font-size: 72rpx;
+}
+.st {
+  position: absolute;
+  left: 12rpx;
+  top: 12rpx;
+  background: rgba(45, 90, 66, 0.86);
+  color: #fff;
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+}
+.body {
+  padding: 16rpx 18rpx 20rpx;
+}
+.title {
+  font-size: 26rpx;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.meta {
+  font-size: 20rpx;
+  color: #8a8a8a;
+  margin-top: 6rpx;
+}
+.foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8rpx;
+}
+.price {
+  color: #c45c5c;
+  font-weight: 700;
+  font-size: 28rpx;
+}
+.fav {
+  font-size: 20rpx;
+  color: #999;
+}

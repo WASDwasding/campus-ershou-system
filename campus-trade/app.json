@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "Campus Trade",
+    "slug": "campus-trade",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "campustrade",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#E6F1F7"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "edu.campus.trade",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Campus Trade needs camera access for intelligent product posting with low-light enhancement.",
+        "NSPhotoLibraryUsageDescription": "Campus Trade needs photo library access to select product images.",
+        "NSPhotoLibraryAddUsageDescription": "Campus Trade may save enhanced product photos."
+      }
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Campus Trade to use your camera for smart product posting."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Campus Trade to access your photos for product posting."
+        }
+      ],
+      "expo-asset"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}

@@ -1,0 +1,14 @@
+<view class="page">
+  <view class="card box">
+    <view class="label">昵称（1–16 字）</view>
+    <input class="inp" maxlength="16" value="{{nickname}}" bindinput="onNick" />
+    <view class="label">简介（60 字以内）</view>
+    <textarea class="area" maxlength="60" value="{{bio}}" bindinput="onBio" />
+    <view class="label">宿舍楼</view>
+    <picker range="{{dormNames}}" bindchange="onDorm">
+      <view class="inp">{{dormNames[dormIndex] || '请选择宿舍楼'}}</view>
+    </picker>
+    <view class="btn btn-ghost" bindtap="avatar">上传头像</view>
+    <view class="btn btn-primary" bindtap="save">保存</view>
+  </view>
+</view>

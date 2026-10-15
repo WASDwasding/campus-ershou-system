@@ -1,0 +1,66 @@
+.page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #3d7a5a 0%, #8ec8e3 42%, #f4f1ea 42%);
+  padding: 80rpx 40rpx 40rpx;
+}
+.hero {
+  text-align: center;
+  color: #fff;
+  margin-bottom: 40rpx;
+}
+.logo {
+  width: 140rpx;
+  height: 140rpx;
+}
+.name {
+  font-size: 48rpx;
+  font-weight: 800;
+  margin-top: 12rpx;
+}
+.sub {
+  font-size: 24rpx;
+  opacity: 0.9;
+  margin-top: 8rpx;
+}
+.form {
+  padding: 36rpx;
+}
+.label {
+  font-size: 24rpx;
+  color: #666;
+  margin: 12rpx 0 8rpx;
+}
+.inp {
+  height: 84rpx;
+  background: #f7f3ea;
+  border-radius: 16rpx;
+  padding: 0 24rpx;
+  margin-bottom: 8rpx;
+}
+.center {
+  text-align: center;
+  margin-top: 16rpx;
+}
+.form .btn {
+  margin-top: 28rpx;
+}
+.demo {
+  margin-top: 36rpx;
+}
+.demo-title {
+  font-size: 24rpx;
+  color: #666;
+  margin-bottom: 12rpx;
+}
+.demo-row {
+  display: flex;
+  justify-content: space-between;
+  background: #fff;
+  padding: 20rpx 24rpx;
+  border-radius: 16rpx;
+  margin-bottom: 12rpx;
+  font-size: 26rpx;
+}
+.who {
+  color: #8a8a8a;
+}

@@ -1,0 +1,12 @@
+<view class="page">
+  <view class="row space pad">
+    <view class="chip {{unreadOnly ? 'chip-on' : ''}}" bindtap="toggle">只看未读</view>
+    <view class="chip" bindtap="readAll">全部已读</view>
+  </view>
+  <view class="card item" wx:for="{{list}}" wx:key="id" bindtap="open" data-i="{{index}}">
+    <view class="t">{{item.title}}</view>
+    <text class="c">{{item.content}}</text>
+    <view class="m">{{item.timeText}} {{item.read ? '' : '· 未读'}}</view>
+  </view>
+  <view class="empty" wx:if="{{!list.length}}">暂无通知</view>
+</view>

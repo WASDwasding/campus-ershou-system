@@ -1,0 +1,4 @@
+{
+  "navigationBarTitleText": "我的商品",
+  "usingComponents": { "product-card": "/components/product-card/product-card" }
+}

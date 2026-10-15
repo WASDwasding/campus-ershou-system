@@ -1,0 +1,6 @@
+.box { margin: 24rpx; padding: 28rpx; }
+.st { color: #3d7a5a; font-weight: 700; }
+.t { font-size: 34rpx; font-weight: 800; margin: 8rpx 0; }
+.m { color: #666; margin-top: 8rpx; }
+.page .btn { margin: 16rpx 24rpx; }
+.inp { background: #f7f3ea; border-radius: 14rpx; padding: 18rpx 20rpx; margin-bottom: 12rpx; }

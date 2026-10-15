@@ -1,0 +1,62 @@
+{
+  "pages": [
+    "pages/login/login",
+    "pages/index/index",
+    "pages/publish/publish",
+    "pages/chat/chat",
+    "pages/profile/profile",
+    "pages/detail/detail",
+    "pages/search/search",
+    "pages/chat-room/chat-room",
+    "pages/orders/orders",
+    "pages/order-detail/order-detail",
+    "pages/favorite/favorite",
+    "pages/verify/verify",
+    "pages/settings/settings",
+    "pages/notifications/notifications",
+    "pages/history/history",
+    "pages/user/user",
+    "pages/my-goods/my-goods"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#3D7A5A",
+    "navigationBarTitleText": "校园二手",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#F4F1EA",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#9A9A9A",
+    "selectedColor": "#3D7A5A",
+    "backgroundColor": "#FFFDF8",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "市集",
+        "iconPath": "images/tab-shop.png",
+        "selectedIconPath": "images/tab-shop-on.png"
+      },
+      {
+        "pagePath": "pages/publish/publish",
+        "text": "发布",
+        "iconPath": "images/tab-plus.png",
+        "selectedIconPath": "images/tab-plus-on.png"
+      },
+      {
+        "pagePath": "pages/chat/chat",
+        "text": "消息",
+        "iconPath": "images/tab-msg.png",
+        "selectedIconPath": "images/tab-msg-on.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "images/tab-me.png",
+        "selectedIconPath": "images/tab-me-on.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

@@ -1,0 +1,13 @@
+.page { display: flex; flex-direction: column; height: 100vh; }
+.msgs { flex: 1; padding: 20rpx; }
+.more { text-align: center; color: #3d7a5a; padding: 12rpx; }
+.msg { display: flex; margin: 12rpx 0; }
+.msg.mine { justify-content: flex-end; }
+.msg.sys { justify-content: center; }
+.bubble { max-width: 70%; background: #fff; padding: 16rpx 20rpx; border-radius: 20rpx; }
+.mine .bubble { background: #3d7a5a; color: #fff; }
+.sys .bubble { background: #e7f3ec; color: #2c5a42; font-size: 22rpx; }
+.pic { width: 280rpx; border-radius: 12rpx; }
+.inputbar { display: flex; gap: 12rpx; padding: 16rpx; background: #fff; }
+.inputbar .inp { flex: 1; height: 76rpx; background: #f7f3ea; border-radius: 16rpx; padding: 0 20rpx; }
+.send { width: 140rpx; height: 76rpx; }

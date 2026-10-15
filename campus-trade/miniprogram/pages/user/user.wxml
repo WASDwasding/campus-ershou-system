@@ -1,0 +1,20 @@
+<view class="page" wx:if="{{ready}}">
+  <view class="card box">
+    <view class="n">{{profile.nickname || '同学'}}</view>
+    <view class="m">{{profile.verified ? '已认证' : '未认证'}} · 评分 {{profile.rating || '—'}}</view>
+    <view class="m">成交 {{profile.dealCount || 0}} · 在售 {{profile.onSaleCount || 0}}</view>
+    <view class="m" wx:if="{{profile.relation}}">{{profile.relation.sameBuilding ? '同楼' : ''}} {{profile.relation.sameArea ? '同区' : ''}}</view>
+    <view class="btn btn-ghost" bindtap="report">举报</view>
+  </view>
+  <view class="section-title pad">在售</view>
+  <view class="grid">
+    <view class="cell" wx:for="{{goods}}" wx:key="id">
+      <product-card item="{{item}}" bind:open="open" />
+    </view>
+  </view>
+  <view class="section-title pad">评价</view>
+  <view class="card rev" wx:for="{{reviews}}" wx:key="id">
+    <view>{{item.score}} 分</view>
+    <text>{{item.content}}</text>
+  </view>
+</view>

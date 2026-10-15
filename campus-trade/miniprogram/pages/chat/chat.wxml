@@ -1,0 +1,17 @@
+<view class="page">
+  <view class="item" wx:for="{{list}}" wx:key="id" bindtap="open" data-id="{{item.id}}">
+    <view class="av">{{item.peerName}}</view>
+    <view class="mid">
+      <view class="row space">
+        <text class="n">{{item.title}}</text>
+        <text class="t">{{item.timeText}}</text>
+      </view>
+      <view class="m">{{item.preview}}</view>
+    </view>
+    <view class="badge" wx:if="{{item.unreadCount}}">{{item.unreadCount}}</view>
+  </view>
+  <view class="empty" wx:if="{{!list.length}}">
+    <view class="empty-emoji">💬</view>
+    还没有会话。在商品页点「咨询」开始聊天。
+  </view>
+</view>

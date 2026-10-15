@@ -1,0 +1,16 @@
+.page { padding-bottom: 24rpx; }
+.search {
+  margin: 20rpx 24rpx 8rpx;
+  height: 72rpx;
+  background: #fff;
+  border-radius: 36rpx;
+  display: flex;
+  align-items: center;
+  padding: 0 28rpx;
+}
+.ph { color: #aaa; font-size: 26rpx; }
+.cats { white-space: nowrap; padding: 8rpx 24rpx; }
+.cats .chip { display: inline-block; margin-right: 12rpx; }
+.pad { padding: 16rpx 28rpx; text-align: center; }
+.grid { display: flex; flex-wrap: wrap; padding: 8rpx 16rpx; }
+.cell { width: 50%; box-sizing: border-box; padding: 10rpx; }

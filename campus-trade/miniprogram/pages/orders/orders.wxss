@@ -1,0 +1,6 @@
+.tabs { display: flex; gap: 12rpx; padding: 16rpx 24rpx 0; white-space: nowrap; }
+.tabs .chip { display: inline-block; margin-right: 12rpx; }
+.item { margin: 16rpx 24rpx; padding: 20rpx; display: flex; align-items: center; gap: 16rpx; }
+.mid { flex: 1; }
+.t { font-weight: 700; }
+.m { font-size: 22rpx; color: #8a8a8a; }

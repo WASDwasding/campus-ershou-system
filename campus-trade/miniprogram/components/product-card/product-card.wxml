@@ -1,0 +1,15 @@
+<view class="pcard" bindtap="onTap">
+  <view class="cover">
+    <image wx:if="{{item.coverUrl}}" class="cover-img" src="{{item.coverUrl}}" mode="aspectFill" />
+    <text wx:else class="emoji">📦</text>
+    <view class="st" wx:if="{{item.statusLabel}}">{{item.statusLabel}}</view>
+  </view>
+  <view class="body">
+    <view class="title">{{item.title}}</view>
+    <view class="meta">{{item.meetupName}} {{item.conditionLabel}}</view>
+    <view class="foot">
+      <text class="price">¥{{item.priceText}}</text>
+      <text class="fav">♡ {{item.favoriteCount || 0}}</text>
+    </view>
+  </view>
+</view>
