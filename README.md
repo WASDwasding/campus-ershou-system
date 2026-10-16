@@ -7,7 +7,7 @@
 底座之后分两条线，只加各自的接口，不改底座已有字段、状态机和错误码。分叉关系见 [doc/tree.html](./doc/tree.html)。
 
 1. **AI 模块**：大模型填表、建议价、议价。范围见 [doc/base-API.md](./doc/base-API.md) 第 1 节和 [doc/tree.html](./doc/tree.html)。
-2. **书籍图像质量评估**：在底座上单独加。针对校园里的实体书籍，用图像评估质量。接口和规则还没写，文档待整理。
+2. **书籍视觉分档**：在底座上单独加。用视觉语言模型看校园实体书的照片，按分档规则定档；预价由服务端按档计算，只作参考，不写入订单。分档细则、路径和字段待整理。
 
 环境说明见 [doc/SETUP.md](./doc/SETUP.md)。  
 小程序默认请求 `https://simpleyi.site`。服务器健康检查：<https://simpleyi.site/api/health>  
