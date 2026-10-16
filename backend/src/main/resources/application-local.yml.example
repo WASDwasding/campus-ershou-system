@@ -17,14 +17,15 @@ spring:
       host: 127.0.0.1
       port: 6379
   mail:
-    host: smtp.qq.com
+    host: smtp.163.com
     port: 465
-    username: "你的QQ邮箱@qq.com"
-    password: "授权码，不是QQ密码"
+    username: campus_cat_bazaar@163.com
+    password: "163 客户端授权码，不是登录密码"
     properties:
       mail.smtp.auth: true
       mail.smtp.ssl.enable: true
       mail.smtp.ssl.required: true
+      mail.smtp.ssl.trust: smtp.163.com
 
 app:
   jwt:
@@ -34,7 +35,7 @@ app:
   mail:
     enabled: false
     expose-code: true
-    from: "你的QQ邮箱@qq.com"
+    from: campus_cat_bazaar@163.com
   file:
     # 服务器示例。本机用 application.yml 的默认值即可。
     # dir: /opt/campus-ershou/files

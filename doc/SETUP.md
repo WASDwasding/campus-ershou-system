@@ -28,7 +28,7 @@ mvn spring-boot:run
 
 库名 `campus_ershou`，账号 `root` / `campus`，地址 `127.0.0.1:3307`。本机还要有 Redis（`127.0.0.1:6379`）。首次启动 Flyway 会建表并写入分类、楼栋。
 
-`application-local.yml` 已被 gitignore。把 example 复制过去后填写 QQ SMTP；数据源默认指向 3307。本机若 `app.mail.enabled: true`，注册会发真实邮件，响应不再带 `debugCode`。
+`application-local.yml` 已被 gitignore。把 example 复制过去后填写 163 SMTP（发信账号 `campus_cat_bazaar@163.com`，密码填客户端授权码）；数据源默认指向 3307。本机若 `app.mail.enabled: true`，注册会发真实邮件，响应不再带 `debugCode`。
 
 本机健康检查：`curl http://127.0.0.1:8080/api/health`。测自己的后端时，把 `campus-trade/miniprogram/utils/config.js` 临时改成 `http://127.0.0.1:8080`，测完改回去，不要提交。
 
