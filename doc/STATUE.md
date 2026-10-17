@@ -3,7 +3,7 @@
 核对时间：2026-10-10。阶段：底座（base）。AI 模块和书籍视觉分档还不在这批接口里。  
 约定全文见 [base-API.md](./base-API.md)。下面的参数是给前端对接用的。
 
-**2026-10-10 已部署到 `https://simpleyi.site`。** 注册登录、资料、上传、商品、校园认证审核、通知、订单、模拟支付、聊天、举报和管理端动作都在线上。微信登录 `POST /api/auth/wx-login` 仍要等 AppID。`POST /api/auth/dev-login` 只在本机打开，服务器返回 404。
+**2026-10-10 已部署到 `https://simpleyi.site`。** 注册登录、资料、上传、商品、校园认证审核、通知、订单、模拟支付、聊天、举报和管理端动作都在线上。微信登录 `POST /api/auth/wx-login` 仍要等 AppID，当前不做。模拟发票、税额和 `/api/ai/**` 已写入 [base-API.md](./base-API.md)，代码还没做。`POST /api/auth/dev-login` 只在本机打开，服务器返回 404。
 
 统一响应：`{ "code", "message", "data", "traceId" }`。成功时 `code` 为 `OK`。支付回调 `POST /api/pay/notify/mock` 例外，成功是 `{ "code": "SUCCESS", "message": "OK" }`。  
 登录后请求头：`Authorization: Bearer <token>`。  

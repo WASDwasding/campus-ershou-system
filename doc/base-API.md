@@ -2,7 +2,7 @@
 
 v0.4 设计稿（2026-09-30）。这是后续分叉前的公共底座。技术栈：Spring Boot 3.4 / Java 17、MySQL 8、Redis、原生微信小程序（`campus-trade/miniprogram`）。
 
-已实现范围与 [STATUE.md](./STATUE.md) 一致：健康检查、注册登录、资料、统计角标、公开主页、校园认证提交和管理员审核、上传、商品、通知、订单、模拟支付、聊天、举报、管理端动作。微信登录仍等 AppID。AI 模块和书籍视觉分档只加接口和可选字段，不改这里的字段含义、状态机和错误码。改底座先改本文件。
+已实现范围与 [STATUE.md](./STATUE.md) 一致：健康检查、注册登录、资料、统计角标、公开主页、校园认证提交和管理员审核、上传、商品、通知、订单、模拟支付、聊天、举报、管理端动作。微信登录仍等 AppID，当前不做。第 9 节的模拟发票与税额、第 12 节的 AI 模块只是约定，尚未实现。这些只加接口和可选字段，不改已有字段含义、状态机和错误码。改底座先改本文件。
 
 ## 1. 范围
 
@@ -12,7 +12,7 @@ v0.4 设计稿（2026-09-30）。这是后续分叉前的公共底座。技术�
 
 | 内容 | 去向 |
 | --- | --- |
-| 大模型填表、建议价、议价话术、报价令牌 | AI 模块，路径 `/api/ai/**` |
+| 大模型填表、建议价、议价话术、报价令牌 | AI 模块，见第 12 节。路径 `/api/ai/**`，尚未实现 |
 | 校园实体书的视觉分档和预价 | 书籍视觉分档。视觉语言模型按分档规则定档，服务端按档计算预价。预价不写入订单，也不生成议价话术。路径、字段和分档细则待整理 |
 | 自然语言搜索、求购、候补、组合发布、校园专题、订阅消息、学校统一身份接口 | 不做 |
 | 价格为 0 的赠送 | 不做。价格最低 1 分，订单都走支付 |
@@ -41,6 +41,7 @@ v0.4 设计稿（2026-09-30）。这是后续分叉前的公共底座。技术�
 | 注册响应里的 `debugCode` | 仅 mail 未启用时 | 禁止 |
 | OpenAPI 页面 | 开 | 关 |
 | 模拟支付 | 开 | 开 |
+| AI 上游 | 可关。关闭、超时或失败时三个 `/api/ai/**` 仍返回 200：填表是空草稿，建议价和议价走规则价与固定话术 | 同左。模型密钥只放服务器配置 |
 | 错误响应带异常栈 | 开 | 关，只返回错误码和 traceId |
 
 ## 3. 通用约定
@@ -72,7 +73,7 @@ v0.4 设计稿（2026-09-30）。这是后续分叉前的公共底座。技术�
 - 金额：整数，单位分。`1500` = 15.00 元。前端不计算、不回传金额。
 - ID：用户/商品/订单等是自增整数。`orderNo` 为 `O` + 时间 + 4 位随机数，`paymentNo` 为 `P` 开头，`fileId` 为 `f_` + 随机串。自增 ID 能被遍历，按 ID 取数据必须先查归属。
 - 枚举用大写英文，中文名由 `GET /api/meta` 下发。前端遇到不认识的值显示「未知」。
-- **请求体出现文档没定义的字段：400 `UNKNOWN_FIELD`。** 字段名是 `price`、`amount`、`paid`、`status`、`stock`、`sellerId`、`buyerId`、`userId`、`role` 时再记审计 `TAMPER_FIELD`。当前用户只从 token 取。
+- **请求体出现文档没定义的字段：400 `UNKNOWN_FIELD`。** 字段名是 `price`、`amount`、`paid`、`status`、`stock`、`sellerId`、`buyerId`、`userId`、`role`、`taxAmount`、`taxRate`、`suggestedPrice` 时再记审计 `TAMPER_FIELD`。当前用户只从 token 取。
 - 幂等：下单和创建支付单可带 `Idempotency-Key`（8–64 位）。同一用户、同一键 10 分钟内：成功过就返回原结果；还在处理返回 409 `CONFLICT`。发消息用 `clientMsgId`。
 - 文本按字符计，先 trim。原样保存。小程序用 `<text>`，不用 `rich-text`；管理网页不用 `v-html`。
 - 联系方式（先做 NFKC，全角转半角）：商品标题/描述/交易说明、昵称、简介、面交地点、评价、申诉说明里出现则 400 `CONTACT_INFO_NOT_ALLOWED`。聊天消息不拒绝，命中片段换成 `[联系方式已隐藏]`，`masked: true`。举报说明不检测。
@@ -97,6 +98,10 @@ QQ：   (?:qq|扣扣|企鹅)[\s:：]*[1-9]\d{4,10}
 | 商品列表 | 每人每分钟 120 次 |
 | 下单 | 每人每小时 10 单，另有待支付上限 |
 | 创建支付单 / 模拟付款 | 各每人每小时 20 次 |
+| 开模拟发票 | 每人每小时 20 次 |
+| AI 填表 | 每人每小时 20 次 |
+| AI 建议价 | 每人每分钟 10 次 |
+| AI 议价 | 每人每分钟 20 次 |
 | 开会话 | 每人每小时 30 个 |
 | 发消息 | 每人每分钟 30 条 |
 | 举报 | 每人每天 10 次 |
@@ -104,14 +109,14 @@ QQ：   (?:qq|扣扣|企鹅)[\s:：]*[1-9]\d{4,10}
 | 谁 | 能做什么 |
 | --- | --- |
 | 公开 | 健康检查、元数据、楼栋、分类、注册、登录、管理员登录 |
-| 登录（`status=ACTIVE`） | 浏览、资料、收藏、浏览记录、通知、举报、提交认证 |
-| 已认证（`verifyStatus=VERIFIED`） | 发布、下单、支付、聊天、面交、申诉、评价 |
+| 登录（`status=ACTIVE`） | 浏览、资料、收藏、浏览记录、通知、举报、提交认证、AI 建议价、AI 议价 |
+| 已认证（`verifyStatus=VERIFIED`） | 发布、下单、支付、聊天、面交、申诉、评价、AI 填表、申请模拟发票 |
 | 资源方 | 在上一级之外，还必须是卖家本人、订单买家或卖家、会话成员 |
 | 管理员 | 只认管理员 token |
 
 别人的订单、支付单、会话、私有文件：403，记 `ACCESS_DENIED`。别人的在售商品可看；编辑返回 403。别人已下架或已删除的商品：404。
 
-底线：MyBatis 只用 `#{}`。`ORDER BY` 用白名单。`LIKE` 转义 `%`、`_`、`\`。上传按文件头判断类型，转码，去掉 EXIF。日志不记 token、密码、密钥、完整学号、聊天原文。
+底线：MyBatis 只用 `#{}`。`ORDER BY` 用白名单。`LIKE` 转义 `%`、`_`、`\`。上传按文件头判断类型，转码，去掉 EXIF。日志不记 token、密码、密钥、完整学号、聊天原文、模型原文、填表说明、议价话术和报价令牌。
 
 ## 4. 接口清单
 
@@ -164,6 +169,11 @@ QQ：   (?:qq|扣扣|企鹅)[\s:：]*[1-9]\d{4,10}
 | 支付 | GET | `/api/payments/{paymentNo}` | 买家 |
 | 支付 | POST | `/api/pay/mock/{paymentNo}/confirm` | 买家。`{ "result": "SUCCESS" 或 "FAIL" }`，不能带金额 |
 | 支付 | POST | `/api/pay/notify/mock` | 签名，不用 token |
+| 支付 | POST | `/api/orders/{orderId}/invoice` | 买家。付款成功后开模拟发票。尚未实现 |
+| 支付 | GET | `/api/orders/{orderId}/invoice` | 买家或卖家。尚未实现 |
+| AI | POST | `/api/ai/goods-draft` | 已认证。填表草稿，不写商品。尚未实现 |
+| AI | POST | `/api/ai/quotes` | 登录。建议价和报价令牌。尚未实现 |
+| AI | POST | `/api/ai/bargain` | 登录。话术和新建议价。尚未实现 |
 | 聊天 | POST | `/api/im/conversations` | 已认证。`{ "goodsId" }` |
 | 聊天 | GET | `/api/im/conversations` | 登录 |
 | 聊天 | GET | `/api/im/conversations/{id}` | 会话成员 |
@@ -227,7 +237,7 @@ QQ：   (?:qq|扣扣|企鹅)[\s:：]*[1-9]\d{4,10}
 | messageType | `TEXT`，`IMAGE`，`SYSTEM` |
 | filePurpose | `GOODS` 公开，`AVATAR` 公开，`IM` 会话双方，`VERIFICATION` 本人和管理员，`EVIDENCE` 本人和管理员；用于申诉时订单双方也能看 |
 
-limits：`payTimeoutMinutes` 15，`maxPendingPayOrders` 3，`priceMin` 1，`priceMax` 9999900，标题 2–30，描述 500，交易说明 100，商品图最多 9 张、单张 5242880 字节，昵称 16，简介 60，消息 500，面交地点 40、最多提前 14 天，评价窗口 30 天、内容 200，申诉说明 10–500、证据最多 6 张，举报说明 300。
+limits：`payTimeoutMinutes` 15，`maxPendingPayOrders` 3，`priceMin` 1，`priceMax` 9999900，标题 2–30，描述 500，交易说明 100，商品图最多 9 张、单张 5242880 字节，昵称 16，简介 60，消息 500，面交地点 40、最多提前 14 天，评价窗口 30 天、内容 200，申诉说明 10–500、证据最多 6 张，举报说明 300。实现模拟发票后增加 `mockTaxRate: 100`（万分比，即 1%）。现有字段保持不变。
 
 楼栋：`id`、`name`、`areaId`、`areaName`、`type`、`meetupPoint`、`sort`。停用的不返回。「同区」比 `areaId`。分类：`id`、`name`、`icon`、`sort`。`icon` 对应小程序本地图片。初始分类：教材书籍、数码电子、宿舍电器、生活日用、运动户外、服饰鞋包、考研考证、其他。
 
@@ -380,9 +390,25 @@ amount=1500&gatewayTradeNo=MOCK20260929101602483911&nonce=9f2c7a1e4b6d8f03&order
 
 成功响应不走统一包：HTTP 200 `{ "code": "SUCCESS", "message": "OK" }`。失败 HTTP 400 `{ "code": "FAIL", "message": "<原因>" }`。没收到 200 和 `SUCCESS` 就重发。
 
-退款没有对外接口。触发：卖家取消已付款订单、管理员判退款、管理员下架有已付款订单的商品、迟到的付款。模拟退款立即把支付单改为 `REFUNDED`。
+退款没有对外接口。触发：卖家取消已付款订单、管理员判退款、管理员下架有已付款订单的商品、迟到的付款。模拟退款立即把支付单改为 `REFUNDED`。若该支付单已有 `ISSUED` 发票，同一事务把发票改为 `VOIDED`，并记下冲回。
 
 以后换渠道只换验签和收银台。防重放、回查金额、幂等、状态机必须复用。真实渠道还要加主动查单。
+
+### 模拟发票与税额
+
+尚未实现。挂在付款成功之后，单独记一笔。订单 `amount` 和订单状态机不变。买家实付仍是订单金额，税从这笔金额里拆出，不另加。不对接税局，不产生真实报税。
+
+`invoiceNo` 为 `I` + 时间 + 4 位随机数。状态：`ISSUED` 已开，`VOIDED` 已作废。一笔 `SUCCESS` 支付单最多一张发票。
+
+`POST /api/orders/{orderId}/invoice` 请求体为 `{}`。调用者是买家。支付单须为 `SUCCESS`，订单为 `PAID`、`COMPLETED` 或 `DISPUTED`。已有 `ISSUED` 发票则返回原票，不新建。未付款、已取消，或支付单已是 `REFUNDED`：409 `ORDER_STATUS_INVALID`。发票已是 `VOIDED`：409 `INVOICE_VOIDED`。请求体里出现 `amount`、`taxAmount`、`taxRate` 或其他未定义字段：400 `UNKNOWN_FIELD`。
+
+`GET /api/orders/{orderId}/invoice` 买家或卖家可看。还没开过：404 `NOT_FOUND`。作废后仍返回这张票，`status` 为 `VOIDED`。
+
+开票时从订单复制 `amount`（分）。`taxRate` 固定为 `100`（万分比，1%），与 `GET /api/meta` 的 `limits.mockTaxRate` 相同。税额用整数算：`taxAmount = (amount * taxRate + 5000) / 10000`，`netAmount = amount - taxAmount`。例：`amount=1500` 时 `taxAmount=15`，`netAmount=1485`。
+
+响应字段：`invoiceNo`、`status`、`orderId`、`paymentNo`、`amount`、`netAmount`、`taxRate`、`taxAmount`、`issuedAt`、`voidedAt`（未作废为 null）、`reversal`（未作废为 null）。作废后 `reversal` 为 `{ "taxAmount", "voidedAt" }`，其中 `taxAmount` 等于原税额，表示冲回。
+
+退款把 `ISSUED` 改为 `VOIDED` 的时机与「模拟退款立即把支付单改为 `REFUNDED`」相同，记审计 `INVOICE_VOIDED`。开票成功记 `INVOICE_ISSUED`。`detail` 只含 `invoiceNo`、`orderId`、`paymentNo`、`amount`、`taxAmount`。
 
 ## 10. 聊天
 
@@ -413,14 +439,50 @@ WebSocket：`/ws/im`，请求头带 token，不要把 token 放在 URL 里。无
 | 类别 | 事件 |
 | --- | --- |
 | SECURITY | `TAMPER_FIELD`、`ACCESS_DENIED`、`TOKEN_INVALID`（过期不记）、`LOGIN_FAIL`、`RATE_LIMITED`、`PAY_NOTIFY_BAD_SIGN`、`PAY_NOTIFY_REPLAY`、`PAY_NOTIFY_EXPIRED`、`PAY_NOTIFY_AMOUNT_MISMATCH`、`FILE_REJECTED`、`DEV_LOGIN_BLOCKED` |
-| BUSINESS | `ORDER_STOCK_CONFLICT`、`ORDER_STATUS_CHANGED`、`PAYMENT_SUCCESS`、`PAYMENT_LATE_REFUND`、`GOODS_PRICE_CHANGED`、`IM_CONTACT_MASKED` |
+| BUSINESS | `ORDER_STOCK_CONFLICT`、`ORDER_STATUS_CHANGED`、`PAYMENT_SUCCESS`、`PAYMENT_LATE_REFUND`、`GOODS_PRICE_CHANGED`、`IM_CONTACT_MASKED`、`INVOICE_ISSUED`、`INVOICE_VOIDED`、`AI_QUOTE_CLAMPED` |
 | ADMIN | `ADMIN_VERIFY_APPROVE`、`ADMIN_VERIFY_REJECT`、`ADMIN_USER_BAN`、`ADMIN_USER_UNBAN`、`ADMIN_GOODS_REMOVE`、`ADMIN_GOODS_RESTORE`、`ADMIN_DISPUTE_RESOLVE`、`ADMIN_REPORT_HANDLE` |
 
 Redis 键都加 `campus:`：`lock:goods:{id}` 5 秒；`idem:{userId}:{key}` 10 分钟；`pay:nonce:{nonce}` 10 分钟；`jwt:deny:{jti}` 到 token 过期；`user:tokenver:{userId}`；`order:timeouts:{userId}` 24 小时；`rl:{规则}:{用户或IP}:{时间窗}`；`history:{userId}`；`goods:view:{id}:{yyyyMMdd}`；商品列表和详情短缓存。下单和支付只读 MySQL。释放锁用 Lua：值等于自己的 requestId 才删除。
 
-模块对应包：`/api/auth` → `auth`；`/api/me` 与 `/api/users` → `user`；元数据、楼栋、分类、文件 → `common`；商品 → `goods`；订单 → `order`；支付 → `pay`；聊天和通知 → `im`；举报 → `report`；管理端账号和审计 → `admin`，其余管理接口放在对应业务包。`ai` 包留给 AI 模块，底座不用。书籍视觉分档另起模块，包等文档再定。下单改库存只能调商品模块的方法，不在订单包里直接 `UPDATE goods`。
+模块对应包：`/api/auth` → `auth`；`/api/me` 与 `/api/users` → `user`；元数据、楼栋、分类、文件 → `common`；商品 → `goods`；订单 → `order`；支付 → `pay`；聊天和通知 → `im`；举报 → `report`；管理端账号和审计 → `admin`，其余管理接口放在对应业务包。`/api/ai/**` → `ai`。模拟发票放在 `pay`。书籍视觉分档另起模块，包等文档再定。下单改库存只能调商品模块的方法，不在订单包里直接 `UPDATE goods`。下单和创建支付单不读 AI 的草稿或报价令牌。
 
-## 12. 错误码
+Redis 另有：`ai:draft:{userId}:{draftId}` 10 分钟；`ai:quote:{token}` 10 分钟。发票落库，实现时用 Flyway 加表，字段以第 9 节为准。AI 草稿和报价令牌不建表。
+
+## 12. AI 模块
+
+尚未实现。模型密钥只在服务端配置。建议价只出现在本节三个接口的响应里。商品详情和订单仍只有标价，不写入建议价。发布仍走 `POST /api/goods`，入库价格以用户提交的 `price` 为准。
+
+上游关闭、超过 8 秒或调用失败时，三个接口都返回 HTTP 200，不把上游错误抛给页面。
+
+**填表** `POST /api/ai/goods-draft`。已认证。请求：`imageFileIds`（1–9 个，本人已上传且 `purpose=GOODS`，否则 `FILE_NOT_USABLE`）、`prompt`（可选，1–200 字；含联系方式则 `CONTACT_INFO_NOT_ALLOWED`）。
+
+成功时 `filled` 为 true，并带 `draftId`（`d_` + 随机串）、`title`、`description`、`categoryId`、`condition`、`suggestedPrice`、`tradeNote`、`expiresInSeconds`（600）。草稿只放 Redis。发布接口不读 `draftId`。
+
+模型给出的字段先按发布规则检查：标题 2–30，描述 0–500，交易说明 0–100，分类须启用，成色须是枚举，建议价须在 1–9999900。含联系方式或越界的字段改为 null，其余保留。至少还有一个非空字段则 `filled` 为 true；全部不可用，或上游失败，则 `filled` 为 false，上述字段为 null，仍返回 `draftId`。
+
+**建议价** `POST /api/ai/quotes`。登录。请求只收 `{ "goodsId" }`。商品须 `ON_SALE` 且调用者看得到；否则 404 `NOT_FOUND`。
+
+服务端用库内标价 `listPrice` 和成色算闭区间，单位分，整数除法：
+
+| 成色 | 下限占标价 |
+| --- | --- |
+| `NEW` | 90% |
+| `LIKE_NEW` | 80% |
+| `GOOD` | 70% |
+| `FAIR` | 60% |
+| `POOR` | 50% |
+
+`priceFloor = max(1, listPrice * 百分比 / 100)`，`priceCeiling = listPrice`。下限高于上限时，下限改成上限。规则价是 `(priceFloor + priceCeiling) / 2`。
+
+模型给出的建议价须落在区间内，话术 1–200 字且不含联系方式。价格越界或话术不合格，整份改用规则价和固定话术「建议价已按成色区间给出，成交以商品标价为准。」`source` 为 `MODEL` 或 `RULE`。越界记审计 `AI_QUOTE_CLAMPED`，`detail` 只含 `goodsId`。
+
+响应：`goodsId`、`listPrice`、`priceFloor`、`priceCeiling`、`suggestedPrice`、`script`、`source`、`quoteToken`、`expiresInSeconds`（600）。令牌是 16–32 位随机串，Redis 里绑住用户、商品、标价、建议价和区间。过期或被下一句议价替换后失效。
+
+**议价** `POST /api/ai/bargain`。登录。请求：`goodsId`、`quoteToken`、`message`（可选，1–200 字）。`message` 含联系方式：`CONTACT_INFO_NOT_ALLOWED`。令牌须属于当前用户、未过期，且其中的 `goodsId`、`listPrice` 与当前商品一致；否则 400 `QUOTE_TOKEN_INVALID`。商品已不是在售：409 `GOODS_NOT_AVAILABLE`。
+
+新建议价仍用上一节的区间。返回字段与建议价相同，并换发新令牌，旧令牌删除。上游失败时 `source` 为 `RULE`，HTTP 200。
+
+## 13. 错误码
 
 | code | HTTP | 含义 |
 | --- | --- | --- |
@@ -436,6 +498,7 @@ Redis 键都加 `campus:`：`lock:goods:{id}` 5 秒；`idem:{userId}:{key}` 10 �
 | `FILE_TYPE_NOT_ALLOWED` | 400 | 不是 JPEG、PNG、WebP |
 | `FILE_NOT_USABLE` | 400 | fileId 不能用 |
 | `PAY_CHANNEL_UNSUPPORTED` | 400 | 渠道不是 `MOCK` |
+| `QUOTE_TOKEN_INVALID` | 400 | 报价令牌无效、过期，或与当前商品标价不一致 |
 | `UNAUTHORIZED` | 401 | 未登录或 token 失效 |
 | `BAD_CREDENTIALS` | 401 | 学号/密码错误，或管理员账号/密码错 |
 | `FORBIDDEN` | 403 | 不是资源所属人，或没有管理权限 |
@@ -457,6 +520,7 @@ Redis 键都加 `campus:`：`lock:goods:{id}` 5 秒；`idem:{userId}:{key}` 10 �
 | `ORDER_STATUS_INVALID` | 409 | 订单状态不允许该操作 |
 | `ORDER_EXPIRED` | 409 | 订单已超时 |
 | `PAYMENT_NOT_PAYABLE` | 409 | 支付单已付款、关闭或过期 |
+| `INVOICE_VOIDED` | 409 | 发票已因退款作废 |
 | `DISPUTE_NOT_OPEN` | 409 | 没有进行中的申诉 |
 | `ALREADY_REVIEWED` | 409 | 已评价 |
 | `REVIEW_WINDOW_CLOSED` | 409 | 超过评价期 |
@@ -475,7 +539,7 @@ Redis 键都加 `campus:`：`lock:goods:{id}` 5 秒；`idem:{userId}:{key}` 10 �
 
 攻防时至少要看到这些结果：下单带 `price` 被拒绝且无订单；并发抢一件只有一单成功；伪造或改金额的回调不改变订单；A 的 token 不能读 B 的订单和会话；`sort` 不能注入；标题里的 `<script>` 原样保存但不执行；服务器上 `dev-login` 为 404；登出和封禁后旧 token 失效。
 
-## 13. 待确认
+## 14. 待确认
 
 已定：模拟网关、域名 `simpleyi.site`、库名 `ershou`、小程序默认连服务器。当前登录走学号 + 密码；微信登录等 AppID。
 
@@ -493,3 +557,4 @@ Redis 键都加 `campus:`：`lock:goods:{id}` 5 秒；`idem:{userId}:{key}` 10 �
 | v0.6 | 2026-10-08 | 管理员独立成 `admins` 表。已实现管理员登录、登出、当前管理员、改密。审核接口仍未做 |
 | v0.7 | 2026-10-10 | 管理员可看待办、审核校园认证（通过/驳回）。用户可拉通知并标已读。角标里的未读通知改为真实数量。已部署到 `simpleyi.site` |
 | v0.8 | 2026-10-10 | 订单、模拟支付、面交、申诉、评价、聊天 HTTP/WebSocket、举报，以及用户封禁、商品下架/恢复、分类楼栋维护、审计查询。角标和评分改为真实数据。`wx-login` 仍未做。已部署到 `simpleyi.site` |
+| v0.9 | 2026-10-17 | 约定模拟发票与税额（第 9 节）、AI 填表、建议价、议价（第 12 节）。只加接口，尚未实现。微信登录仍不做。订单金额、状态机和已有字段不变 |
