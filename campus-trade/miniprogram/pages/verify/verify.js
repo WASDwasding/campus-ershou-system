@@ -8,7 +8,6 @@ Page({
     status: 'UNVERIFIED',
     statusLabel: '',
     rejectReason: '',
-    studentNo: '',
     dorms: [],
     dormNames: [],
     dormIndex: 0,
@@ -21,7 +20,7 @@ Page({
       this.setData({
         status,
         statusLabel: labelOf('verifyStatus', status),
-        rejectReason: (v && v.reason) || ''
+        rejectReason: (v && v.rejectReason) || ''
       })
     }).catch(showError)
     api.buildings({ type: 'DORM' }).then((data) => {
@@ -29,7 +28,6 @@ Page({
       this.setData({ dorms, dormNames: dorms.map((d) => d.name) })
     }).catch(() => {})
   },
-  onNo(e) { this.setData({ studentNo: e.detail.value }) },
   onDorm(e) { this.setData({ dormIndex: Number(e.detail.value) }) },
   card() {
     wx.chooseMedia({
@@ -46,13 +44,10 @@ Page({
     })
   },
   submit() {
-    const studentNo = (this.data.studentNo || '').trim()
-    if (!/^\d{8,12}$/.test(studentNo)) return wx.showToast({ title: '学号为 8–12 位数字', icon: 'none' })
     const dorm = this.data.dorms[this.data.dormIndex]
     if (!dorm) return wx.showToast({ title: '请选择宿舍楼', icon: 'none' })
     if (!this.data.fileId) return wx.showToast({ title: '请上传证件照', icon: 'none' })
     api.submitVerification({
-      studentNo,
       dormBuildingId: dorm.id,
       cardImageFileId: this.data.fileId
     }).then(() => {

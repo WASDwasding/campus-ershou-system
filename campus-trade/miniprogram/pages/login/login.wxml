@@ -2,10 +2,53 @@
   <view class="hero">
     <image class="logo" src="/images/logo.png" />
     <view class="name">校园二手</view>
-    <view class="sub">微信登录 · 校园认证后交易</view>
+    <view class="sub">学号登录 · 校园认证后交易</view>
   </view>
   <view class="card form">
-    <view class="btn btn-primary" bindtap="login">微信登录</view>
+    <view class="tabs" wx:if="{{mode === 'login' || mode === 'register'}}">
+      <view class="tab {{mode === 'login' ? 'on' : ''}}" bindtap="showLogin">登录</view>
+      <view class="tab {{mode === 'register' ? 'on' : ''}}" bindtap="showRegister">注册</view>
+    </view>
+
+    <block wx:if="{{mode === 'login'}}">
+      <view class="label">学号</view>
+      <input class="inp" type="number" maxlength="12" placeholder="8–12 位数字" value="{{studentNo}}" bindinput="onStudentNo" />
+      <view class="label">密码</view>
+      <input class="inp" password maxlength="64" placeholder="请输入密码" value="{{password}}" bindinput="onPassword" />
+      <view class="btn btn-primary" bindtap="login">登录</view>
+    </block>
+
+    <block wx:if="{{mode === 'register'}}">
+      <view class="label">学号</view>
+      <input class="inp" type="number" maxlength="12" placeholder="8–12 位数字" value="{{studentNo}}" bindinput="onStudentNo" />
+      <view class="label">用户名</view>
+      <input class="inp" maxlength="16" placeholder="1–16 字，中文、字母、数字、下划线" value="{{username}}" bindinput="onUsername" />
+      <view class="label">邮箱</view>
+      <input class="inp" maxlength="128" placeholder="用于接收验证码" value="{{email}}" bindinput="onEmail" />
+      <view class="btn btn-primary" bindtap="sendCode">发送验证码</view>
+    </block>
+
+    <block wx:if="{{mode === 'code'}}">
+      <view class="step">验证邮箱</view>
+      <view class="hint">验证码已发送到 {{emailMasked}}，10 分钟内有效。</view>
+      <view class="hint" wx:if="{{debugCode}}">本机调试验证码：{{debugCode}}</view>
+      <view class="label">验证码</view>
+      <input class="inp" type="number" maxlength="6" placeholder="6 位数字" value="{{code}}" bindinput="onCode" />
+      <view class="btn btn-primary" bindtap="verifyCode">下一步</view>
+      <view class="link {{cooldown ? 'off' : ''}}" bindtap="sendCode">{{cooldown ? '重新发送（' + cooldown + 's）' : '重新发送'}}</view>
+      <view class="link" bindtap="showRegister">返回修改</view>
+    </block>
+
+    <block wx:if="{{mode === 'password'}}">
+      <view class="step">设置密码</view>
+      <view class="hint">密码 8–64 位。设置完成后会直接登录。</view>
+      <view class="label">密码</view>
+      <input class="inp" password maxlength="64" placeholder="至少 8 位" value="{{password}}" bindinput="onPassword" />
+      <view class="label">确认密码</view>
+      <input class="inp" password maxlength="64" placeholder="再输入一次" value="{{confirm}}" bindinput="onConfirm" />
+      <view class="btn btn-primary" bindtap="finishRegister">完成注册</view>
+    </block>
+
     <view class="hint center">{{healthText}}</view>
     <view class="hint center">登录后请填写资料并提交校园认证。认证通过才能发布和下单。</view>
   </view>

@@ -1,8 +1,6 @@
 const { baseUrl } = require('./config')
 const session = require('./session')
 
-let reloginTask = null
-
 function showError(err) {
   if (!err) {
     wx.showToast({ title: '请求失败', icon: 'none' })
@@ -32,44 +30,6 @@ function showError(err) {
   const extra = Array.isArray(fields) && fields.length ? '：' + fields.map((f) => f.message).join('；') : ''
   const msg = (err.message || '请求失败') + extra
   wx.showToast({ title: msg.slice(0, 36), icon: 'none' })
-}
-
-function wxLoginCode() {
-  return new Promise((resolve, reject) => {
-    wx.login({
-      success(res) {
-        if (res.code) resolve(res.code)
-        else reject({ code: 'WX_LOGIN_FAILED', message: '没有拿到微信登录 code' })
-      },
-      fail() {
-        reject({ code: 'WX_LOGIN_FAILED', message: '微信登录失败' })
-      }
-    })
-  })
-}
-
-function relogin() {
-  if (reloginTask) return reloginTask
-  reloginTask = wxLoginCode()
-    .then((code) =>
-      raw({
-        url: '/api/auth/wx-login',
-        method: 'POST',
-        data: { code },
-        auth: false,
-        retry: false
-      })
-    )
-    .then((data) => {
-      session.setSession(data.token, data.user)
-      const app = getApp()
-      if (app && app.globalData) app.globalData.user = data.user
-      return data.token
-    })
-    .finally(() => {
-      reloginTask = null
-    })
-  return reloginTask
 }
 
 function raw(options) {
@@ -102,15 +62,12 @@ function raw(options) {
           data: body.data || null,
           traceId: body.traceId || ''
         }
-        if (res.statusCode === 401 && options.auth !== false && options.retry !== false) {
-          relogin()
-            .then(() => raw(Object.assign({}, options, { retry: false })))
-            .then(resolve)
-            .catch(() => {
-              session.clear()
-              wx.reLaunch({ url: '/pages/login/login' })
-              reject(err)
-            })
+        if (res.statusCode === 401 && options.auth !== false) {
+          session.clear()
+          const socket = require('./socket')
+          socket.close()
+          wx.reLaunch({ url: '/pages/login/login' })
+          reject(err)
           return
         }
         reject(err)
@@ -148,4 +105,4 @@ function upload(filePath, purpose) {
   })
 }
 
-module.exports = { raw, upload, showError, relogin, wxLoginCode }
+module.exports = { raw, upload, showError }
