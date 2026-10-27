@@ -19,16 +19,16 @@
     "pages/my-goods/my-goods"
   ],
   "window": {
-    "navigationBarBackgroundColor": "#3D7A5A",
+    "navigationBarBackgroundColor": "#7EB6D9",
     "navigationBarTitleText": "校园二手",
     "navigationBarTextStyle": "white",
-    "backgroundColor": "#F4F1EA",
+    "backgroundColor": "#F3F8FC",
     "backgroundTextStyle": "dark"
   },
   "tabBar": {
-    "color": "#9A9A9A",
-    "selectedColor": "#3D7A5A",
-    "backgroundColor": "#FFFDF8",
+    "color": "#8AA0B0",
+    "selectedColor": "#7EB6D9",
+    "backgroundColor": "#FFFFFF",
     "borderStyle": "white",
     "list": [
       {

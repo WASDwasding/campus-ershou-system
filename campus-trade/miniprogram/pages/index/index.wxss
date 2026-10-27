@@ -8,7 +8,7 @@
   align-items: center;
   padding: 0 28rpx;
 }
-.ph { color: #aaa; font-size: 26rpx; }
+.ph { color: #8aa0b0; font-size: 26rpx; }
 .cats { white-space: nowrap; padding: 8rpx 24rpx; }
 .cats .chip { display: inline-block; margin-right: 12rpx; }
 .pad { padding: 16rpx 28rpx; text-align: center; }

@@ -1,11 +1,11 @@
 .box { margin: 20rpx 24rpx; padding: 24rpx; }
 .photos { display: flex; flex-wrap: wrap; gap: 16rpx; margin-top: 16rpx; }
-.ph { width: 160rpx; height: 160rpx; border-radius: 16rpx; overflow: hidden; position: relative; background: #f3eee6; }
+.ph { width: 160rpx; height: 160rpx; border-radius: 16rpx; overflow: hidden; position: relative; background: #e4eef5; }
 .ph-img { width: 100%; height: 100%; }
-.add { display: flex; align-items: center; justify-content: center; font-size: 56rpx; color: #aaa; }
+.add { display: flex; align-items: center; justify-content: center; font-size: 56rpx; color: #8aa0b0; }
 .x { position: absolute; right: 4rpx; top: 4rpx; width: 36rpx; height: 36rpx; background: rgba(0,0,0,.5); color: #fff; border-radius: 50%; text-align: center; line-height: 36rpx; }
-.label { margin: 16rpx 0 8rpx; color: #666; font-size: 24rpx; }
-.inp, .area, .pick { background: #f7f3ea; border-radius: 14rpx; padding: 18rpx 20rpx; }
+.label { margin: 16rpx 0 8rpx; color: #7d8f9c; font-size: 24rpx; }
+.inp, .area, .pick { background: #f3f8fc; border-radius: 14rpx; padding: 18rpx 20rpx; color: #2e4150; }
 .area { width: 100%; min-height: 140rpx; }
 .pub { margin: 12rpx 24rpx 40rpx; }
 .box .btn { margin-top: 20rpx; }
