@@ -2,7 +2,7 @@
   background: #fff;
   border-radius: 20rpx;
   overflow: hidden;
-  box-shadow: 0 8rpx 20rpx rgba(61, 122, 90, 0.06);
+  box-shadow: 0 8rpx 20rpx rgba(46, 65, 80, 0.06);
 }
 .cover {
   height: 220rpx;
@@ -22,8 +22,8 @@
   position: absolute;
   left: 12rpx;
   top: 12rpx;
-  background: rgba(45, 90, 66, 0.86);
-  color: #fff;
+  background: #f7c9d4;
+  color: #2e4150;
   font-size: 20rpx;
   padding: 4rpx 12rpx;
   border-radius: 8rpx;
@@ -40,7 +40,7 @@
 }
 .meta {
   font-size: 20rpx;
-  color: #8a8a8a;
+  color: #7d8f9c;
   margin-top: 6rpx;
 }
 .foot {
@@ -50,11 +50,11 @@
   margin-top: 8rpx;
 }
 .price {
-  color: #c45c5c;
+  color: #4f90b8;
   font-weight: 700;
   font-size: 28rpx;
 }
 .fav {
   font-size: 20rpx;
-  color: #999;
+  color: #8aa0b0;
 }

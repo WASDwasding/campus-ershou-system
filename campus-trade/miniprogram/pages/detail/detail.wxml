@@ -10,7 +10,7 @@
   <view class="card main">
     <view class="row space">
       <view class="price lg">¥{{item.priceText}}</view>
-      <view class="chip">{{item.conditionLabel}}</view>
+      <view class="tag">{{item.conditionLabel}}</view>
     </view>
     <view class="title">{{item.title}}</view>
     <view class="muted">{{item.categoryName}} · {{item.meetupName}} · {{item.statusLabel}}</view>

@@ -3,4 +3,4 @@
 .item { margin: 16rpx 24rpx; padding: 20rpx; display: flex; align-items: center; gap: 16rpx; }
 .mid { flex: 1; }
 .t { font-weight: 700; }
-.m { font-size: 22rpx; color: #8a8a8a; }
+.m { font-size: 22rpx; color: #7d8f9c; }

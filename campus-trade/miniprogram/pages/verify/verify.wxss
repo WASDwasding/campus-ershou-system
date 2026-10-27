@@ -1,5 +1,5 @@
 .box { margin: 24rpx; padding: 28rpx; }
-.st { font-weight: 700; color: #3d7a5a; }
-.label { margin: 16rpx 0 8rpx; color: #666; }
-.inp { background: #f7f3ea; border-radius: 14rpx; padding: 18rpx 20rpx; }
+.st { font-weight: 700; color: #4f90b8; }
+.label { margin: 16rpx 0 8rpx; color: #7d8f9c; }
+.inp { background: #f3f8fc; border-radius: 14rpx; padding: 18rpx 20rpx; color: #2e4150; }
 .box .btn { margin-top: 16rpx; }

@@ -1,6 +1,6 @@
 .box { margin: 24rpx; padding: 28rpx; }
 .n { font-size: 36rpx; font-weight: 800; }
-.m { color: #666; margin-top: 6rpx; }
+.m { color: #7d8f9c; margin-top: 6rpx; }
 .pad { padding: 0 28rpx; }
 .grid { display: flex; flex-wrap: wrap; padding: 8rpx 16rpx; }
 .cell { width: 50%; box-sizing: border-box; padding: 10rpx; }

@@ -1,6 +1,6 @@
 .item { margin: 16rpx 24rpx; background: #fff; border-radius: 20rpx; padding: 20rpx; display: flex; gap: 16rpx; align-items: center; }
-.av { width: 80rpx; height: 80rpx; border-radius: 50%; background: #3d7a5a; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.av { width: 80rpx; height: 80rpx; border-radius: 50%; background: #7eb6d9; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; }
 .mid { flex: 1; min-width: 0; }
 .n { font-weight: 700; }
-.t { font-size: 22rpx; color: #aaa; }
-.m { color: #666; font-size: 24rpx; margin-top: 6rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.t { font-size: 22rpx; color: #8aa0b0; }
+.m { color: #7d8f9c; font-size: 24rpx; margin-top: 6rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

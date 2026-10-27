@@ -3,5 +3,5 @@
 .row { display: flex; align-items: stretch; margin: 0 16rpx 12rpx; }
 .grow { flex: 1; }
 .ops { width: 120rpx; display: flex; flex-direction: column; justify-content: center; gap: 8rpx; }
-.op { background: #e7f3ec; color: #2c5a42; text-align: center; border-radius: 12rpx; padding: 8rpx 0; font-size: 24rpx; }
+.op { background: #e8f4fa; color: #4f90b8; text-align: center; border-radius: 12rpx; padding: 8rpx 0; font-size: 24rpx; }
 .danger { background: #fdecec; color: #c45c5c; }

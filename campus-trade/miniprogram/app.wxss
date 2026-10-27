@@ -1,17 +1,15 @@
 page {
-  --green: #3d7a5a;
-  --green-dark: #2c5a42;
-  --green-soft: #e7f3ec;
-  --pink: #e8a0bf;
-  --cream: #fff8ee;
-  --sky: #8ec8e3;
-  --ink: #2a2a2a;
-  --muted: #8a8a8a;
+  --blue: #7eb6d9;
+  --blue-deep: #4f90b8;
+  --pink: #f7c9d4;
+  --cream: #f6e7b4;
+  --ink: #2e4150;
+  --muted: #7d8f9c;
   --card: #ffffff;
-  --warn: #e09a3a;
-  --danger: #c45c5c;
-  --line: #efe8dc;
-  background: #f4f1ea;
+  --line: #e4eef5;
+  --field: #f3f8fc;
+  --soft: #e8f4fa;
+  background: #f3f8fc;
   color: var(--ink);
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 28rpx;
@@ -25,7 +23,7 @@ page {
 .card {
   background: var(--card);
   border-radius: 24rpx;
-  box-shadow: 0 8rpx 24rpx rgba(61, 122, 90, 0.06);
+  box-shadow: 0 8rpx 24rpx rgba(46, 65, 80, 0.06);
 }
 
 .btn {
@@ -39,26 +37,26 @@ page {
 }
 
 .btn-primary {
-  background: var(--green);
+  background: var(--blue);
   color: #fff;
 }
 
 .btn-primary:active {
-  opacity: 0.86;
+  background: var(--blue-deep);
 }
 
 .btn-ghost {
-  background: var(--green-soft);
-  color: var(--green-dark);
+  background: var(--soft);
+  color: var(--blue-deep);
 }
 
 .btn-warn {
-  background: #fff4e4;
-  color: #b36b12;
+  background: var(--soft);
+  color: var(--blue-deep);
 }
 
 .btn-disabled {
-  background: #d8d8d8;
+  background: #d5dee6;
   color: #fff;
 }
 
@@ -66,26 +64,34 @@ page {
   padding: 8rpx 20rpx;
   border-radius: 999rpx;
   font-size: 22rpx;
-  background: #f3eee6;
-  color: #666;
+  background: #fff;
+  color: var(--ink);
 }
 
 .chip-on {
-  background: var(--green);
+  background: var(--blue);
   color: #fff;
 }
 
+.tag {
+  padding: 4rpx 14rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  background: var(--pink);
+  color: var(--ink);
+}
+
 .tag-ai {
-  background: #eef6ff;
-  color: #3a6ea5;
+  background: var(--cream);
+  color: var(--ink);
   padding: 4rpx 12rpx;
   border-radius: 8rpx;
   font-size: 20rpx;
 }
 
 .tag-ref {
-  background: #fff4e4;
-  color: #b36b12;
+  background: var(--pink);
+  color: var(--ink);
   padding: 4rpx 12rpx;
   border-radius: 8rpx;
   font-size: 20rpx;
@@ -96,7 +102,7 @@ page {
 }
 
 .price {
-  color: #c45c5c;
+  color: var(--blue-deep);
   font-weight: 700;
 }
 
@@ -136,7 +142,7 @@ page {
   height: 32rpx;
   padding: 0 8rpx;
   border-radius: 16rpx;
-  background: #c45c5c;
+  background: var(--blue-deep);
   color: #fff;
   font-size: 20rpx;
   display: flex;
