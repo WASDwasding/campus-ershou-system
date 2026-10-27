@@ -75,11 +75,9 @@ function connect() {
       return
     }
     if (res && res.code === 4401) {
-      const request = require('./request')
-      request
-        .relogin()
-        .then(() => connect())
-        .catch(() => {})
+      stopped = true
+      session.clear()
+      wx.reLaunch({ url: '/pages/login/login' })
       return
     }
     scheduleRetry()

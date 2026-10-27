@@ -46,8 +46,17 @@ const api = {
   categories() {
     return raw({ url: '/api/categories' })
   },
-  wxLogin(code) {
-    return raw({ url: '/api/auth/wx-login', method: 'POST', data: { code }, auth: false, retry: false })
+  register(body) {
+    return raw({ url: '/api/auth/register', method: 'POST', data: body, auth: false })
+  },
+  verifyRegisterCode(body) {
+    return raw({ url: '/api/auth/register/verify-code', method: 'POST', data: body, auth: false })
+  },
+  setPassword(body) {
+    return raw({ url: '/api/auth/register/set-password', method: 'POST', data: body, auth: false })
+  },
+  login(body) {
+    return raw({ url: '/api/auth/login', method: 'POST', data: body, auth: false })
   },
   logout() {
     return raw({ url: '/api/auth/logout', method: 'POST', data: {} })
