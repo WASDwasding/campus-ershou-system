@@ -1,9 +1,9 @@
 # 现状（本机 vs 服务器）
 
-核对时间：2026-10-10。阶段：底座（base）。AI 模块和书籍视觉分档还不在这批接口里。  
+核对时间：2026-11-02。阶段：底座加上分支 A。书籍视觉分档还不在这批接口里。  
 约定全文见 [base-API.md](./base-API.md)。下面的参数是给前端对接用的。
 
-**2026-10-10 已部署到 `https://simpleyi.site`。** 注册登录、资料、上传、商品、校园认证审核、通知、订单、模拟支付、聊天、举报和管理端动作都在线上。微信登录 `POST /api/auth/wx-login` 仍要等 AppID，当前不做。模拟发票、税额和 `/api/ai/**` 已写入 [base-API.md](./base-API.md)，代码还没做。`POST /api/auth/dev-login` 只在本机打开，服务器返回 404。
+**2026-11-02 已部署到 `https://simpleyi.site`。** 注册登录、资料、上传、商品、校园认证审核、通知、订单、模拟支付、聊天、举报、管理端动作，以及 `/api/ai/goods-draft`、`/api/ai/quotes`、`/api/ai/bargain` 都在线上。微信登录 `POST /api/auth/wx-login` 仍要等 AppID，当前不做。模拟发票和税额只写在 [base-API.md](./base-API.md)，代码还没做。`POST /api/auth/dev-login` 只在本机打开，服务器返回 404。
 
 统一响应：`{ "code", "message", "data", "traceId" }`。成功时 `code` 为 `OK`。支付回调 `POST /api/pay/notify/mock` 例外，成功是 `{ "code": "SUCCESS", "message": "OK" }`。  
 登录后请求头：`Authorization: Bearer <token>`。  
@@ -16,7 +16,7 @@
 | | 本机 | 服务器 |
 | --- | --- | --- |
 | 入口 | `http://127.0.0.1:8080` | `https://simpleyi.site` |
-| 代码 | 当前仓库 | `/opt/campus-ershou/campus-ershou.jar`（2026-10-10 交易包，上一版留在 bak-20261010-trade） |
+| 代码 | 当前仓库 | `/opt/campus-ershou/campus-ershou.jar`（2026-11-02 分支 A，上一版留在 bak-20261102） |
 | MySQL | `127.0.0.1:3307` / `campus_ershou` | `127.0.0.1:3306` / `ershou`，Flyway 已建到 v5 |
 | 图片 | `.data/files` | `/opt/campus-ershou/files`，公网 `https://simpleyi.site` |
 
@@ -179,6 +179,8 @@ data：`{ fileId, purpose, url, thumbUrl }`。私有图的 `url` 约 10 分钟�
 ---
 
 ## 这次部署做了什么
+
+2026-11-02 换上分支 A 的包。库 `ershou` 没有新的 Flyway 版本，AI 草稿和报价令牌只放 Redis。服务器配置只加了 `app.ai`，库、邮件、图片目录和已有密钥没改。旧 jar 留在 `/opt/campus-ershou/campus-ershou.jar.bak-20261102`，旧配置留在 `application-local.yml.bak-20261102`。
 
 2026-10-10 换上带审核和通知的包。服务器库 `ershou` 由 Flyway 从 v3 迁到 v4（通知表、审计表、认证申请增加审核人）。服务器配置、邮件和图片目录没改。旧 jar 留在 `/opt/campus-ershou/campus-ershou.jar.bak-20261010`。
 
