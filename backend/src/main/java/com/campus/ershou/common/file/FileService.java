@@ -126,6 +126,18 @@ public class FileService {
         return fileMapper.findById(fileId);
     }
 
+    public byte[] readJpeg(String fileId) {
+        Path file = path(fileId, false);
+        try {
+            if (!Files.isRegularFile(file)) {
+                return null;
+            }
+            return Files.readAllBytes(file);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
     public Map<String, Object> describe(StoredFile file, boolean includePurpose) {
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("fileId", file.getId());

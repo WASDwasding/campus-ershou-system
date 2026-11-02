@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
 
     private static final Set<String> TAMPER_FIELDS = Set.of(
             "price", "amount", "paid", "status", "stock",
-            "sellerId", "buyerId", "userId", "role"
+            "sellerId", "buyerId", "userId", "role", "suggestedPrice"
     );
 
     @ExceptionHandler(ApiException.class)
