@@ -24,6 +24,8 @@ public class AppProperties {
     private final Pay pay = new Pay();
     @NestedConfigurationProperty
     private final DevLogin devLogin = new DevLogin();
+    @NestedConfigurationProperty
+    private final Ai ai = new Ai();
 
     public Jwt getJwt() {
         return jwt;
@@ -55,6 +57,10 @@ public class AppProperties {
 
     public DevLogin getDevLogin() {
         return devLogin;
+    }
+
+    public Ai getAi() {
+        return ai;
     }
 
     public static class Jwt {
@@ -285,6 +291,81 @@ public class AppProperties {
 
         public void setSecret(String secret) {
             this.secret = secret;
+        }
+    }
+
+    public static class Ai {
+        private boolean enabled = false;
+        private String baseUrl = "";
+        private String apiKey = "";
+        private String model = "qwen3-vl-flash";
+        private Duration timeout = Duration.ofSeconds(8);
+        private int draftPerMinute = 5;
+        private int quotePerMinute = 10;
+        private int bargainPerMinute = 10;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getBaseUrl() {
+            return baseUrl;
+        }
+
+        public void setBaseUrl(String baseUrl) {
+            this.baseUrl = baseUrl;
+        }
+
+        public String getApiKey() {
+            return apiKey;
+        }
+
+        public void setApiKey(String apiKey) {
+            this.apiKey = apiKey;
+        }
+
+        public String getModel() {
+            return model;
+        }
+
+        public void setModel(String model) {
+            this.model = model;
+        }
+
+        public Duration getTimeout() {
+            return timeout;
+        }
+
+        public void setTimeout(Duration timeout) {
+            this.timeout = timeout;
+        }
+
+        public int getDraftPerMinute() {
+            return draftPerMinute;
+        }
+
+        public void setDraftPerMinute(int draftPerMinute) {
+            this.draftPerMinute = draftPerMinute;
+        }
+
+        public int getQuotePerMinute() {
+            return quotePerMinute;
+        }
+
+        public void setQuotePerMinute(int quotePerMinute) {
+            this.quotePerMinute = quotePerMinute;
+        }
+
+        public int getBargainPerMinute() {
+            return bargainPerMinute;
+        }
+
+        public void setBargainPerMinute(int bargainPerMinute) {
+            this.bargainPerMinute = bargainPerMinute;
         }
     }
 }

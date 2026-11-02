@@ -115,6 +115,15 @@ public class GoodsService {
         return toDetail(goods, viewer);
     }
 
+    public GoodsRow findVisible(long viewerId, long goodsId) {
+        userService.requireUser(viewerId);
+        GoodsRow goods = goodsMapper.findById(goodsId);
+        if (!canSee(goods, viewerId)) {
+            return null;
+        }
+        return goods;
+    }
+
     @Transactional
     public Map<String, Object> create(long sellerId, GoodsWriteRequest request) {
         UserEntity seller = requireVerified(sellerId);

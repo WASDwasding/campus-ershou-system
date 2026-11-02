@@ -70,4 +70,12 @@ public final class RedisKeys {
     public static String orderTimeouts(long userId) {
         return PREFIX + "order:timeouts:" + userId;
     }
+
+    public static String aiDraft(long userId, String draftId) {
+        return PREFIX + "ai:draft:" + userId + ":" + draftId;
+    }
+
+    public static String aiQuote(String token) {
+        return PREFIX + "ai:quote:" + token;
+    }
 }

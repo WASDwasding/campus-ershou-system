@@ -37,6 +37,7 @@ public enum ErrorCode {
     ORDER_RESTRICTED(HttpStatus.FORBIDDEN, "超时未付次数过多"),
     PAYMENT_NOT_PAYABLE(HttpStatus.CONFLICT, "支付单不可付款"),
     PAY_CHANNEL_UNSUPPORTED(HttpStatus.BAD_REQUEST, "不支持的支付渠道"),
+    QUOTE_TOKEN_INVALID(HttpStatus.BAD_REQUEST, "报价令牌无效、过期，或与当前商品标价不一致"),
     DISPUTE_NOT_OPEN(HttpStatus.CONFLICT, "没有进行中的申诉"),
     ALREADY_REVIEWED(HttpStatus.CONFLICT, "已评价"),
     REVIEW_WINDOW_CLOSED(HttpStatus.CONFLICT, "超过评价期"),
