@@ -1,5 +1,7 @@
 # 校园二手交易平台 · Base API
 
+这份是作业目录里的旧稿，不要按它对接。现行约定是仓库的 [doc/base-API.md](../../doc/base-API.md) v1.6。
+
 v0.3 设计稿（2026-09-29）。项目 A（AI 议价）、项目 B（成色与仲裁）分叉前的公共底座。技术栈：Spring Boot 3.4 / Java 17、MySQL 8、Redis、uni-app 微信小程序。
 
 除 `GET /api/health` 外都还没实现。A、B 只加接口和可选字段，不改这里的字段含义、状态机和错误码。改底座先改本文件。

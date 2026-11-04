@@ -1,6 +1,10 @@
 # 数据库
 
-当前进度：底座。已有注册登录、资料、校园认证申请和审核、通知、上传、商品、收藏、订单、模拟支付、聊天、举报、管理端。AI 草稿和报价令牌用 Redis，不建表。模拟发票的表还没加，字段见 [../doc/base-API.md](../doc/base-API.md) 第 9 节。书籍视觉分档还没有表。表结构以本目录为准。Flyway 迁移到 `V5__trade.sql`。
+当前文件描述的是仓库里已经建好的库，Flyway 到 `V5__trade.sql`。接口目标是 [../doc/base-API.md](../doc/base-API.md) v1.6，这套表还对不上，下一步应新增迁移，不要改已经在线上执行过的 `V1`–`V5`。
+
+v1.6 还需要、而现有表没有的内容：微信 openid、认证用的姓名和学院、禁止再发布标记、商品同义叫法、商品状态「待面交 / 申诉中」、下单时的完整商品快照、按订单保存的聊天、支付通知记录（到达时间、金额、是否采纳、原因）、支付状态「待支付 / 已支付 / 已取消 / 模拟退回」。
+
+现有库里的 `favorites`、`reviews`、按商品建的 `conversations`、学号密码和邮箱注册字段，是旧实现留下的。v1.6 不再提供收藏、评价、浏览记录、议价话术和模拟发票，也不再把这些当成对接接口。AI 草稿只放 Redis，不建表。书籍视觉分档没有表，也不在本期。
 
 不建 `user_balance`。以后订单表名用 `orders`。
 
@@ -56,16 +60,16 @@ admins         （独立；审核时写入 campus_verifications.reviewed_by 和 
 | `areas` | 校区区域（东区 / 西区） | 楼栋归属；`GET /api/campus/buildings` 带出 `areaId` / `areaName` |
 | `buildings` | 楼栋 | 楼栋列表、资料里的宿舍、商品面交点 |
 | `categories` | 商品一级分类 | `GET /api/categories`、发布商品 |
-| `users` | 账号 | 注册、登录、资料、公开主页 |
+| `users` | 账号。现有列是学号密码注册；v1.6 学生登录改为微信 | 登录、资料、公开主页 |
 | `stored_files` | 上传后的图片 | `POST /api/files` |
-| `campus_verifications` | 校园认证申请 | 用户提交；管理员通过 / 驳回 |
+| `campus_verifications` | 校园认证。现有列只有宿舍楼和校园卡；v1.6 还要姓名、学号、学院 | 用户提交；管理员通过 / 驳回 |
 | `goods` / `goods_images` | 商品和图片 | 商品列表、详情、发布 |
-| `favorites` | 收藏 | 收藏接口 |
+| `favorites` | 旧收藏表。v1.6 不做收藏，新接口不要再读写它 | 旧代码 |
 | `admins` | 管理员，与 `users` 分开 | `POST /api/admin/auth/login`。不使用学号 |
 | `notifications` | 站内通知 | 审核结果；`GET /api/notifications` |
 | `audit_logs` | 审计 | 通过 / 驳回时写入，不记驳回原因原文 |
 
-验证码、设置密码凭证、登录失败计数、JWT 黑名单、浏览记录、每日浏览去重在 **Redis**（前缀 `campus:`），不建表。
+验证码、设置密码凭证、登录失败计数、JWT 黑名单、浏览记录、每日浏览去重仍在 **Redis**（前缀 `campus:`）。这些是旧注册和浏览记录留下的。v1.6 的学生会话、商品列表缓存和下单短锁也用 Redis，键名以 [../doc/base-API.md](../doc/base-API.md) 第 11 节为准。
 
 ## `areas`
 
@@ -106,6 +110,8 @@ admins         （独立；审核时写入 campus_verifications.reviewed_by 和 
 只有一级。初始 8 个：教材书籍、数码电子、宿舍电器、生活日用、运动户外、服饰鞋包、考研考证、其他。
 
 ## `users`
+
+下面是**当前库**的列，对应旧的学号密码注册。v1.6 学生登录改为微信，学号改到校园认证里采集；改表时新增迁移，不要直接改这段已经上线的列定义。
 
 | 列 | 类型 | 说明 |
 | --- | --- | --- |

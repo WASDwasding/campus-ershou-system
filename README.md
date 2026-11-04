@@ -2,12 +2,9 @@
 
 对抗赛题目：同题竞技 + 安全攻防。后端 Spring Boot，前端是 `campus-trade/miniprogram` 里的原生微信小程序。
 
-当前进度：仓库处在底座（base）。后端已有注册登录、资料、上传、校园认证审核、通知、商品、订单、模拟支付、聊天、举报和管理端。线上范围以 [doc/STATUE.md](./doc/STATUE.md) 为准。表结构在 [sql/](./sql/)。微信登录还要等 AppID。
+当前进度：接口约定已按说明书 V1.6 写成 [doc/base-API.md](./doc/base-API.md)。前后端按这份约定改。仓库里的代码和 `https://simpleyi.site` 仍是旧实现，线上实际进程见 [doc/STATUE.md](./doc/STATUE.md)。表结构在 [sql/](./sql/)，现有库还没迁到 V1.6。
 
-底座之后分两条线，只加各自的接口，不改底座已有字段、状态机和错误码。分叉关系见 [doc/tree.html](./doc/tree.html)。
-
-1. **AI 模块**：大模型填表、建议价、议价。范围见 [doc/base-API.md](./doc/base-API.md) 第 1 节和 [doc/tree.html](./doc/tree.html)。
-2. **书籍视觉分档**：在底座上单独加。用视觉语言模型看校园实体书的照片，按分档规则定档；预价由服务端按档计算，只作参考，不写入订单。分档细则、路径和字段待整理。
+本期范围以说明书为准：微信登录、校园认证、发布与浏览、建议价、下单、沙箱支付、订单内聊天、面交、申诉、通知、商品举报。AI 只做商品草稿和建议价，建议价不进订单。书籍视觉分档不在本期。
 
 环境说明见 [doc/SETUP.md](./doc/SETUP.md)。  
 小程序默认请求 `https://simpleyi.site`。服务器健康检查：<https://simpleyi.site/api/health>  
@@ -28,11 +25,11 @@ doc/            文档
 | --- | --- |
 | [doc/SETUP.md](./doc/SETUP.md) | 怎么跑起来 |
 | [doc/ARCH.md](./doc/ARCH.md) | 模块和约定 |
-| [doc/base-API.md](./doc/base-API.md) | 底座接口约定。已实现的范围和参数见 [doc/STATUE.md](./doc/STATUE.md) |
-| [doc/STATUE.md](./doc/STATUE.md) | 线上现状和给前端的接口参数 |
-| [doc/校园智能二手交易平台软件项目计划.docx](./doc/校园智能二手交易平台软件项目计划.docx) | 项目计划书 |
-| [doc/技术过程.txt](./doc/技术过程.txt) | 计划书第 4 部分 |
-| [sql/](./sql/) | 表结构、初始数据和说明 |
+| [doc/base-API.md](./doc/base-API.md) | 前后端按此对接的 v1.6 接口约定 |
+| [doc/STATUE.md](./doc/STATUE.md) | 本机和线上旧进程的现状，不是新接口说明 |
+| [doc/D3-第一组-软件需求规格说明书-V1.6.docx](./doc/D3-第一组-软件需求规格说明书-V1.6.docx) | 最终需求说明书 |
+| [doc/第一组项目计划书.docx](./doc/第一组项目计划书.docx) | 项目计划书 |
+| [sql/](./sql/) | 当前库的表结构、初始数据和说明 |
 | [doc/TONEW.md](./doc/TONEW.md) | Git 新手教程 |
 
 ## 协作

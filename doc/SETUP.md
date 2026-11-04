@@ -1,6 +1,6 @@
 # 启动
 
-Git 不会用先看 [TONEW.md](./TONEW.md)。接口字段看 [base-API.md](./base-API.md)。表结构看 [../sql/README.md](../sql/README.md)。
+Git 不会用先看 [TONEW.md](./TONEW.md)。前后端按 [base-API.md](./base-API.md) v1.6 对接。本机和 `https://simpleyi.site` 现在跑的仍是旧进程，响应不要当成新接口；线上旧进程见 [STATUE.md](./STATUE.md)。表结构看 [../sql/README.md](../sql/README.md)，现有库还没迁到 v1.6。
 
 需要：Git、JDK 17+、Maven、[微信开发者工具](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html)。前端不用在本机装数据库，也不用在本机起后端。后端写接口时才需要本机的 MySQL 和 Redis，可以用仓库里的 `docker-compose.yml`。
 
@@ -28,7 +28,7 @@ mvn spring-boot:run
 
 库名 `campus_ershou`，账号 `root` / `campus`，地址 `127.0.0.1:3307`。本机还要有 Redis（`127.0.0.1:6379`）。首次启动 Flyway 会建表并写入分类、楼栋。
 
-`application-local.yml` 已被 gitignore。把 example 复制过去后填写 163 SMTP（发信账号 `campus_cat_bazaar@163.com`，密码填客户端授权码）；数据源默认指向 3307。本机若 `app.mail.enabled: true`，注册会发真实邮件，响应不再带 `debugCode`。
+`application-local.yml` 已被 gitignore。把 example 复制过去后填写数据源，默认指向 3307。旧进程的注册仍会发邮箱验证码；若 `app.mail.enabled: true`，把 163 SMTP 填进去（发信账号 `campus_cat_bazaar@163.com`，密码填客户端授权码），响应里不再带 `debugCode`。v1.6 的学生登录不走这封邮件，改完代码后这段只在还没删掉旧注册接口时有用。
 
 本机健康检查：`curl http://127.0.0.1:8080/api/health`。测自己的后端时，把 `campus-trade/miniprogram/utils/config.js` 临时改成 `http://127.0.0.1:8080`，测完改回去，不要提交。
 
@@ -36,7 +36,7 @@ mvn spring-boot:run
 
 停掉项目 MySQL：`bash sql/stop-local-mysql.sh`。
 
-线上已在 2026-10-10 部署。再更新时：把 jar 传到 `/opt/campus-ershou/campus-ershou.jar`，然后 `sudo systemctl restart campus-ershou`。服务器配置在 `/opt/campus-ershou/application-local.yml`，不要用本机整份覆盖（库名是 `ershou`，和本机 `campus_ershou` 不同）。邮件、图片目录 `/opt/campus-ershou/files` 和 `public-base-url: https://simpleyi.site` 已经写在那份配置里。没测完的包不要先传上去。启动时 Flyway 会自己迁到当前版本，不要在服务器上手动导入 `schema.sql`。
+线上 jar 仍是 2026-11-02 的旧包。再更新时：把 jar 传到 `/opt/campus-ershou/campus-ershou.jar`，然后 `sudo systemctl restart campus-ershou`。服务器配置在 `/opt/campus-ershou/application-local.yml`，不要用本机整份覆盖（库名是 `ershou`，和本机 `campus_ershou` 不同）。邮件、图片目录 `/opt/campus-ershou/files` 和 `public-base-url: https://simpleyi.site` 已经写在那份配置里。没测完的包不要先传上去。启动时 Flyway 会自己迁到当前版本，不要在服务器上手动导入 `schema.sql`。
 
 macOS 若 `java` 报找不到 Runtime：
 
