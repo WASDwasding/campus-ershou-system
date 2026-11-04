@@ -1,6 +1,6 @@
 # 校园二手交易平台 · Base API
 
-这份是作业目录里的旧稿，不要按它对接。现行约定是仓库的 [doc/base-API.md](../../doc/base-API.md) v1.6。
+这份是作业目录里的旧稿，不要按它对接。现行约定是仓库的 [doc/base-API.md](../../doc/base-API.md) v1.6.1：学号注册登录保留，并增加微信登录。
 
 v0.3 设计稿（2026-09-29）。项目 A（AI 议价）、项目 B（成色与仲裁）分叉前的公共底座。技术栈：Spring Boot 3.4 / Java 17、MySQL 8、Redis、uni-app 微信小程序。
 
