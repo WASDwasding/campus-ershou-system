@@ -1,5 +1,7 @@
 # Campus Trade
 
+课程要交的前端是 `miniprogram/` 里的原生微信小程序，接口以仓库根目录的 [doc/base-API.md](../doc/base-API.md) v1.6 为准。下面从 “iOS-first” 起，写的是同目录里还没接入这套接口的 Expo 原型，不要按它做收藏、评价、信用分或「联系卖家」。
+
 iOS-first React Native (Expo) campus second-hand marketplace. Lake-blue visual language, student-ID verification, and **smart low-light product posting** with client-side recognition simulation.
 
 ## Features

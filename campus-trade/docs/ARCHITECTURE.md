@@ -1,5 +1,9 @@
 # Campus Trade — Engineering Notes
 
+课程小程序在 `../miniprogram/`，接口见仓库 `doc/base-API.md` v1.6。本文件只记录同目录 Expo 原型里的前端试验，不作为对接约定。
+
+
+
 ## Smart recognition pipeline (frontend)
 
 `services/vision.ts` orchestrates the demo ML UX:
