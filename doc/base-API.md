@@ -1,6 +1,6 @@
 # 校园二手交易平台 · Base API
 
-v1.6（2026-11-04）。学生端接口以《软件需求规格说明书 V1.6》为准，登录、商品状态、订单、支付、聊天、申诉、举报和 AI 都按该说明书写进本文。技术栈：Spring Boot 3.4 / Java 17、MySQL 8、Redis、微信小程序。
+v1.6.1（2026-11-04）。商品、订单、支付、聊天、申诉、举报和 AI 仍按《软件需求规格说明书 V1.6》书写。登录按组内决定：保留学号注册和学号密码登录，并增加微信登录。技术栈：Spring Boot 3.4 / Java 17、MySQL 8、Redis、微信小程序。
 
 线上 `https://simpleyi.site` 仍是改正前的进程，已部署行为见 [STATUE.md](./STATUE.md)。本文是下一版约定。改代码前以本文为准；与本文冲突的旧字段、旧状态机和旧路径停止使用。
 
@@ -8,8 +8,8 @@ v1.6（2026-11-04）。学生端接口以《软件需求规格说明书 V1.6》�
 
 **本期要做：**
 
-- 微信登录。系统按微信标识建立或找回用户。
-- 校园身份人工审核。学生提交姓名、学号、学院、楼栋和校园卡照片。未通过只能浏览。
+- 学号注册登录，以及微信登录。学号注册走邮箱验证码和密码；微信按 openid 找回或建立用户。已有学号账号可以再绑定微信，之后两种方式进入同一个用户。
+- 校园身份人工审核。学生提交姓名、学号、学院、楼栋和校园卡照片。未通过只能浏览。学号注册的账号，认证时填写的学号必须与注册学号一致。
 - 手填发布，或先要 AI 草稿再确认。按关键词（含卖家确认的同义叫法）、楼栋、价格区间查找。
 - 议价建议。建议价不进订单。失败时提示「暂无建议价」。
 - 下单只提交商品编号和数量 1。成交价由服务端按商品编号读取。同一商品同时只有一笔未结束订单。满 15 分钟未支付则释放。
@@ -23,7 +23,6 @@ v1.6（2026-11-04）。学生端接口以《软件需求规格说明书 V1.6》�
 
 | 撤下 | 原因 |
 | --- | --- |
-| 学号 + 邮箱验证码注册、学号 + 密码登录 | 学生登录改为微信。学号只在校园认证里提交 |
 | `PUT/DELETE /api/goods/{id}/favorite`、`GET /api/me/favorites` | 本期不做收藏 |
 | `GET/DELETE /api/me/history` | 本期不做浏览记录 |
 | `POST /api/orders/{id}/review`、`GET /api/users/{id}/reviews`、主页 `rating` | 本期不做评价、信用分、差评 |
@@ -51,7 +50,7 @@ v1.6（2026-11-04）。学生端接口以《软件需求规格说明书 V1.6》�
 
 密钥放服务器或本机的 `application-local.yml`，不进仓库：数据库、Redis、`app.jwt.secret`（≥32 字节）、`app.student-no.hmac-key`、`wx.app-id`、`wx.app-secret`、`pay.mock.secret`、`file.sign-key`、`admin.init-password`。
 
-MySQL 保存用户、商品、订单、商品快照、聊天消息、支付记录、支付通知、申诉、举报和通知。Redis 用于会话、商品列表热点缓存，以及下单短锁。业务状态以 MySQL 为准，重启后仍可查询。
+MySQL 保存用户、商品、订单、商品快照、聊天消息、支付记录、支付通知、申诉、举报和通知。Redis 用于会话、注册验证码、商品列表热点缓存，以及下单短锁。业务状态以 MySQL 为准，重启后仍可查询。
 
 | 开关 | local | server |
 | --- | --- | --- |
@@ -64,7 +63,7 @@ MySQL 保存用户、商品、订单、商品快照、聊天消息、支付记�
 ## 3. 通用约定
 
 - JSON，`camelCase`。上传用 `multipart/form-data`。小程序不用 `PATCH`。查询里多个值用逗号。多出来的查询参数忽略。
-- 登录头：`Authorization: Bearer <token>`。JWT 固定 HS256，拒绝 `alg: none`。载荷：`sub`、`typ`（`user` / `admin`）、`ver`、`jti`、`iat`、`exp`。用户 7 天，管理员 12 小时。两种 token 不能互调。会话是否仍有效以 Redis 为准。登出后旧 token 失效。401 时重新微信登录，只重试一次。
+- 登录头：`Authorization: Bearer <token>`。JWT 固定 HS256，拒绝 `alg: none`。载荷：`sub`、`typ`（`user` / `admin`）、`ver`、`jti`、`iat`、`exp`。用户 7 天，管理员 12 小时。两种 token 不能互调。会话是否仍有效以 Redis 为准。登出后旧 token 失效。401 时重新登录（学号密码或微信），只重试一次。
 - 除健康检查、私有图片本体、支付回调外，响应都是：
 
 ```json
@@ -103,6 +102,8 @@ QQ：   (?:qq|扣扣|企鹅)[\s:：]*[1-9]\d{4,10}
 
 | 限流 | 上限 |
 | --- | --- |
+| 发送注册验证码 | 每 IP 每分钟 10 次，同一邮箱 60 秒一次 |
+| 学号密码登录失败 | 15 分钟 5 次后锁 15 分钟 |
 | 微信登录 | 每 IP 每分钟 10 次 |
 | 管理员登录失败 | 15 分钟 5 次后锁 15 分钟 |
 | 提交校园认证 | 每人每天 3 次 |
@@ -119,7 +120,7 @@ QQ：   (?:qq|扣扣|企鹅)[\s:：]*[1-9]\d{4,10}
 
 | 谁 | 能做什么 |
 | --- | --- |
-| 公开 | 健康检查、元数据、楼栋、分类、微信登录、管理员登录 |
+| 公开 | 健康检查、元数据、楼栋、分类、学号注册三步、学号密码登录、微信登录、管理员登录 |
 | 登录且未认证 | 浏览商品、改自己的资料、看通知、提交校园认证、看建议价 |
 | 已认证（`verifyStatus=VERIFIED`） | 在上一行之外：发布、下单、支付、确认面交、申诉、举报、发订单聊天、要商品草稿 |
 | `publishBanned=true` | 仍可登录和买东西。`POST /api/goods` 与重新上架返回 403 `PUBLISH_BANNED` |
@@ -138,7 +139,12 @@ QQ：   (?:qq|扣扣|企鹅)[\s:：]*[1-9]\d{4,10}
 | 系统 | GET | `/api/meta` | 公开 |
 | 基础 | GET | `/api/campus/buildings?type=&meetupOnly=` | 公开 |
 | 基础 | GET | `/api/categories` | 公开。只有一级 |
-| 认证 | POST | `/api/auth/wx-login` | 公开。`{ "code" }` |
+| 认证 | POST | `/api/auth/register` | 公开。`{ studentNo, username, email }` |
+| 认证 | POST | `/api/auth/register/verify-code` | 公开。`{ email, code }` |
+| 认证 | POST | `/api/auth/register/set-password` | 公开。`{ setupToken, password }`，成功即登录 |
+| 认证 | POST | `/api/auth/login` | 公开。`{ studentNo, password }` |
+| 认证 | POST | `/api/auth/wx-login` | 公开。`{ code }` |
+| 认证 | POST | `/api/auth/wx-bind` | 登录。`{ code }`，把微信绑到当前账号 |
 | 认证 | POST | `/api/auth/logout` | 登录 |
 | 认证 | POST | `/api/auth/dev-login` | 仅 local。`{ "devOpenid" }` 匹配 `^dev-[a-z0-9-]{3,32}$`。不进入验收 |
 | 认证 | GET | `/api/auth/campus-verification` | 登录 |
@@ -208,7 +214,7 @@ QQ：   (?:qq|扣扣|企鹅)[\s:：]*[1-9]\d{4,10}
 | 管理 | GET、POST | `/api/admin/buildings` | 管理员 |
 | 管理 | PUT | `/api/admin/buildings/{id}` | 管理员 |
 
-主流程：微信登录 → 提交姓名、学号、学院、楼栋、校园卡 → 管理员通过 → 卖家手填或确认草稿后发布 → 买家浏览（详情没有聊天）→ 下单 → 沙箱付款被采纳 → 待面交后在本单聊天里约定时间和地点 → 双方确认面交。待面交可申诉，管理员在取消、继续完成、驳回里选一个。
+主流程：学号注册或微信登录 → 提交姓名、学号、学院、楼栋、校园卡 → 管理员通过 → 卖家手填或确认草稿后发布 → 买家浏览（详情没有聊天）→ 下单 → 沙箱付款被采纳 → 待面交后在本单聊天里约定时间和地点 → 双方确认面交。待面交可申诉，管理员在取消、继续完成、驳回里选一个。已用学号注册的用户，可以在登录后再绑定微信。
 
 ## 5. 枚举与上限
 
@@ -239,9 +245,23 @@ limits：`payTimeoutMinutes` 15，`priceMin` 1，`priceMax` 9999900，标题 2�
 
 ## 6. 认证、用户、文件
 
-学生登录只有微信。`POST /api/auth/wx-login` 请求 `{ "code" }`。服务端用 code 向微信换 openid：已有用户则找回，没有则建立。响应 `{ token, expiresAt, isNewUser, user }`。新用户 `verifyStatus=UNVERIFIED`，`publishBanned=false`。code 无效或已用过：400 `WX_LOGIN_FAILED`。微信不可用：503 `UPSTREAM_UNAVAILABLE`。openid 只落库，任何接口都不返回 openid，也不返回微信号。
+学生有两种登录方式，进的是同一个用户。
 
-`dev-login` 仅本机，且 `app.dev-login.enabled=true`。它按 `devOpenid` 造用户，不能代替微信登录。
+**学号注册。** `POST /api/auth/register` 请求 `{ "studentNo", "username", "email" }`。学号 `^\d{8,12}$`。用户名 1–16 个字符，只含中文、字母、数字和下划线，且不能含联系方式。邮箱转成小写，最长 128。学号、用户名、邮箱任一已被占用：409，分别是 `STUDENT_NO_TAKEN`、`USERNAME_TAKEN`、`EMAIL_TAKEN`。成功时发 6 位验证码，响应 `{ "emailMasked", "expiresInSeconds" }`，验证码 10 分钟有效。同一邮箱 60 秒内不能重发。本机在邮件未开启且 `expose-code` 为 true 时，响应多一个 `debugCode`；服务器不返回这个字段。
+
+**校验验证码。** `POST /api/auth/register/verify-code` 请求 `{ "email", "code" }`。成功返回 `{ "setupToken", "expiresInSeconds" }`，凭证 15 分钟有效。验证码错误：400 `INVALID_CODE`，同一封最多错 5 次，超过后该码作废。没有待验证记录、已作废或已过期：400 `CODE_EXPIRED`。
+
+**设置密码并登录。** `POST /api/auth/register/set-password` 请求 `{ "setupToken", "password" }`。密码 8–64 位。凭证无效或过期：400 `SETUP_TOKEN_INVALID`。成功写入用户，`verifyStatus=UNVERIFIED`，`publishBanned=false`，并直接登录。响应 `{ "token", "expiresAt", "isNewUser": true, "user" }`。学号只存 HMAC 和脱敏串，密码只存 BCrypt。
+
+**学号密码登录。** `POST /api/auth/login` 请求 `{ "studentNo", "password" }`。成功响应同上，`isNewUser` 为 false。学号不存在、密码不对、或该账号还没设过密码：一律 401 `BAD_CREDENTIALS`，响应不说明是哪一种。15 分钟内失败 5 次后锁定 15 分钟，429 `LOGIN_LOCKED`，响应头 `Retry-After` 为剩余秒数。
+
+**微信登录。** `POST /api/auth/wx-login` 请求 `{ "code" }`。服务端用 code 向微信换 openid。这个 openid 已经绑在某个用户上：登录该用户，`isNewUser` 为 false。还没有绑定：新建未认证用户，不写学号、邮箱和密码，`isNewUser` 为 true，`verifyStatus=UNVERIFIED`，`publishBanned=false`。服务端生成用户名，昵称与用户名相同，随后可在资料里改昵称。code 无效或已用过：400 `WX_LOGIN_FAILED`。微信不可用：503 `UPSTREAM_UNAVAILABLE`。openid 只落库，任何接口都不返回 openid，也不返回微信号。
+
+**绑定微信。** 已经用学号注册的用户，登录后调用 `POST /api/auth/wx-bind`，请求 `{ "code" }`。服务端把这次 code 对应的 openid 写到当前用户，之后该微信登录进入这个账号。成功 `{ "wxBound": true }`。openid 已经属于当前用户：同样返回成功，不新建用户。openid 属于别人，或当前用户已经绑了另一个微信：409 `WX_ALREADY_BOUND`，绑定保持原样。
+
+只通过微信建立、还没有设密码的用户，用微信登录。学号密码登录不会进入这种账号。
+
+`dev-login` 仅本机，且 `app.dev-login.enabled=true`。它按 `devOpenid` 造用户，不能代替学号登录或微信登录。
 
 **登出** `POST /api/auth/logout`。令牌版本加一，当前会话从 Redis 失效。
 
@@ -250,16 +270,16 @@ limits：`payTimeoutMinutes` 15，`priceMin` 1，`priceMax` 9999900，标题 2�
 | 字段 | 规则 |
 | --- | --- |
 | realName | 必填，1–20 |
-| studentNo | 必填，`^\d{8,12}$`。只在这里采集 |
+| studentNo | 必填，`^\d{8,12}$`。注册时已经有学号的，必须填同一个学号，填别的返回 400，`fieldErrors` 指向 `studentNo`。还没有学号的（仅微信建立），在这里写入并占用该学号 |
 | college | 必填，1–30 |
 | dormBuildingId | 必填，启用中的 `DORM` |
 | cardImageFileId | 必填，用途 `VERIFICATION` |
 
-学号已属于其他用户：409 `STUDENT_NO_TAKEN`。已认证：409 `ALREADY_VERIFIED`。审核中：409 `VERIFICATION_PENDING`。驳回后可再交。进度在未提交时 `status=UNVERIFIED`。本人进度返回状态、驳回原因、提交时间、宿舍楼，不返回证件地址。
+学号已属于其他用户：409 `STUDENT_NO_TAKEN`。注册和认证都会占用学号，后提交的一方得到这个错误。已认证：409 `ALREADY_VERIFIED`。审核中：409 `VERIFICATION_PENDING`。驳回后可再交。进度在未提交时 `status=UNVERIFIED`。本人进度返回状态、驳回原因、提交时间、宿舍楼，不返回证件地址。
 
 管理员详情返回 `realName`、完整 `studentNo`、`college`、宿舍楼、校园卡临时地址。通过后 `verifyStatus=VERIFIED`。驳回须写 2–100 字原因，`verifyStatus=REJECTED`。已处理再审：409 `VERIFICATION_NOT_PENDING`。证件照审核结束 30 天后删除。公开接口不返回宿舍号、完整学号、姓名和学院。
 
-**资料** `GET /api/me`：`id`、`nickname`、`avatarUrl`、`bio`、`status`、`verifyStatus`、`realName`、`college`、`studentNoMasked`、`dormBuilding`、`publishBanned`、`createdAt`。没有微信号字段。
+**资料** `GET /api/me`：`id`、`username`、`nickname`、`avatarUrl`、`bio`、`status`、`verifyStatus`、`realName`、`college`、`studentNoMasked`、`emailMasked`、`wxBound`、`dormBuilding`、`publishBanned`、`createdAt`。没有邮箱时 `emailMasked` 为 null。没有微信号字段，也不返回 openid。
 
 `PUT /api/me/profile` 可改 `nickname`（1–16）、`avatarFileId`、`bio`（≤60，`null` 清空）、`dormBuildingId`（必须是 `DORM`，`null` 清空）。不能改姓名、学号、学院，也不能用外部图片 URL。
 
@@ -534,12 +554,15 @@ Redis 键都加 `campus:`：`lock:goods:{id}` 5 秒；`idem:{userId}:{key}` 10 �
 | `VALIDATION_FAILED` | 400 | 字段不合法，看 `fieldErrors` |
 | `UNKNOWN_FIELD` | 400 | 请求体有文档外字段 |
 | `CONTACT_INFO_NOT_ALLOWED` | 400 | 文本含联系方式 |
+| `INVALID_CODE` | 400 | 注册验证码错误 |
+| `CODE_EXPIRED` | 400 | 注册验证码过期、作废或不存在 |
+| `SETUP_TOKEN_INVALID` | 400 | 设置密码凭证无效或已过期 |
 | `WX_LOGIN_FAILED` | 400 | 微信 code 无效或已用过 |
 | `FILE_TYPE_NOT_ALLOWED` | 400 | 不是 JPEG、PNG、WebP |
 | `FILE_NOT_USABLE` | 400 | fileId 不能用 |
 | `PAY_CHANNEL_UNSUPPORTED` | 400 | 渠道不是 `MOCK` |
 | `UNAUTHORIZED` | 401 | 未登录或 token 失效 |
-| `BAD_CREDENTIALS` | 401 | 管理员账号或密码错 |
+| `BAD_CREDENTIALS` | 401 | 学号或密码错误；管理员登录时是账号或密码错。响应不说明具体是哪一项 |
 | `FORBIDDEN` | 403 | 不是资源所属人，或没有管理权限 |
 | `NOT_VERIFIED` | 403 | 需要校园认证 |
 | `PUBLISH_BANNED` | 403 | 因疑似欺诈被禁止再发布，账号仍可登录 |
@@ -551,6 +574,9 @@ Redis 键都加 `campus:`：`lock:goods:{id}` 5 秒；`idem:{userId}:{key}` 10 �
 | `ALREADY_VERIFIED` | 409 | 已经认证 |
 | `VERIFICATION_PENDING` | 409 | 认证审核中 |
 | `STUDENT_NO_TAKEN` | 409 | 学号已被绑定 |
+| `USERNAME_TAKEN` | 409 | 用户名已被占用 |
+| `EMAIL_TAKEN` | 409 | 邮箱已被注册 |
+| `WX_ALREADY_BOUND` | 409 | 微信已属于别人，或当前账号已绑定另一个微信 |
 | `GOODS_NOT_EDITABLE` | 409 | 当前商品状态不能改 |
 | `GOODS_NOT_AVAILABLE` | 409 | 不能下单。可带 `myOrderId` |
 | `CANNOT_BUY_OWN_GOODS` | 409 | 不能买自己的商品 |
@@ -564,7 +590,7 @@ Redis 键都加 `campus:`：`lock:goods:{id}` 5 秒；`idem:{userId}:{key}` 10 �
 | `FILE_TOO_LARGE` | 413 | 超过 5 MB |
 | `RATE_LIMITED` | 429 | 看 `Retry-After` |
 | `AI_DAILY_QUOTA` | 429 | 当日草稿或建议价已满 20 次 |
-| `LOGIN_LOCKED` | 429 | 管理员登录失败次数过多 |
+| `LOGIN_LOCKED` | 429 | 学号密码或管理员登录失败次数过多 |
 | `INTERNAL_ERROR` | 500 | 服务器错误 |
 | `UPSTREAM_UNAVAILABLE` | 503 | 微信或模型上游不可用 |
 
@@ -574,9 +600,9 @@ Redis 键都加 `campus:`：`lock:goods:{id}` 5 秒；`idem:{userId}:{key}` 10 �
 
 ## 14. 待确认
 
-已定：模拟网关、域名 `simpleyi.site`、库名 `ershou`、小程序默认连服务器、学生登录用微信、订单聊天代替微信号。
+已定：模拟网关、域名 `simpleyi.site`、库名 `ershou`、小程序默认连服务器、学号注册登录与微信登录并存、订单聊天代替微信号。
 
-未定：微信小程序的 AppID 何时写入服务器配置；管理端页面放在小程序里还是单独网页；学号是否收紧到本校号段；图片放磁盘还是对象存储。AppID 未就绪时，验收环境仍按本文的 `wx-login` 和认证字段联调，不把学号密码登录加回约定。
+未定：微信小程序的 AppID 何时写入服务器配置；管理端页面放在小程序里还是单独网页；学号是否收紧到本校号段；图片放磁盘还是对象存储。AppID 未就绪时，学号注册和学号密码登录可以先联调。`wx-login` 与 `wx-bind` 的换票要等 `wx.app-id`、`wx.app-secret` 写入 `application-local.yml`。本机仍可用 `dev-login`，它不进入验收。
 
 ## 变更记录
 
@@ -588,3 +614,4 @@ Redis 键都加 `campus:`：`lock:goods:{id}` 5 秒；`idem:{userId}:{key}` 10 �
 | v0.4 | 2026-09-30 | 注册改为学号+用户名+邮箱验证码，登录改为学号+密码 |
 | v0.5–v0.10 | 2026-10-05 至 2026-11-02 | 认证、商品、订单、模拟支付、聊天、举报、管理端和 AI 按当时约定实现并部署。细节见 git 历史 |
 | v1.6 | 2026-11-04 | 按说明书 V1.6 改约定：微信登录与五项认证材料；商品补待面交/申诉中；支付改为待支付/已支付/已取消/模拟退回；聊天改到订单上并按阶段开关；申诉四种类型和三种结案；举报只处理商品且不取消订单；建议价失败返回「暂无建议价」，草稿和建议每日各 20 次。撤下收藏、浏览记录、评价、议价话术、按商品聊天、面交结构化字段、封号和模拟发票。线上进程尚未按本版修改 |
+| v1.6.1 | 2026-11-04 | 保留学号邮箱注册和学号密码登录，并增加微信登录与登录后绑定。学号注册的账号在注册时占用学号；仅微信建立的账号在校园认证时写入学号。两种方式绑定后进入同一个用户 |

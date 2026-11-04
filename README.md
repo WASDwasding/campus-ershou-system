@@ -2,9 +2,9 @@
 
 对抗赛题目：同题竞技 + 安全攻防。后端 Spring Boot，前端是 `campus-trade/miniprogram` 里的原生微信小程序。
 
-当前进度：接口约定已按说明书 V1.6 写成 [doc/base-API.md](./doc/base-API.md)。前后端按这份约定改。仓库里的代码和 `https://simpleyi.site` 仍是旧实现，线上实际进程见 [doc/STATUE.md](./doc/STATUE.md)。表结构在 [sql/](./sql/)，现有库还没迁到 V1.6。
+当前进度：接口约定见 [doc/base-API.md](./doc/base-API.md) v1.6.1。前后端按这份约定改。学号注册登录已经在代码里；微信登录还没做。仓库里的其余交易流程和 `https://simpleyi.site` 仍是旧实现，线上实际进程见 [doc/STATUE.md](./doc/STATUE.md)。表结构在 [sql/](./sql/)，现有库还没有微信 openid。
 
-本期范围以说明书为准：微信登录、校园认证、发布与浏览、建议价、下单、沙箱支付、订单内聊天、面交、申诉、通知、商品举报。AI 只做商品草稿和建议价，建议价不进订单。书籍视觉分档不在本期。
+本期范围：学号注册登录和微信登录、校园认证、发布与浏览、建议价、下单、沙箱支付、订单内聊天、面交、申诉、通知、商品举报。商品到举报的规则以说明书 V1.6 为准，登录以接口约定为准。AI 只做商品草稿和建议价，建议价不进订单。书籍视觉分档不在本期。
 
 环境说明见 [doc/SETUP.md](./doc/SETUP.md)。  
 小程序默认请求 `https://simpleyi.site`。服务器健康检查：<https://simpleyi.site/api/health>  
@@ -25,7 +25,7 @@ doc/            文档
 | --- | --- |
 | [doc/SETUP.md](./doc/SETUP.md) | 怎么跑起来 |
 | [doc/ARCH.md](./doc/ARCH.md) | 模块和约定 |
-| [doc/base-API.md](./doc/base-API.md) | 前后端按此对接的 v1.6 接口约定 |
+| [doc/base-API.md](./doc/base-API.md) | 前后端按此对接的 v1.6.1 接口约定 |
 | [doc/STATUE.md](./doc/STATUE.md) | 本机和线上旧进程的现状，不是新接口说明 |
 | [doc/D3-第一组-软件需求规格说明书-V1.6.docx](./doc/D3-第一组-软件需求规格说明书-V1.6.docx) | 最终需求说明书 |
 | [doc/第一组项目计划书.docx](./doc/第一组项目计划书.docx) | 项目计划书 |

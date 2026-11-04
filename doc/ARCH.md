@@ -2,11 +2,11 @@
 
 单体仓库：`backend`（Spring Boot）+ `campus-trade/miniprogram`（原生微信小程序）。
 
-接口以 [base-API.md](./base-API.md) v1.6 为准，需求以 [D3-第一组-软件需求规格说明书-V1.6.docx](./D3-第一组-软件需求规格说明书-V1.6.docx) 为准。当前 Java 代码和 [STATUE.md](./STATUE.md) 里的线上包还是旧实现：学号邮箱注册、学号密码登录、收藏、浏览记录、评价、按商品聊天。改这些模块时直接改成 v1.6，不要在旧字段上继续加功能。
+接口以 [base-API.md](./base-API.md) v1.6.1 为准。商品、订单、支付、聊天、申诉、举报和 AI 以 [D3-第一组-软件需求规格说明书-V1.6.docx](./D3-第一组-软件需求规格说明书-V1.6.docx) 为准。登录按接口约定：保留学号邮箱注册和学号密码登录，并增加微信登录。当前 Java 代码和 [STATUE.md](./STATUE.md) 里的线上包已有学号注册登录，还没有微信登录，另外仍带着收藏、浏览记录、评价、按商品聊天。改这些模块时按 v1.6.1，学号注册登录保持现有路径。
 
-v1.6 要做的是：微信登录，校园认证提交姓名、学号、学院、楼栋和校园卡，手填发布和 AI 草稿，建议价，下单与沙箱支付，订单内文字聊天，双方确认面交，待面交申诉，商品详情举报。不做收藏、浏览记录、评价、议价话术、模拟发票和封号。
+v1.6.1 要做的是：学号注册登录和微信登录，校园认证提交姓名、学号、学院、楼栋和校园卡，手填发布和 AI 草稿，建议价，下单与沙箱支付，订单内文字聊天，双方确认面交，待面交申诉，商品详情举报。不做收藏、浏览记录、评价、议价话术、模拟发票和封号。
 
-表结构见 [../sql/README.md](../sql/README.md)。现有 Flyway 停在 `V5`，和 v1.6 的表还不一致，改表时新增迁移，不要改已经执行过的 `V1`–`V5`。
+表结构见 [../sql/README.md](../sql/README.md)。现有 Flyway 停在 `V5`，和 v1.6.1 的表还不一致，改表时新增迁移，不要改已经执行过的 `V1`–`V5`。
 
 ## 目录
 
@@ -14,7 +14,7 @@ v1.6 要做的是：微信登录，校园认证提交姓名、学号、学院、
 backend/src/main/java/com/campus/ershou/
   CampusErshouApplication.java
   HealthController.java          GET /api/health
-  auth/     目标：微信登录、校园认证、管理员审核
+  auth/     学号注册登录、微信登录与绑定、校园认证、管理员审核
   user/     资料、统计、公开主页
   common/file/  上传
   goods/    商品列表、发布、同义叫法。收藏和浏览记录要卸掉
@@ -34,7 +34,7 @@ campus-trade/miniprogram/      课程使用的原生微信小程序
   utils/config.js               后端地址（默认 https://simpleyi.site）
 ```
 
-当前库里已经有：`areas`、`buildings`、`categories`、`users`、`stored_files`、`campus_verifications`、`goods`、`goods_images`、`favorites`、`admins`、`notifications`、`audit_logs`，以及 `V5` 的订单、支付、会话、申诉、评价、举报。`favorites` 和评价表是旧功能留下的。验证码和浏览记录在 Redis，v1.6 不再使用。
+当前库里已经有：`areas`、`buildings`、`categories`、`users`、`stored_files`、`campus_verifications`、`goods`、`goods_images`、`favorites`、`admins`、`notifications`、`audit_logs`，以及 `V5` 的订单、支付、会话、申诉、评价、举报。`favorites` 和评价表是旧功能留下的。注册验证码在 Redis，继续用于学号注册。浏览记录也在 Redis，v1.6.1 不再使用。用户表还没有微信 openid。
 
 实现时在对应包改 `controller` / `service` / `mapper`。改表先改 `sql/`，再补新的 Flyway 文件。前端在 `campus-trade/miniprogram/pages/` 改页面，并写入 `app.json`。
 
@@ -49,4 +49,4 @@ campus-trade/miniprogram/      课程使用的原生微信小程序
 7. MyBatis 只用 `#{}`。小程序不用 `rich-text` 渲染用户输入。
 8. 不建 `user_balance`。支付走模拟网关通知，要验签、防重放、回查金额。取消或超时后的成功通知记模拟退回，不能把订单改回待面交。
 9. 密钥和微信 AppID 只放本机或服务器配置，不要提交。`campus-trade/miniprogram/project.config.json` 的 `appid` 在没有正式 AppID 时保持 `touristappid`。
-10. 学号在校园认证时采集，不存明文，只存 HMAC 和脱敏串。学生登录不设密码。管理员密码用 BCrypt。
+10. 学号在注册或校园认证时采集，不存明文，只存 HMAC 和脱敏串。学号密码和微信 openid 可以落在同一个用户上。密码用 BCrypt，接口不返回 openid。管理员密码同样用 BCrypt。
