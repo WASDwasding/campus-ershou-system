@@ -6,6 +6,9 @@ public class CampusVerification {
 
     private Long id;
     private Long userId;
+    private String realName;
+    private String studentNo;
+    private String college;
     private Long dormBuildingId;
     private String cardFileId;
     private String status;
@@ -28,6 +31,30 @@ public class CampusVerification {
 
     public void setUserId(Long userId) {
         this.userId = userId;
+    }
+
+    public String getRealName() {
+        return realName;
+    }
+
+    public void setRealName(String realName) {
+        this.realName = realName;
+    }
+
+    public String getStudentNo() {
+        return studentNo;
+    }
+
+    public void setStudentNo(String studentNo) {
+        this.studentNo = studentNo;
+    }
+
+    public String getCollege() {
+        return college;
+    }
+
+    public void setCollege(String college) {
+        this.college = college;
     }
 
     public Long getDormBuildingId() {

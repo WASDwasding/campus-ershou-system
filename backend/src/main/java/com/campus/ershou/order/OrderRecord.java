@@ -12,6 +12,16 @@ public class OrderRecord {
     private Integer amount;
     private Integer quantity;
     private String goodsTitle;
+    private String goodsDescription;
+    private Long goodsCategoryId;
+    private String goodsCategoryName;
+    private String goodsCondition;
+    private Integer goodsPrice;
+    private String goodsTradeNote;
+    private Long goodsMeetupBuildingId;
+    private String goodsMeetupBuildingName;
+    private String goodsAliasesJson;
+    private String goodsImagesJson;
     private String goodsCoverFileId;
     private Long conversationId;
     private Long meetupBuildingId;
@@ -19,6 +29,8 @@ public class OrderRecord {
     private LocalDateTime meetupTime;
     private LocalDateTime buyerHandoverAt;
     private LocalDateTime sellerHandoverAt;
+    private Long buyerLastRead;
+    private Long sellerLastRead;
     private String cancelBy;
     private String cancelReason;
     private LocalDateTime expireAt;
@@ -46,6 +58,26 @@ public class OrderRecord {
     public void setQuantity(Integer quantity) { this.quantity = quantity; }
     public String getGoodsTitle() { return goodsTitle; }
     public void setGoodsTitle(String goodsTitle) { this.goodsTitle = goodsTitle; }
+    public String getGoodsDescription() { return goodsDescription; }
+    public void setGoodsDescription(String goodsDescription) { this.goodsDescription = goodsDescription; }
+    public Long getGoodsCategoryId() { return goodsCategoryId; }
+    public void setGoodsCategoryId(Long goodsCategoryId) { this.goodsCategoryId = goodsCategoryId; }
+    public String getGoodsCategoryName() { return goodsCategoryName; }
+    public void setGoodsCategoryName(String goodsCategoryName) { this.goodsCategoryName = goodsCategoryName; }
+    public String getGoodsCondition() { return goodsCondition; }
+    public void setGoodsCondition(String goodsCondition) { this.goodsCondition = goodsCondition; }
+    public Integer getGoodsPrice() { return goodsPrice; }
+    public void setGoodsPrice(Integer goodsPrice) { this.goodsPrice = goodsPrice; }
+    public String getGoodsTradeNote() { return goodsTradeNote; }
+    public void setGoodsTradeNote(String goodsTradeNote) { this.goodsTradeNote = goodsTradeNote; }
+    public Long getGoodsMeetupBuildingId() { return goodsMeetupBuildingId; }
+    public void setGoodsMeetupBuildingId(Long goodsMeetupBuildingId) { this.goodsMeetupBuildingId = goodsMeetupBuildingId; }
+    public String getGoodsMeetupBuildingName() { return goodsMeetupBuildingName; }
+    public void setGoodsMeetupBuildingName(String goodsMeetupBuildingName) { this.goodsMeetupBuildingName = goodsMeetupBuildingName; }
+    public String getGoodsAliasesJson() { return goodsAliasesJson; }
+    public void setGoodsAliasesJson(String goodsAliasesJson) { this.goodsAliasesJson = goodsAliasesJson; }
+    public String getGoodsImagesJson() { return goodsImagesJson; }
+    public void setGoodsImagesJson(String goodsImagesJson) { this.goodsImagesJson = goodsImagesJson; }
     public String getGoodsCoverFileId() { return goodsCoverFileId; }
     public void setGoodsCoverFileId(String goodsCoverFileId) { this.goodsCoverFileId = goodsCoverFileId; }
     public Long getConversationId() { return conversationId; }
@@ -60,6 +92,10 @@ public class OrderRecord {
     public void setBuyerHandoverAt(LocalDateTime buyerHandoverAt) { this.buyerHandoverAt = buyerHandoverAt; }
     public LocalDateTime getSellerHandoverAt() { return sellerHandoverAt; }
     public void setSellerHandoverAt(LocalDateTime sellerHandoverAt) { this.sellerHandoverAt = sellerHandoverAt; }
+    public Long getBuyerLastRead() { return buyerLastRead; }
+    public void setBuyerLastRead(Long buyerLastRead) { this.buyerLastRead = buyerLastRead; }
+    public Long getSellerLastRead() { return sellerLastRead; }
+    public void setSellerLastRead(Long sellerLastRead) { this.sellerLastRead = sellerLastRead; }
     public String getCancelBy() { return cancelBy; }
     public void setCancelBy(String cancelBy) { this.cancelBy = cancelBy; }
     public String getCancelReason() { return cancelReason; }

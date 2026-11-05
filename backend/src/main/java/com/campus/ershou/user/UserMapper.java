@@ -14,8 +14,8 @@ import java.util.List;
 public interface UserMapper {
 
     @Select("""
-            SELECT id, student_no_hash, student_no_masked, username, nickname, email, password_hash,
-                   avatar_file_id, bio, dorm_building_id, status, verify_status, ban_reason, ban_until,
+            SELECT id, student_no_hash, student_no_masked, username, nickname, email, password_hash, openid,
+                   avatar_file_id, bio, dorm_building_id, status, verify_status, publish_banned, ban_reason, ban_until,
                    token_version, created_at, updated_at
             FROM users
             WHERE id = #{id}
@@ -23,8 +23,8 @@ public interface UserMapper {
     UserEntity findById(long id);
 
     @Select("""
-            SELECT id, student_no_hash, student_no_masked, username, nickname, email, password_hash,
-                   avatar_file_id, bio, dorm_building_id, status, verify_status, ban_reason, ban_until,
+            SELECT id, student_no_hash, student_no_masked, username, nickname, email, password_hash, openid,
+                   avatar_file_id, bio, dorm_building_id, status, verify_status, publish_banned, ban_reason, ban_until,
                    token_version, created_at, updated_at
             FROM users
             WHERE student_no_hash = #{studentNoHash}
@@ -32,8 +32,8 @@ public interface UserMapper {
     UserEntity findByStudentNoHash(String studentNoHash);
 
     @Select("""
-            SELECT id, student_no_hash, student_no_masked, username, nickname, email, password_hash,
-                   avatar_file_id, bio, dorm_building_id, status, verify_status, ban_reason, ban_until,
+            SELECT id, student_no_hash, student_no_masked, username, nickname, email, password_hash, openid,
+                   avatar_file_id, bio, dorm_building_id, status, verify_status, publish_banned, ban_reason, ban_until,
                    token_version, created_at, updated_at
             FROM users
             WHERE username = #{username}
@@ -41,8 +41,8 @@ public interface UserMapper {
     UserEntity findByUsername(String username);
 
     @Select("""
-            SELECT id, student_no_hash, student_no_masked, username, nickname, email, password_hash,
-                   avatar_file_id, bio, dorm_building_id, status, verify_status, ban_reason, ban_until,
+            SELECT id, student_no_hash, student_no_masked, username, nickname, email, password_hash, openid,
+                   avatar_file_id, bio, dorm_building_id, status, verify_status, publish_banned, ban_reason, ban_until,
                    token_version, created_at, updated_at
             FROM users
             WHERE email = #{email}
@@ -51,11 +51,11 @@ public interface UserMapper {
 
     @Insert("""
             INSERT INTO users (
-                student_no_hash, student_no_masked, username, nickname, email, password_hash,
-                status, verify_status, token_version
+                student_no_hash, student_no_masked, username, nickname, email, password_hash, openid,
+                status, verify_status, publish_banned, token_version
             ) VALUES (
-                #{studentNoHash}, #{studentNoMasked}, #{username}, #{nickname}, #{email}, #{passwordHash},
-                #{status}, #{verifyStatus}, #{tokenVersion}
+                #{studentNoHash}, #{studentNoMasked}, #{username}, #{nickname}, #{email}, #{passwordHash}, #{openid},
+                #{status}, #{verifyStatus}, #{publishBanned}, #{tokenVersion}
             )
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
@@ -91,8 +91,8 @@ public interface UserMapper {
 
     @Select("""
             <script>
-            SELECT id, student_no_hash, student_no_masked, username, nickname, email, password_hash,
-                   avatar_file_id, bio, dorm_building_id, status, verify_status, ban_reason, ban_until,
+            SELECT id, student_no_hash, student_no_masked, username, nickname, email, password_hash, openid,
+                   avatar_file_id, bio, dorm_building_id, status, verify_status, publish_banned, ban_reason, ban_until,
                    token_version, created_at, updated_at
             FROM users
             WHERE id IN
@@ -116,8 +116,8 @@ public interface UserMapper {
     int unban(long id);
 
     @Select("""
-            SELECT id, student_no_hash, student_no_masked, username, nickname, email, password_hash,
-                   avatar_file_id, bio, dorm_building_id, status, verify_status, ban_reason, ban_until,
+            SELECT id, student_no_hash, student_no_masked, username, nickname, email, password_hash, openid,
+                   avatar_file_id, bio, dorm_building_id, status, verify_status, publish_banned, ban_reason, ban_until,
                    token_version, created_at, updated_at
             FROM users
             WHERE dev_openid = #{devOpenid}
@@ -138,8 +138,8 @@ public interface UserMapper {
 
     @Select("""
             <script>
-            SELECT id, student_no_masked, username, nickname, email, avatar_file_id, bio, dorm_building_id,
-                   status, verify_status, ban_reason, ban_until, created_at
+            SELECT id, student_no_masked, username, nickname, email, openid, avatar_file_id, bio, dorm_building_id,
+                   status, verify_status, publish_banned, ban_reason, ban_until, created_at
             FROM users
             WHERE 1 = 1
             <if test="status != null">AND status = #{status}</if>
@@ -175,4 +175,31 @@ public interface UserMapper {
             @Param("status") String status,
             @Param("verifyStatus") String verifyStatus
     );
+
+    @Select("""
+            SELECT id, student_no_hash, student_no_masked, username, nickname, email, password_hash, openid,
+                   avatar_file_id, bio, dorm_building_id, status, verify_status, publish_banned, ban_reason, ban_until,
+                   token_version, created_at, updated_at
+            FROM users
+            WHERE openid = #{openid}
+            """)
+    UserEntity findByOpenid(String openid);
+
+    @Update("""
+            UPDATE users
+            SET openid = #{openid}
+            WHERE id = #{id} AND openid IS NULL
+            """)
+    int bindOpenid(@Param("id") long id, @Param("openid") String openid);
+
+    @Update("""
+            UPDATE users
+            SET student_no_hash = #{studentNoHash}, student_no_masked = #{studentNoMasked}
+            WHERE id = #{id} AND student_no_hash IS NULL
+            """)
+    int bindStudentNo(@Param("id") long id, @Param("studentNoHash") String studentNoHash,
+                      @Param("studentNoMasked") String studentNoMasked);
+
+    @Update("UPDATE users SET publish_banned = 1 WHERE id = #{id}")
+    int banPublish(long id);
 }

@@ -11,6 +11,7 @@ public class ReportRecord {
     private String description;
     private String status;
     private String action;
+    private String handleReason;
     private String messageSnapshot;
     private LocalDateTime createdAt;
     private LocalDateTime handledAt;
@@ -31,6 +32,8 @@ public class ReportRecord {
     public void setStatus(String status) { this.status = status; }
     public String getAction() { return action; }
     public void setAction(String action) { this.action = action; }
+    public String getHandleReason() { return handleReason; }
+    public void setHandleReason(String handleReason) { this.handleReason = handleReason; }
     public String getMessageSnapshot() { return messageSnapshot; }
     public void setMessageSnapshot(String messageSnapshot) { this.messageSnapshot = messageSnapshot; }
     public LocalDateTime getCreatedAt() { return createdAt; }

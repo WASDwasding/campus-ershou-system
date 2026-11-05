@@ -43,24 +43,4 @@ public class AdminUserController {
     ) {
         return ApiResponse.ok(adminUserService.detail(userId));
     }
-
-    @PostMapping("/api/admin/users/{userId}/ban")
-    public ApiResponse<Map<String, Object>> ban(
-            @AuthenticationPrincipal LoginAdmin loginAdmin,
-            @PathVariable long userId,
-            @RequestBody BanUserRequest request,
-            HttpServletRequest httpRequest
-    ) {
-        return ApiResponse.ok(adminUserService.ban(
-                loginAdmin.adminId(), userId, request.reason(), request.days(), ClientIp.resolve(httpRequest)));
-    }
-
-    @PostMapping("/api/admin/users/{userId}/unban")
-    public ApiResponse<Map<String, Object>> unban(
-            @AuthenticationPrincipal LoginAdmin loginAdmin,
-            @PathVariable long userId,
-            HttpServletRequest httpRequest
-    ) {
-        return ApiResponse.ok(adminUserService.unban(loginAdmin.adminId(), userId, ClientIp.resolve(httpRequest)));
-    }
 }

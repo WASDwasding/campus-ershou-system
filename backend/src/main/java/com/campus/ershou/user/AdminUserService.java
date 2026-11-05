@@ -99,6 +99,8 @@ public class AdminUserService {
         data.put("studentNoMasked", user.getStudentNoMasked());
         data.put("status", user.getStatus());
         data.put("verifyStatus", user.getVerifyStatus());
+        data.put("publishBanned", user.isPublishBanned());
+        data.put("wxBound", user.getOpenid() != null && !user.getOpenid().isBlank());
         data.put("banReason", user.getBanReason());
         data.put("banUntil", Times.at(user.getBanUntil()));
         data.put("createdAt", Times.at(user.getCreatedAt()));

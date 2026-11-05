@@ -12,6 +12,7 @@ import com.campus.ershou.common.rate.RateLimitService;
 import com.campus.ershou.common.util.ContactInfo;
 import com.campus.ershou.common.util.Randoms;
 import com.campus.ershou.common.util.RedisKeys;
+import com.campus.ershou.common.util.Times;
 import com.campus.ershou.goods.GoodsMapper;
 import com.campus.ershou.goods.GoodsRow;
 import com.campus.ershou.goods.GoodsService;
@@ -95,7 +96,7 @@ public class AiService {
         }
         checkPrompt(prompt);
         List<String> ids = normalizeImages(userId, imageFileIds);
-        rateLimitService.check("ai-draft", String.valueOf(userId), props.getAi().getDraftPerMinute(), Duration.ofMinutes(1));
+        consumeDaily("draft", userId);
         Map<Long, CategoryView> categories = categories();
         List<AiPart> parts = new ArrayList<>();
         parts.add(AiPart.text(draftInstruction(categories, prompt)));
@@ -120,35 +121,30 @@ public class AiService {
     }
 
     public Map<String, Object> quote(long userId, long goodsId, String ip) {
-        GoodsRow goods = requireOnSale(userId, goodsId);
-        rateLimitService.check("ai-quote", String.valueOf(userId), props.getAi().getQuotePerMinute(), Duration.ofMinutes(1));
-        QuoteRange range = QuoteRange.of(goods.getPrice(), goods.getConditionCode());
-        Outcome outcome = interpret(ModelJson.object(objectMapper, ask(QUOTE_SYSTEM, List.of(AiPart.text(quoteInstruction(goods, range))), QUOTE_TOKENS).orElse(null)), range);
-        return issue(userId, goods, range, outcome, null, ip);
-    }
-
-    public Map<String, Object> bargain(long userId, long goodsId, String quoteToken, String message, String ip) {
         userService.requireUser(userId);
-        checkMessage(message);
-        if (quoteToken == null || !TOKEN.matcher(quoteToken).matches()) {
-            throw ApiException.of(ErrorCode.QUOTE_TOKEN_INVALID);
+        GoodsRow goods = goodsService.findVisible(userId, goodsId);
+        if (goods == null || goods.getPrice() == null) {
+            throw ApiException.of(ErrorCode.NOT_FOUND);
         }
-        rateLimitService.check("ai-bargain", String.valueOf(userId), props.getAi().getBargainPerMinute(), Duration.ofMinutes(1));
-        StoredQuote stored = readQuote(redis.opsForValue().get(RedisKeys.aiQuote(quoteToken)));
-        if (stored == null || stored.userId() != userId || stored.goodsId() != goodsId) {
-            throw ApiException.of(ErrorCode.QUOTE_TOKEN_INVALID);
+        consumeDaily("quote", userId);
+        Integer price = readQuotePrice(ModelJson.object(objectMapper, ask(
+                QUOTE_SYSTEM,
+                List.of(AiPart.text("标价 " + goods.getPrice() + " 分。只输出 suggestedPrice，整数分，1 到 9999900。")),
+                QUOTE_TOKENS
+        ).orElse(null)));
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("goodsId", goods.getId());
+        body.put("listPrice", goods.getPrice());
+        if (price == null) {
+            auditService.record("BUSINESS", "AI_QUOTE_FAILED", null, userId, ip, "{\"goodsId\":" + goods.getId() + "}");
+            body.put("available", false);
+            body.put("hint", "暂无建议价");
+            return body;
         }
-        GoodsRow goods = goodsMapper.findById(goodsId);
-        int listPrice = goods == null || goods.getPrice() == null ? Integer.MIN_VALUE : goods.getPrice();
-        if (goods == null || listPrice != stored.listPrice()) {
-            throw ApiException.of(ErrorCode.QUOTE_TOKEN_INVALID);
-        }
-        if (!"ON_SALE".equals(goods.getStatus())) {
-            throw ApiException.of(ErrorCode.GOODS_NOT_AVAILABLE);
-        }
-        QuoteRange range = QuoteRange.of(goods.getPrice(), goods.getConditionCode());
-        Outcome outcome = interpret(ModelJson.object(objectMapper, ask(QUOTE_SYSTEM, List.of(AiPart.text(bargainInstruction(goods, range, stored.suggestedPrice(), message))), QUOTE_TOKENS).orElse(null)), range);
-        return issue(userId, goods, range, outcome, quoteToken, ip);
+        body.put("available", true);
+        body.put("suggestedPrice", price);
+        body.put("disclaimer", "仅供参考");
+        return body;
     }
 
     private Map<String, Object> issue(long userId, GoodsRow goods, QuoteRange range, Outcome outcome, String previousToken, String ip) {
@@ -289,6 +285,7 @@ public class AiService {
         body.put("categoryId", fields.categoryId());
         body.put("condition", fields.condition());
         body.put("suggestedPrice", fields.suggestedPrice());
+        body.put("aliases", fields.filled() ? List.of() : null);
         body.put("tradeNote", fields.tradeNote());
         body.put("expiresInSeconds", TTL_SECONDS);
         return body;
@@ -306,6 +303,36 @@ public class AiService {
                 cleanDraftPrice(intField(node, "suggestedPrice")),
                 cleanBounded(textField(node, "tradeNote"), 100)
         );
+    }
+
+    private void consumeDaily(String kind, long userId) {
+        String day = java.time.LocalDate.now(Times.SHANGHAI).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+        String key = "draft".equals(kind) ? RedisKeys.aiDraftCount(userId, day) : RedisKeys.aiQuoteCount(userId, day);
+        Long count = redis.opsForValue().increment(key);
+        long retry = secondsUntilEndOfDay();
+        if (count != null && count == 1L) {
+            redis.expire(key, Duration.ofSeconds(retry));
+        }
+        if (count != null && count > 20) {
+            throw ApiException.aiQuota(retry);
+        }
+    }
+
+    private static long secondsUntilEndOfDay() {
+        java.time.ZonedDateTime now = java.time.ZonedDateTime.now(Times.SHANGHAI);
+        java.time.ZonedDateTime end = now.toLocalDate().plusDays(1).atStartOfDay(Times.SHANGHAI);
+        return Math.max(1, java.time.Duration.between(now, end).getSeconds());
+    }
+
+    private static Integer readQuotePrice(JsonNode node) {
+        if (node == null) {
+            return null;
+        }
+        Integer price = intField(node, "suggestedPrice");
+        if (price == null || price < 1 || price > 9_999_900) {
+            return null;
+        }
+        return price;
     }
 
     private Outcome interpret(JsonNode node, QuoteRange range) {

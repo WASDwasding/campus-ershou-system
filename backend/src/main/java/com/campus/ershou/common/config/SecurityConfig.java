@@ -61,6 +61,7 @@ public class SecurityConfig {
                                 "/api/auth/register/verify-code",
                                 "/api/auth/register/set-password",
                                 "/api/auth/login",
+                                "/api/auth/wx-login",
                                 "/api/auth/dev-login",
                                 "/api/pay/notify/mock",
                                 "/api/admin/auth/login"

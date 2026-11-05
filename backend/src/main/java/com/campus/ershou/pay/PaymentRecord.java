@@ -11,6 +11,7 @@ public class PaymentRecord {
     private Integer amount;
     private String channel;
     private String status;
+    private String reason;
     private String gatewayTradeNo;
     private String gatewayResult;
     private Integer notifyAttempts;
@@ -33,6 +34,8 @@ public class PaymentRecord {
     public void setChannel(String channel) { this.channel = channel; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public String getReason() { return reason; }
+    public void setReason(String reason) { this.reason = reason; }
     public String getGatewayTradeNo() { return gatewayTradeNo; }
     public void setGatewayTradeNo(String gatewayTradeNo) { this.gatewayTradeNo = gatewayTradeNo; }
     public String getGatewayResult() { return gatewayResult; }

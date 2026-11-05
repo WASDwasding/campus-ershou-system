@@ -25,6 +25,8 @@ public class AppProperties {
     @NestedConfigurationProperty
     private final DevLogin devLogin = new DevLogin();
     @NestedConfigurationProperty
+    private final Wx wx = new Wx();
+    @NestedConfigurationProperty
     private final Ai ai = new Ai();
 
     public Jwt getJwt() {
@@ -57,6 +59,10 @@ public class AppProperties {
 
     public DevLogin getDevLogin() {
         return devLogin;
+    }
+
+    public Wx getWx() {
+        return wx;
     }
 
     public Ai getAi() {
@@ -294,12 +300,33 @@ public class AppProperties {
         }
     }
 
+    public static class Wx {
+        private String appId = "";
+        private String appSecret = "";
+
+        public String getAppId() {
+            return appId;
+        }
+
+        public void setAppId(String appId) {
+            this.appId = appId;
+        }
+
+        public String getAppSecret() {
+            return appSecret;
+        }
+
+        public void setAppSecret(String appSecret) {
+            this.appSecret = appSecret;
+        }
+    }
+
     public static class Ai {
         private boolean enabled = false;
         private String baseUrl = "";
         private String apiKey = "";
         private String model = "qwen3-vl-flash";
-        private Duration timeout = Duration.ofSeconds(8);
+        private Duration timeout = Duration.ofSeconds(10);
         private int draftPerMinute = 5;
         private int quotePerMinute = 10;
         private int bargainPerMinute = 10;

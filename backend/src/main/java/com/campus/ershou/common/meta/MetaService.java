@@ -21,28 +21,28 @@ public class MetaService {
         enums.put("goodsStatus", List.of(
                 item("ON_SALE", "在售"),
                 item("RESERVED", "已预约"),
+                item("MEETUP", "待面交"),
+                item("DISPUTED", "申诉中"),
                 item("SOLD", "已售出"),
                 item("OFF_SHELF", "已下架"),
                 item("REMOVED", "管理员下架"),
                 item("DELETED", "已删除")
         ));
         enums.put("orderStatus", List.of(
-                item("PENDING_PAY", "待支付"),
+                item("PENDING_PAY", "已预约"),
                 item("PAID", "待面交"),
                 item("COMPLETED", "已完成"),
                 item("CANCELLED", "已取消"),
                 item("DISPUTED", "申诉中")
         ));
         enums.put("paymentStatus", List.of(
-                item("CREATED", "待付款"),
-                item("SUCCESS", "已付款"),
-                item("FAILED", "付款失败"),
-                item("CLOSED", "已关闭"),
-                item("REFUNDED", "已退款")
+                item("PENDING", "待支付"),
+                item("PAID", "已支付"),
+                item("CANCELLED", "已取消"),
+                item("MOCK_REFUNDED", "模拟退回")
         ));
         enums.put("userStatus", List.of(
-                item("ACTIVE", "正常"),
-                item("BANNED", "已封禁")
+                item("ACTIVE", "正常")
         ));
         enums.put("verifyStatus", List.of(
                 item("UNVERIFIED", "未认证"),
@@ -59,62 +59,60 @@ public class MetaService {
                 item("OTHER", "其他")
         ));
         enums.put("disputeReason", List.of(
-                item("NOT_AS_DESCRIBED", "与描述不符"),
-                item("NO_SHOW", "对方未到"),
-                item("DAMAGED", "商品损坏"),
-                item("OTHER", "其他")
+                item("GOODS_MISMATCH", "货不对版"),
+                item("FALSE_DESCRIPTION", "虚假描述"),
+                item("SUSPECTED_FRAUD", "疑似欺诈"),
+                item("MISSED_MEETUP", "未按约定面交")
         ));
         enums.put("disputeStatus", List.of(
                 item("OPEN", "处理中"),
                 item("WITHDRAWN", "已撤回"),
-                item("RESOLVED", "已处理")
+                item("REJECTED", "已驳回"),
+                item("RESOLVED", "已结案")
         ));
-        enums.put("reportTargetType", List.of(
-                item("GOODS", "商品"),
-                item("USER", "用户"),
-                item("MESSAGE", "消息")
-        ));
-        enums.put("reportReason", List.of(
-                item("FAKE", "虚假信息"),
-                item("FRAUD", "欺诈"),
-                item("HARASSMENT", "骚扰"),
-                item("ILLEGAL", "违规"),
-                item("OTHER", "其他")
+        enums.put("disputeResult", List.of(
+                item("CANCEL", "取消订单"),
+                item("COMPLETE", "继续完成"),
+                item("REJECT", "驳回")
         ));
         enums.put("reportStatus", List.of(
                 item("PENDING", "待处理"),
-                item("HANDLED", "已处理")
+                item("DISMISSED", "已驳回"),
+                item("REMOVED", "已下架")
         ));
         enums.put("messageType", List.of(
-                item("TEXT", "文字"),
-                item("IMAGE", "图片"),
-                item("SYSTEM", "系统")
+                item("TEXT", "文字")
         ));
 
         Map<String, Object> limits = new LinkedHashMap<>();
         limits.put("payTimeoutMinutes", 15);
-        limits.put("maxPendingPayOrders", 3);
         limits.put("priceMin", 1);
         limits.put("priceMax", 9999900);
         limits.put("titleMin", 2);
         limits.put("titleMax", 30);
+        limits.put("descriptionMin", 1);
         limits.put("descriptionMax", 500);
+        limits.put("aliasMaxCount", 5);
+        limits.put("aliasMax", 20);
         limits.put("tradeNoteMax", 100);
         limits.put("goodsImageMaxCount", 9);
         limits.put("goodsImageMaxBytes", 5_242_880);
         limits.put("nicknameMax", 16);
         limits.put("bioMax", 60);
+        limits.put("messageMin", 1);
         limits.put("messageMax", 500);
-        limits.put("meetupPlaceMax", 40);
-        limits.put("meetupAheadDays", 14);
-        limits.put("reviewWindowDays", 30);
-        limits.put("reviewContentMax", 200);
         limits.put("passwordMin", 8);
         limits.put("passwordMax", 64);
+        limits.put("realNameMax", 20);
+        limits.put("collegeMax", 30);
         limits.put("disputeDescriptionMin", 10);
         limits.put("disputeDescriptionMax", 500);
-        limits.put("evidenceMaxCount", 6);
+        limits.put("evidenceMaxCount", 3);
+        limits.put("reportDescriptionMin", 1);
         limits.put("reportDescriptionMax", 300);
+        limits.put("aiDailyDraft", 20);
+        limits.put("aiDailyQuote", 20);
+        limits.put("aiTimeoutSeconds", 10);
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("enums", enums);

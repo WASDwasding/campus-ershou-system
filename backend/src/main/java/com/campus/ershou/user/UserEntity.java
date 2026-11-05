@@ -20,6 +20,8 @@ public class UserEntity {
     private LocalDateTime banUntil;
     private int tokenVersion;
     private String devOpenid;
+    private String openid;
+    private boolean publishBanned;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -149,6 +151,22 @@ public class UserEntity {
 
     public void setDevOpenid(String devOpenid) {
         this.devOpenid = devOpenid;
+    }
+
+    public String getOpenid() {
+        return openid;
+    }
+
+    public void setOpenid(String openid) {
+        this.openid = openid;
+    }
+
+    public boolean isPublishBanned() {
+        return publishBanned;
+    }
+
+    public void setPublishBanned(boolean publishBanned) {
+        this.publishBanned = publishBanned;
     }
 
     public LocalDateTime getCreatedAt() {

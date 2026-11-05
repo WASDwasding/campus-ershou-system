@@ -207,17 +207,12 @@ class AiFlowIT {
                         .content("{\"goodsId\":" + goodsId + "}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.listPrice").value(1500))
-                .andExpect(jsonPath("$.data.priceFloor").value(1050))
-                .andExpect(jsonPath("$.data.priceCeiling").value(1500))
-                .andExpect(jsonPath("$.data.suggestedPrice").value(1275))
-                .andExpect(jsonPath("$.data.script").value(AiService.RULE_SCRIPT))
-                .andExpect(jsonPath("$.data.source").value("RULE"))
-                .andExpect(jsonPath("$.data.expiresInSeconds").value(600))
+                .andExpect(jsonPath("$.data.available").value(false))
+                .andExpect(jsonPath("$.data.hint").value("暂无建议价"))
+                .andExpect(jsonPath("$.data.suggestedPrice").doesNotExist())
                 .andReturn();
-        String token = JsonPath.read(result.getResponse().getContentAsString(), "$.data.quoteToken");
-        assertThat(token).hasSize(32);
-        assertThat(redis.opsForValue().get(RedisKeys.aiQuote(token))).contains("\"listPrice\":1500");
-        assertThat(clampCount(buyerId, goodsId)).isZero();
+        assertThat(result.getResponse().getContentAsString()).doesNotContain("suggestedPrice");
+        assertThat(failedQuoteCount(buyerId)).isEqualTo(1);
     }
 
     @Test
@@ -234,10 +229,9 @@ class AiFlowIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"goodsId\":" + goodsId + "}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.suggestedPrice").value(1275))
-                .andExpect(jsonPath("$.data.source").value("RULE"))
-                .andExpect(jsonPath("$.data.script").value(AiService.RULE_SCRIPT));
-        assertThat(clampCount(buyerId, goodsId)).isEqualTo(1);
+                .andExpect(jsonPath("$.data.available").value(true))
+                .andExpect(jsonPath("$.data.suggestedPrice").value(100));
+        assertThat(failedQuoteCount(buyerId)).isZero();
 
         reply("""
                 {"suggestedPrice":1200,"script":"请加微信 abcdef"}
@@ -247,8 +241,9 @@ class AiFlowIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"goodsId\":" + goodsId + "}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.source").value("RULE"));
-        assertThat(clampCount(buyerId, goodsId)).isEqualTo(1);
+                .andExpect(jsonPath("$.data.available").value(true))
+                .andExpect(jsonPath("$.data.suggestedPrice").value(1200))
+                .andExpect(jsonPath("$.data.disclaimer").value("仅供参考"));
 
         reply("""
                 {"suggestedPrice":1200,"script":"可以小刀，当面看货"}
@@ -258,73 +253,26 @@ class AiFlowIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"goodsId\":" + goodsId + "}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.suggestedPrice").value(1200))
-                .andExpect(jsonPath("$.data.source").value("MODEL"))
-                .andExpect(jsonPath("$.data.script").value("可以小刀，当面看货"));
-        assertThat(clampCount(buyerId, goodsId)).isEqualTo(1);
+                .andExpect(jsonPath("$.data.suggestedPrice").value(1200));
     }
 
     @Test
-    void bargainReplacesTokenAndRejectsStalePriceOrShelf() throws Exception {
-        String sellerToken = login(SELLER_NO);
+    void dailyQuoteQuotaStopsBeforeTheModel() throws Exception {
         String buyerToken = login(BUYER_NO);
+        String sellerToken = login(SELLER_NO);
         long goodsId = createGoods(sellerToken);
-        String token = quoteToken(buyerToken, goodsId);
-
-        mockMvc.perform(post("/api/ai/bargain")
+        String day = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Shanghai"))
+                .format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+        redis.opsForValue().set(RedisKeys.aiQuoteCount(buyerId, day), "20");
+        int calls = UPSTREAM_CALLS.get();
+        mockMvc.perform(post("/api/ai/quotes")
                         .header("Authorization", "Bearer " + buyerToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"goodsId":%d,"quoteToken":"aaaaaaaaaaaaaaaa","message":"能少点吗"}
-                                """.formatted(goodsId)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("QUOTE_TOKEN_INVALID"));
-        assertThat(redis.hasKey(RedisKeys.aiQuote(token))).isTrue();
-
-        reply("""
-                {"suggestedPrice":1100,"script":"当面可以再少一点"}
-                """);
-        MvcResult bargained = mockMvc.perform(post("/api/ai/bargain")
-                        .header("Authorization", "Bearer " + buyerToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"goodsId":%d,"quoteToken":"%s","message":"能少点吗"}
-                                """.formatted(goodsId, token)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.suggestedPrice").value(1100))
-                .andExpect(jsonPath("$.data.source").value("MODEL"))
-                .andReturn();
-        String next = JsonPath.read(bargained.getResponse().getContentAsString(), "$.data.quoteToken");
-        assertThat(next).isNotEqualTo(token);
-        assertThat(redis.hasKey(RedisKeys.aiQuote(token))).isFalse();
-        assertThat(redis.hasKey(RedisKeys.aiQuote(next))).isTrue();
-
-        long secondId = createGoods(sellerToken);
-        String secondToken = quoteToken(buyerToken, secondId);
-        jdbc.update("UPDATE goods SET price = 2000 WHERE id = ?", secondId);
-        mockMvc.perform(post("/api/ai/bargain")
-                        .header("Authorization", "Bearer " + buyerToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"goodsId":%d,"quoteToken":"%s"}
-                                """.formatted(secondId, secondToken)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("QUOTE_TOKEN_INVALID"));
-        assertThat(redis.hasKey(RedisKeys.aiQuote(secondToken))).isTrue();
-
-        long thirdId = createGoods(sellerToken);
-        String thirdToken = quoteToken(buyerToken, thirdId);
-        mockMvc.perform(post("/api/goods/" + thirdId + "/off-shelf")
-                        .header("Authorization", "Bearer " + sellerToken))
-                .andExpect(status().isOk());
-        mockMvc.perform(post("/api/ai/bargain")
-                        .header("Authorization", "Bearer " + buyerToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"goodsId":%d,"quoteToken":"%s"}
-                                """.formatted(thirdId, thirdToken)))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("GOODS_NOT_AVAILABLE"));
+                        .content("{\"goodsId\":" + goodsId + "}"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.code").value("AI_DAILY_QUOTA"))
+                .andExpect(header().exists("Retry-After"));
+        assertThat(UPSTREAM_CALLS.get()).isEqualTo(calls);
     }
 
     @Test
@@ -347,25 +295,20 @@ class AiFlowIT {
     }
 
     @Test
-    void quoteIsRateLimited() throws Exception {
+    void quotesCountFailuresInsideTheDailyCap() throws Exception {
         String sellerToken = login(SELLER_NO);
         String buyerToken = login(BUYER_NO);
         long goodsId = createGoods(sellerToken);
         String body = "{\"goodsId\":" + goodsId + "}";
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 2; i++) {
             mockMvc.perform(post("/api/ai/quotes")
                             .header("Authorization", "Bearer " + buyerToken)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(body))
-                    .andExpect(status().isOk());
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.available").value(false));
         }
-        mockMvc.perform(post("/api/ai/quotes")
-                        .header("Authorization", "Bearer " + buyerToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
-                .andExpect(status().isTooManyRequests())
-                .andExpect(header().string(HttpHeaders.RETRY_AFTER, "60"))
-                .andExpect(jsonPath("$.code").value("RATE_LIMITED"));
+        assertThat(failedQuoteCount(buyerId)).isEqualTo(2);
     }
 
     private String quoteToken(String token, long goodsId) throws Exception {
@@ -390,11 +333,11 @@ class AiFlowIT {
         return id.longValue();
     }
 
-    private int clampCount(long userId, long goodsId) {
+    private int failedQuoteCount(long userId) {
         Integer count = jdbc.queryForObject("""
                 SELECT COUNT(*) FROM audit_logs
-                WHERE category = 'BUSINESS' AND event = 'AI_QUOTE_CLAMPED' AND user_id = ? AND detail = ?
-                """, Integer.class, userId, "{\"goodsId\":" + goodsId + "}");
+                WHERE category = 'BUSINESS' AND event = 'AI_QUOTE_FAILED' AND user_id = ?
+                """, Integer.class, userId);
         return count == null ? 0 : count;
     }
 

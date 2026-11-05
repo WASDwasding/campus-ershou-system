@@ -1,5 +1,7 @@
 package com.campus.ershou.user;
 
+import com.campus.ershou.auth.CampusVerification;
+import com.campus.ershou.auth.CampusVerificationMapper;
 import com.campus.ershou.common.api.ApiException;
 import com.campus.ershou.common.api.ErrorCode;
 import com.campus.ershou.common.api.FieldErrorItem;
@@ -21,11 +23,18 @@ public class UserService {
     private final UserMapper userMapper;
     private final BuildingMapper buildingMapper;
     private final FileService fileService;
+    private final CampusVerificationMapper verificationMapper;
 
-    public UserService(UserMapper userMapper, BuildingMapper buildingMapper, FileService fileService) {
+    public UserService(
+            UserMapper userMapper,
+            BuildingMapper buildingMapper,
+            FileService fileService,
+            CampusVerificationMapper verificationMapper
+    ) {
         this.userMapper = userMapper;
         this.buildingMapper = buildingMapper;
         this.fileService = fileService;
+        this.verificationMapper = verificationMapper;
     }
 
     public MeResponse getMe(long userId) {
@@ -44,17 +53,23 @@ public class UserService {
                 dorm = new MeResponse.DormBuildingView(building.getId(), building.getName());
             }
         }
+        CampusVerification verification = verificationMapper.findLatest(user.getId());
+        String email = user.getEmail();
         return new MeResponse(
                 user.getId(),
                 user.getUsername(),
                 user.getNickname(),
-                Masking.email(user.getEmail()),
-                user.getStudentNoMasked(),
                 fileService.publicUrlIfOwned(user.getAvatarFileId()),
                 user.getBio(),
                 user.getStatus(),
                 user.getVerifyStatus(),
+                verification == null ? null : verification.getRealName(),
+                verification == null ? null : verification.getCollege(),
+                user.getStudentNoMasked(),
+                email == null || email.isBlank() ? null : Masking.email(email),
+                user.getOpenid() != null && !user.getOpenid().isBlank(),
                 dorm,
+                user.isPublishBanned(),
                 user.getCreatedAt() == null ? null : user.getCreatedAt().atOffset(ZoneOffset.ofHours(8))
         );
     }

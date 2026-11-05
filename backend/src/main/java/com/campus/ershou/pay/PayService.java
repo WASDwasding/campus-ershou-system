@@ -3,14 +3,12 @@ package com.campus.ershou.pay;
 import com.campus.ershou.admin.AuditService;
 import com.campus.ershou.common.api.ApiException;
 import com.campus.ershou.common.api.ErrorCode;
-import com.campus.ershou.common.api.FieldErrorItem;
 import com.campus.ershou.common.config.AppProperties;
 import com.campus.ershou.common.rate.RateLimitService;
 import com.campus.ershou.common.redis.IdempotencyStore;
 import com.campus.ershou.common.util.Randoms;
 import com.campus.ershou.common.util.RedisKeys;
 import com.campus.ershou.common.util.Times;
-import com.campus.ershou.im.ConversationService;
 import com.campus.ershou.im.ImHub;
 import com.campus.ershou.im.NotificationService;
 import com.campus.ershou.order.OrderMapper;
@@ -34,10 +32,10 @@ public class PayService {
     private static final DateTimeFormatter STAMP = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
     private final PaymentMapper paymentMapper;
+    private final PaymentNotifyMapper paymentNotifyMapper;
     private final OrderMapper orderMapper;
     private final OrderService orderService;
     private final OrderTx orderTx;
-    private final ConversationService conversationService;
     private final NotificationService notificationService;
     private final AuditService auditService;
     private final ImHub imHub;
@@ -48,10 +46,10 @@ public class PayService {
 
     public PayService(
             PaymentMapper paymentMapper,
+            PaymentNotifyMapper paymentNotifyMapper,
             OrderMapper orderMapper,
             OrderService orderService,
             OrderTx orderTx,
-            ConversationService conversationService,
             NotificationService notificationService,
             AuditService auditService,
             ImHub imHub,
@@ -61,10 +59,10 @@ public class PayService {
             AppProperties props
     ) {
         this.paymentMapper = paymentMapper;
+        this.paymentNotifyMapper = paymentNotifyMapper;
         this.orderMapper = orderMapper;
         this.orderService = orderService;
         this.orderTx = orderTx;
-        this.conversationService = conversationService;
         this.notificationService = notificationService;
         this.auditService = auditService;
         this.imHub = imHub;
@@ -83,15 +81,12 @@ public class PayService {
         if (channel == null || !"MOCK".equals(channel.trim().toUpperCase())) {
             throw ApiException.of(ErrorCode.PAY_CHANNEL_UNSUPPORTED);
         }
-        OrderRecord order = orderService.requireParty(userId, orderId, ip);
-        if (order.getBuyerId() != userId) {
+        OrderRecord order = orderService.syncParty(userId, orderId, ip);
+        if (order.getBuyerId() == null || order.getBuyerId() != userId) {
             throw ApiException.of(ErrorCode.FORBIDDEN);
         }
         if (!"PENDING_PAY".equals(order.getStatus())) {
-            throw ApiException.of(ErrorCode.ORDER_STATUS_INVALID);
-        }
-        if (order.getExpireAt() != null && !order.getExpireAt().isAfter(LocalDateTime.now(Times.SHANGHAI))) {
-            throw ApiException.of(ErrorCode.ORDER_EXPIRED);
+            throw ApiException.of("超时释放".equals(order.getCancelReason()) ? ErrorCode.ORDER_EXPIRED : ErrorCode.ORDER_STATUS_INVALID);
         }
         PaymentRecord open = paymentMapper.findOpen(orderId);
         if (open != null) {
@@ -104,7 +99,7 @@ public class PayService {
         payment.setBuyerId(userId);
         payment.setAmount(order.getAmount());
         payment.setChannel("MOCK");
-        payment.setStatus("CREATED");
+        payment.setStatus("PENDING");
         payment.setExpireAt(order.getExpireAt());
         paymentMapper.insert(payment);
         return view(payment);
@@ -122,12 +117,8 @@ public class PayService {
         return view(payment);
     }
 
-    public Map<String, Object> confirm(long userId, String paymentNo, String result, String ip) {
+    public Map<String, Object> confirm(long userId, String paymentNo, String ip) {
         rateLimitService.check("pay-confirm", String.valueOf(userId), 20, Duration.ofHours(1));
-        String outcome = result == null ? "" : result.trim().toUpperCase();
-        if (!"SUCCESS".equals(outcome) && !"FAIL".equals(outcome)) {
-            throw ApiException.validation(List.of(new FieldErrorItem("result", "只能是 SUCCESS 或 FAIL")));
-        }
         PaymentRecord payment = paymentMapper.findByNo(paymentNo);
         if (payment == null) {
             throw ApiException.of(ErrorCode.NOT_FOUND);
@@ -135,18 +126,18 @@ public class PayService {
         if (payment.getBuyerId() == null || payment.getBuyerId() != userId) {
             throw ApiException.of(ErrorCode.FORBIDDEN);
         }
-        if (!"CREATED".equals(payment.getStatus())
+        if (!"PENDING".equals(payment.getStatus())
                 || payment.getExpireAt() == null
                 || !payment.getExpireAt().isAfter(LocalDateTime.now(Times.SHANGHAI))) {
             throw ApiException.of(ErrorCode.PAYMENT_NOT_PAYABLE);
         }
-        String tradeNo = "MOCK" + STAMP.format(LocalDateTime.now(Times.SHANGHAI)) + Randoms.digits(6);
+        String notifyNo = "N" + STAMP.format(LocalDateTime.now(Times.SHANGHAI)) + Randoms.digits(6);
         Map<String, String> body = new LinkedHashMap<>();
         body.put("paymentNo", payment.getPaymentNo());
         body.put("orderNo", payment.getOrderNo());
         body.put("amount", String.valueOf(payment.getAmount()));
-        body.put("status", outcome);
-        body.put("gatewayTradeNo", tradeNo);
+        body.put("notifyNo", notifyNo);
+        body.put("status", "SUCCESS");
         body.put("timestamp", String.valueOf(Instant.now().getEpochSecond()));
         body.put("nonce", Randoms.hex(8));
         body.put("sign", PaySigner.sign(body, props.getPay().getMock().getSecret()));
@@ -158,15 +149,16 @@ public class PayService {
         String paymentNo = text(body, "paymentNo");
         String orderNo = text(body, "orderNo");
         String amountText = text(body, "amount");
+        String notifyNo = text(body, "notifyNo");
         String status = text(body, "status");
-        String tradeNo = text(body, "gatewayTradeNo");
         String timestampText = text(body, "timestamp");
         String nonce = text(body, "nonce");
         String sign = text(body, "sign");
-        if (paymentNo == null || orderNo == null || amountText == null || status == null
-                || tradeNo == null || timestampText == null || nonce == null || sign == null
-                || (!"SUCCESS".equals(status) && !"FAIL".equals(status))
-                || nonce.length() < 16 || nonce.length() > 32) {
+        if (paymentNo == null || orderNo == null || amountText == null || notifyNo == null || status == null
+                || timestampText == null || nonce == null || sign == null
+                || !"SUCCESS".equals(status)
+                || nonce.length() < 16 || nonce.length() > 32
+                || notifyNo.length() > 40) {
             throw new PayNotifyException("BAD_REQUEST");
         }
         long timestamp;
@@ -190,6 +182,9 @@ public class PayService {
             auditService.record("SECURITY", "PAY_NOTIFY_REPLAY", null, null, ip, "{\"paymentNo\":\"" + paymentNo + "\"}");
             throw new PayNotifyException("REPLAYED");
         }
+        if (paymentNotifyMapper.findByNo(notifyNo) != null) {
+            return;
+        }
         PaymentRecord payment = paymentMapper.findByNo(paymentNo);
         if (payment == null || payment.getOrderNo() == null || !payment.getOrderNo().equals(orderNo)) {
             throw new PayNotifyException("PAYMENT_NOT_FOUND");
@@ -199,32 +194,28 @@ public class PayService {
                 || amount != payment.getAmount() || amount != order.getAmount()) {
             auditService.record("SECURITY", "PAY_NOTIFY_AMOUNT_MISMATCH", null, payment.getBuyerId(), ip,
                     "{\"paymentNo\":\"" + paymentNo + "\",\"amount\":" + amount + "}");
+            orderTx.recordNotify(payment.getId(), notifyNo, amount, false, "金额不一致");
             throw new PayNotifyException("AMOUNT_MISMATCH");
         }
-        if ("SUCCESS".equals(payment.getStatus())) {
-            return;
-        }
-        if ("FAIL".equals(status)) {
-            orderTx.failPayment(paymentNo);
-            paymentMapper.bumpNotify(paymentNo, "FAIL");
-            return;
-        }
-        OrderTx.PayOutcome outcome = orderTx.applyPaid(payment, tradeNo);
-        paymentMapper.bumpNotify(paymentNo, outcome.name());
-        if (outcome == OrderTx.PayOutcome.LATE_REFUND) {
+        OrderTx.PayOutcome outcome = orderTx.applySuccess(payment, notifyNo, amount);
+        if (outcome == OrderTx.PayOutcome.LATE) {
             auditService.record("BUSINESS", "PAYMENT_LATE_REFUND", null, payment.getBuyerId(), ip,
                     "{\"paymentNo\":\"" + paymentNo + "\",\"orderId\":" + payment.getOrderId() + "}");
+            OrderRecord current = orderMapper.findById(payment.getOrderId());
+            if (current != null) {
+                notificationService.notify(current.getBuyerId(), "PAYMENT_MOCK_REFUNDED", "模拟退回",
+                        OrderTx.LATE_PAY_REASON, "ORDER", current.getId());
+                notificationService.notify(current.getSellerId(), "PAYMENT_MOCK_REFUNDED", "模拟退回",
+                        OrderTx.LATE_PAY_REASON, "ORDER", current.getId());
+            }
             return;
         }
         if (outcome == OrderTx.PayOutcome.APPLIED) {
             auditService.record("BUSINESS", "PAYMENT_SUCCESS", null, payment.getBuyerId(), ip,
                     "{\"paymentNo\":\"" + paymentNo + "\",\"orderId\":" + payment.getOrderId() + ",\"amount\":" + amount + "}");
             OrderRecord paid = orderMapper.findById(payment.getOrderId());
-            if (paid != null && paid.getConversationId() != null) {
-                conversationService.system(paid.getConversationId(), "买家已付款");
-            }
             if (paid != null) {
-                notificationService.notify(paid.getSellerId(), "ORDER_PAID", "买家已付款", paid.getGoodsTitle(), "ORDER", paid.getId());
+                notificationService.notify(paid.getSellerId(), "ORDER_PAID", "买家已付款", "订单已进入待面交", "ORDER", paid.getId());
                 imHub.pushAll(List.of(paid.getBuyerId(), paid.getSellerId()),
                         Map.of("type", "ORDER_STATUS", "orderId", paid.getId(), "status", "PAID"));
             }
@@ -239,6 +230,7 @@ public class PayService {
         data.put("amount", payment.getAmount());
         data.put("channel", payment.getChannel());
         data.put("status", payment.getStatus());
+        data.put("reason", payment.getReason());
         data.put("expireAt", Times.at(payment.getExpireAt()));
         data.put("cashier", Map.of("confirmPath", "/api/pay/mock/" + payment.getPaymentNo() + "/confirm"));
         return data;

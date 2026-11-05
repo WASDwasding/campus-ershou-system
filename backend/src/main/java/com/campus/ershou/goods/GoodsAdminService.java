@@ -5,9 +5,7 @@ import com.campus.ershou.common.api.ApiException;
 import com.campus.ershou.common.api.ErrorCode;
 import com.campus.ershou.common.api.FieldErrorItem;
 import com.campus.ershou.common.api.Paging;
-import com.campus.ershou.order.OrderRecord;
-import com.campus.ershou.order.OrderService;
-import com.campus.ershou.order.OrderTx;
+import com.campus.ershou.im.NotificationService;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -19,22 +17,16 @@ import java.util.Set;
 @Service
 public class GoodsAdminService {
 
-    private static final Set<String> STATUSES = Set.of("ON_SALE", "RESERVED", "SOLD", "OFF_SHELF", "REMOVED", "DELETED");
+    private static final Set<String> STATUSES = Set.of(
+            "ON_SALE", "RESERVED", "MEETUP", "DISPUTED", "SOLD", "OFF_SHELF", "REMOVED", "DELETED");
 
     private final GoodsMapper goodsMapper;
-    private final OrderService orderService;
-    private final OrderTx orderTx;
+    private final NotificationService notificationService;
     private final AuditService auditService;
 
-    public GoodsAdminService(
-            GoodsMapper goodsMapper,
-            OrderService orderService,
-            OrderTx orderTx,
-            AuditService auditService
-    ) {
+    public GoodsAdminService(GoodsMapper goodsMapper, NotificationService notificationService, AuditService auditService) {
         this.goodsMapper = goodsMapper;
-        this.orderService = orderService;
-        this.orderTx = orderTx;
+        this.notificationService = notificationService;
         this.auditService = auditService;
     }
 
@@ -74,26 +66,13 @@ public class GoodsAdminService {
         if (goods == null || "DELETED".equals(goods.getStatus())) {
             throw ApiException.of(ErrorCode.NOT_FOUND);
         }
-        OrderRecord disputed = orderService.findActive(goodsId);
-        if (disputed != null && "DISPUTED".equals(disputed.getStatus())) {
-            throw ApiException.of(ErrorCode.GOODS_IN_DISPUTE);
-        }
-        String from = goods.getStatus();
-        if ("RESERVED".equals(from) && disputed != null) {
-            if ("PENDING_PAY".equals(disputed.getStatus())) {
-                orderTx.cancelUnpaid(disputed, "ADMIN", adminId, text);
-                from = "ON_SALE";
-            } else if ("PAID".equals(disputed.getStatus())) {
-                orderTx.cancelPaid(disputed, "ADMIN", adminId, text);
-                from = "OFF_SHELF";
-            }
-        }
-        if (!"ON_SALE".equals(from) && !"OFF_SHELF".equals(from)) {
+        if ("REMOVED".equals(goods.getStatus())) {
             throw ApiException.of(ErrorCode.CONFLICT);
         }
-        if (goodsMapper.removeFrom(goodsId, from, text) != 1) {
+        if (goodsMapper.removeFrom(goodsId, goods.getStatus(), text) != 1) {
             throw ApiException.of(ErrorCode.CONFLICT);
         }
+        notificationService.notify(goods.getSellerId(), "GOODS_REMOVED", "商品已下架", text, "GOODS", goodsId);
         auditService.record("ADMIN", "ADMIN_GOODS_REMOVE", adminId, goods.getSellerId(), ip,
                 "{\"goodsId\":" + goodsId + "}");
         return Map.of("id", goodsId, "status", "REMOVED");

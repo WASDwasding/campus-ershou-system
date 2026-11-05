@@ -8,8 +8,9 @@ import com.campus.ershou.common.api.Paging;
 import com.campus.ershou.common.file.FileService;
 import com.campus.ershou.common.rate.RateLimitService;
 import com.campus.ershou.common.util.Times;
-import com.campus.ershou.goods.GoodsMapper;
+import com.campus.ershou.goods.GoodsAdminService;
 import com.campus.ershou.goods.GoodsRow;
+import com.campus.ershou.goods.GoodsService;
 import com.campus.ershou.im.ConversationService;
 import com.campus.ershou.im.MessageRecord;
 import com.campus.ershou.im.ConversationMapper;
@@ -18,6 +19,7 @@ import com.campus.ershou.order.OrderRecord;
 import com.campus.ershou.order.OrderMapper;
 import com.campus.ershou.user.AdminUserService;
 import com.campus.ershou.user.UserMapper;
+import com.campus.ershou.user.UserService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,7 +38,8 @@ public class ReportService {
     private static final Set<String> ACTIONS = Set.of("DISMISS", "WARN", "REMOVE_GOODS", "BAN_USER");
 
     private final ReportMapper reportMapper;
-    private final GoodsMapper goodsMapper;
+    private final GoodsService goodsService;
+    private final UserService userService;
     private final UserMapper userMapper;
     private final OrderMapper orderMapper;
     private final ConversationMapper conversationMapper;
@@ -50,7 +53,8 @@ public class ReportService {
 
     public ReportService(
             ReportMapper reportMapper,
-            GoodsMapper goodsMapper,
+            GoodsService goodsService,
+            UserService userService,
             UserMapper userMapper,
             OrderMapper orderMapper,
             ConversationMapper conversationMapper,
@@ -63,7 +67,8 @@ public class ReportService {
             AuditService auditService
     ) {
         this.reportMapper = reportMapper;
-        this.goodsMapper = goodsMapper;
+        this.goodsService = goodsService;
+        this.userService = userService;
         this.userMapper = userMapper;
         this.orderMapper = orderMapper;
         this.conversationMapper = conversationMapper;
@@ -77,42 +82,42 @@ public class ReportService {
     }
 
     @Transactional
-    public Map<String, Object> create(long userId, String targetType, Long targetId, String reason, String description, List<String> evidence) {
-        rateLimitService.check("report", String.valueOf(userId), 10, Duration.ofDays(1));
-        String type = targetType == null ? "" : targetType.trim().toUpperCase();
-        String cleanReason = reason == null ? "" : reason.trim().toUpperCase();
-        if (!TARGETS.contains(type)) {
-            throw ApiException.validation(List.of(new FieldErrorItem("targetType", "只能是 GOODS、USER 或 MESSAGE")));
+    public Map<String, Object> create(long userId, Long goodsId, String description, List<String> evidence) {
+        if (!"VERIFIED".equals(userService.requireUser(userId).getVerifyStatus())) {
+            throw ApiException.of(ErrorCode.NOT_VERIFIED);
         }
-        if (targetId == null) {
-            throw ApiException.validation(List.of(new FieldErrorItem("targetId", "请选择举报对象")));
-        }
-        if (!REASONS.contains(cleanReason)) {
-            throw ApiException.validation(List.of(new FieldErrorItem("reason", "举报原因不合法")));
+        if (goodsId == null) {
+            throw ApiException.validation(List.of(new FieldErrorItem("goodsId", "请选择商品")));
         }
         String text = description == null ? "" : description.trim();
-        if (text.codePointCount(0, text.length()) > 300) {
-            throw ApiException.validation(List.of(new FieldErrorItem("description", "说明最多 300 字")));
+        int length = text.codePointCount(0, text.length());
+        if (length < 1 || length > 300) {
+            throw ApiException.validation(List.of(new FieldErrorItem("description", "说明长度为 1–300")));
         }
         List<String> files = evidence == null ? List.of() : evidence;
-        if (files.size() > 6) {
-            throw ApiException.validation(List.of(new FieldErrorItem("evidenceFileIds", "最多 6 张")));
+        if (files.size() > 3) {
+            throw ApiException.validation(List.of(new FieldErrorItem("evidenceFileIds", "最多 3 张")));
+        }
+        GoodsRow goods = goodsService.findVisible(userId, goodsId);
+        if (goods == null) {
+            throw ApiException.of(ErrorCode.NOT_FOUND);
+        }
+        if (goods.getSellerId() != null && goods.getSellerId() == userId) {
+            throw ApiException.of(ErrorCode.FORBIDDEN);
         }
         for (String fileId : files) {
             fileService.requireUsable(fileId, userId, "EVIDENCE");
         }
-        String snapshot = assertVisible(userId, type, targetId);
-        if (reportMapper.countRecent(userId, type, targetId) > 0) {
+        if (reportMapper.countPendingOf(userId, goodsId) > 0) {
             throw ApiException.of(ErrorCode.DUPLICATE_REPORT);
         }
+        rateLimitService.check("report", String.valueOf(userId), 10, Duration.ofDays(1));
         ReportRecord report = new ReportRecord();
         report.setReporterId(userId);
-        report.setTargetType(type);
-        report.setTargetId(targetId);
-        report.setReason(cleanReason);
-        report.setDescription(text.isEmpty() ? null : text);
+        report.setTargetType("GOODS");
+        report.setTargetId(goodsId);
+        report.setDescription(text);
         report.setStatus("PENDING");
-        report.setMessageSnapshot(snapshot);
         reportMapper.insert(report);
         for (int i = 0; i < files.size(); i++) {
             reportMapper.insertFile(report.getId(), files.get(i), i);
@@ -132,7 +137,7 @@ public class ReportService {
     public Map<String, Object> adminList(String status, String targetType, Integer page, Integer size) {
         String normalizedStatus = blank(status);
         String normalizedType = blank(targetType);
-        if (normalizedStatus != null && !Set.of("PENDING", "HANDLED").contains(normalizedStatus.toUpperCase())) {
+        if (normalizedStatus != null && !Set.of("PENDING", "DISMISSED", "REMOVED").contains(normalizedStatus.toUpperCase())) {
             throw ApiException.validation(List.of(new FieldErrorItem("status", "举报状态不合法")));
         }
         if (normalizedType != null && !TARGETS.contains(normalizedType.toUpperCase())) {
@@ -156,10 +161,16 @@ public class ReportService {
         return adminView(report, true);
     }
 
-    public Map<String, Object> handle(long adminId, long id, String action, Integer banDays, String reason, String ip) {
+    @Transactional
+    public Map<String, Object> handle(long adminId, long id, String action, String reason, String ip) {
         String normalized = action == null ? "" : action.trim().toUpperCase();
-        if (!ACTIONS.contains(normalized)) {
-            throw ApiException.validation(List.of(new FieldErrorItem("action", "处理动作不合法")));
+        if (!"DISMISS".equals(normalized) && !"REMOVE_GOODS".equals(normalized)) {
+            throw ApiException.validation(List.of(new FieldErrorItem("action", "只能是 REMOVE_GOODS 或 DISMISS")));
+        }
+        String text = reason == null ? "" : reason.trim();
+        int length = text.codePointCount(0, text.length());
+        if (length < 2 || length > 100) {
+            throw ApiException.validation(List.of(new FieldErrorItem("reason", "理由 2–100 字")));
         }
         ReportRecord report = reportMapper.findById(id);
         if (report == null) {
@@ -168,23 +179,14 @@ public class ReportService {
         if (!"PENDING".equals(report.getStatus())) {
             throw ApiException.of(ErrorCode.REPORT_ALREADY_HANDLED);
         }
+        String status = "DISMISS".equals(normalized) ? "DISMISSED" : "REMOVED";
         if ("REMOVE_GOODS".equals(normalized)) {
-            if (!"GOODS".equals(report.getTargetType())) {
-                throw ApiException.validation(List.of(new FieldErrorItem("action", "只有商品举报可以下架")));
-            }
-            String text = reason == null || reason.isBlank() ? "举报成立" : reason.trim();
             goodsAdminService.remove(adminId, report.getTargetId(), text, ip);
-        } else if ("BAN_USER".equals(normalized)) {
-            long targetUser = reportedUser(report);
-            String text = reason == null || reason.isBlank() ? "举报成立" : reason.trim();
-            adminUserService.ban(adminId, targetUser, text, banDays, ip);
-        } else if ("WARN".equals(normalized)) {
-            long targetUser = reportedUser(report);
-            notificationService.notify(targetUser, "REPORT_WARN", "请注意社区规范", "你的内容被举报，请遵守平台规则。", "REPORT", report.getId());
         }
-        if (reportMapper.handle(id, normalized) != 1) {
+        if (reportMapper.handle(id, status, normalized, text) != 1) {
             throw ApiException.of(ErrorCode.REPORT_ALREADY_HANDLED);
         }
+        notificationService.notify(report.getReporterId(), "REPORT_HANDLED", "举报已处理", text, "REPORT", id);
         auditService.record("ADMIN", "ADMIN_REPORT_HANDLE", adminId, report.getReporterId(), ip,
                 "{\"reportId\":" + id + ",\"action\":\"" + normalized + "\"}");
         return adminDetail(id);
@@ -194,66 +196,12 @@ public class ReportService {
         return reportMapper.countPending();
     }
 
-    private String assertVisible(long userId, String type, long targetId) {
-        return switch (type) {
-            case "GOODS" -> {
-                GoodsRow goods = goodsMapper.findById(targetId);
-                if (goods == null || !Set.of("ON_SALE", "RESERVED", "SOLD").contains(goods.getStatus())) {
-                    throw ApiException.of(ErrorCode.NOT_FOUND);
-                }
-                if (goods.getSellerId() != null && goods.getSellerId() == userId) {
-                    throw ApiException.of(ErrorCode.FORBIDDEN);
-                }
-                yield null;
-            }
-            case "USER" -> {
-                if (targetId == userId || userMapper.findById(targetId) == null) {
-                    throw targetId == userId ? ApiException.of(ErrorCode.FORBIDDEN) : ApiException.of(ErrorCode.NOT_FOUND);
-                }
-                yield null;
-            }
-            default -> {
-                MessageRecord message = conversationMapper.findMessage(targetId);
-                if (message == null || message.getConversationId() == null) {
-                    throw ApiException.of(ErrorCode.NOT_FOUND);
-                }
-                conversationService.requireMember(message.getConversationId(), userId);
-                if (message.getSenderId() != null && message.getSenderId() == userId) {
-                    throw ApiException.of(ErrorCode.FORBIDDEN);
-                }
-                yield message.getRawContent() == null ? message.getContent() : message.getRawContent();
-            }
-        };
-    }
-
-    private long reportedUser(ReportRecord report) {
-        return switch (report.getTargetType()) {
-            case "USER" -> report.getTargetId();
-            case "GOODS" -> {
-                GoodsRow goods = goodsMapper.findById(report.getTargetId());
-                if (goods == null || goods.getSellerId() == null) {
-                    throw ApiException.of(ErrorCode.NOT_FOUND);
-                }
-                yield goods.getSellerId();
-            }
-            case "MESSAGE" -> {
-                MessageRecord message = conversationMapper.findMessage(report.getTargetId());
-                if (message == null || message.getSenderId() == null) {
-                    throw ApiException.of(ErrorCode.NOT_FOUND);
-                }
-                yield message.getSenderId();
-            }
-            default -> throw ApiException.of(ErrorCode.CONFLICT);
-        };
-    }
-
     private Map<String, Object> mineView(ReportRecord report) {
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("id", report.getId());
-        data.put("targetType", report.getTargetType());
-        data.put("targetId", report.getTargetId());
-        data.put("reason", report.getReason());
+        data.put("goodsId", report.getTargetId());
         data.put("description", report.getDescription());
+        data.put("reason", report.getHandleReason());
         data.put("status", report.getStatus());
         data.put("action", report.getAction());
         data.put("createdAt", Times.at(report.getCreatedAt()));

@@ -13,7 +13,7 @@ import java.util.List;
 public interface CampusVerificationMapper {
 
     @Select("""
-            SELECT id, user_id, dorm_building_id, card_file_id, status, reject_reason, created_at, reviewed_at, reviewed_by
+            SELECT id, user_id, real_name, student_no, college, dorm_building_id, card_file_id, status, reject_reason, created_at, reviewed_at, reviewed_by
             FROM campus_verifications
             WHERE user_id = #{userId}
             ORDER BY id DESC
@@ -22,14 +22,14 @@ public interface CampusVerificationMapper {
     CampusVerification findLatest(long userId);
 
     @Select("""
-            SELECT id, user_id, dorm_building_id, card_file_id, status, reject_reason, created_at, reviewed_at, reviewed_by
+            SELECT id, user_id, real_name, student_no, college, dorm_building_id, card_file_id, status, reject_reason, created_at, reviewed_at, reviewed_by
             FROM campus_verifications
             WHERE id = #{id}
             """)
     CampusVerification findById(long id);
 
     @Select("""
-            SELECT id, user_id, dorm_building_id, card_file_id, status, reject_reason, created_at, reviewed_at, reviewed_by
+            SELECT id, user_id, real_name, student_no, college, dorm_building_id, card_file_id, status, reject_reason, created_at, reviewed_at, reviewed_by
             FROM campus_verifications
             WHERE user_id = #{userId}
             ORDER BY id DESC
@@ -38,7 +38,7 @@ public interface CampusVerificationMapper {
 
     @Select("""
             <script>
-            SELECT id, user_id, dorm_building_id, card_file_id, status, reject_reason, created_at, reviewed_at, reviewed_by
+            SELECT id, user_id, real_name, student_no, college, dorm_building_id, card_file_id, status, reject_reason, created_at, reviewed_at, reviewed_by
             FROM campus_verifications
             <where>
                 <if test="status != null">status = #{status}</if>
@@ -65,8 +65,8 @@ public interface CampusVerificationMapper {
     long count(@Param("status") String status);
 
     @Insert("""
-            INSERT INTO campus_verifications (user_id, dorm_building_id, card_file_id, status)
-            VALUES (#{userId}, #{dormBuildingId}, #{cardFileId}, #{status})
+            INSERT INTO campus_verifications (user_id, real_name, student_no, college, dorm_building_id, card_file_id, status)
+            VALUES (#{userId}, #{realName}, #{studentNo}, #{college}, #{dormBuildingId}, #{cardFileId}, #{status})
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(CampusVerification verification);

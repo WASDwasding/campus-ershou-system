@@ -13,7 +13,7 @@ import java.util.List;
 public interface ReportMapper {
 
     String COLUMNS = """
-            id, reporter_id, target_type, target_id, reason, description, status, action,
+            id, reporter_id, target_type, target_id, reason, description, status, action, handle_reason,
             message_snapshot, created_at, handled_at
             """;
 
@@ -32,10 +32,10 @@ public interface ReportMapper {
 
     @Select("""
             SELECT COUNT(*) FROM reports
-            WHERE reporter_id = #{reporterId} AND target_type = #{targetType} AND target_id = #{targetId}
-              AND created_at > DATE_SUB(CURRENT_TIMESTAMP(3), INTERVAL 24 HOUR)
+            WHERE reporter_id = #{reporterId} AND target_type = 'GOODS' AND target_id = #{goodsId}
+              AND status = 'PENDING'
             """)
-    int countRecent(@Param("reporterId") long reporterId, @Param("targetType") String targetType, @Param("targetId") long targetId);
+    int countPendingOf(@Param("reporterId") long reporterId, @Param("goodsId") long goodsId);
 
     @Select("SELECT file_id FROM report_files WHERE report_id = #{reportId} ORDER BY sort ASC")
     List<String> listFiles(long reportId);
@@ -82,8 +82,8 @@ public interface ReportMapper {
 
     @Update("""
             UPDATE reports
-            SET status = 'HANDLED', action = #{action}, handled_at = CURRENT_TIMESTAMP(3)
+            SET status = #{status}, action = #{action}, handle_reason = #{reason}, handled_at = CURRENT_TIMESTAMP(3)
             WHERE id = #{id} AND status = 'PENDING'
             """)
-    int handle(@Param("id") long id, @Param("action") String action);
+    int handle(@Param("id") long id, @Param("status") String status, @Param("action") String action, @Param("reason") String reason);
 }

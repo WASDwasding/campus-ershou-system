@@ -125,46 +125,4 @@ public class GoodsController {
         int[] paging = GoodsService.page(page, size);
         return ApiResponse.ok(goodsService.bySeller(loginUser.userId(), userId, status, paging[0], paging[1]));
     }
-
-    @PutMapping("/api/goods/{goodsId}/favorite")
-    public ApiResponse<Map<String, Object>> favorite(
-            @AuthenticationPrincipal LoginUser loginUser,
-            @PathVariable long goodsId
-    ) {
-        return ApiResponse.ok(goodsService.favorite(loginUser.userId(), goodsId, true));
-    }
-
-    @DeleteMapping("/api/goods/{goodsId}/favorite")
-    public ApiResponse<Map<String, Object>> unfavorite(
-            @AuthenticationPrincipal LoginUser loginUser,
-            @PathVariable long goodsId
-    ) {
-        return ApiResponse.ok(goodsService.favorite(loginUser.userId(), goodsId, false));
-    }
-
-    @GetMapping("/api/me/favorites")
-    public ApiResponse<Map<String, Object>> favorites(
-            @AuthenticationPrincipal LoginUser loginUser,
-            @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size
-    ) {
-        int[] paging = GoodsService.page(page, size);
-        return ApiResponse.ok(goodsService.favorites(loginUser.userId(), paging[0], paging[1]));
-    }
-
-    @GetMapping("/api/me/history")
-    public ApiResponse<Map<String, Object>> history(
-            @AuthenticationPrincipal LoginUser loginUser,
-            @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size
-    ) {
-        int[] paging = GoodsService.page(page, size);
-        return ApiResponse.ok(goodsService.history(loginUser.userId(), paging[0], paging[1]));
-    }
-
-    @DeleteMapping("/api/me/history")
-    public ApiResponse<Map<String, Object>> clearHistory(@AuthenticationPrincipal LoginUser loginUser) {
-        goodsService.clearHistory(loginUser.userId());
-        return ApiResponse.ok();
-    }
 }

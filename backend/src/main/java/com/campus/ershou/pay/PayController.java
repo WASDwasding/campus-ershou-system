@@ -41,7 +41,7 @@ public class PayController {
             HttpServletRequest httpRequest
     ) {
         return ApiResponse.ok(payService.confirm(
-                loginUser.userId(), paymentNo, request.result(), ClientIp.resolve(httpRequest)));
+                loginUser.userId(), paymentNo, ClientIp.resolve(httpRequest)));
     }
 
     @PostMapping("/api/pay/notify/mock")

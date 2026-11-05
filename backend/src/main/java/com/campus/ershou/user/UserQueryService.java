@@ -6,7 +6,6 @@ import com.campus.ershou.common.campus.BuildingMapper;
 import com.campus.ershou.common.campus.BuildingView;
 import com.campus.ershou.common.file.FileService;
 import com.campus.ershou.goods.GoodsService;
-import com.campus.ershou.im.ConversationService;
 import com.campus.ershou.im.NotificationService;
 import com.campus.ershou.order.OrderService;
 import org.springframework.stereotype.Service;
@@ -24,7 +23,6 @@ public class UserQueryService {
     private final GoodsService goodsService;
     private final NotificationService notificationService;
     private final OrderService orderService;
-    private final ConversationService conversationService;
 
     public UserQueryService(
             UserMapper userMapper,
@@ -33,8 +31,7 @@ public class UserQueryService {
             FileService fileService,
             GoodsService goodsService,
             NotificationService notificationService,
-            OrderService orderService,
-            ConversationService conversationService
+            OrderService orderService
     ) {
         this.userMapper = userMapper;
         this.userService = userService;
@@ -43,7 +40,6 @@ public class UserQueryService {
         this.goodsService = goodsService;
         this.notificationService = notificationService;
         this.orderService = orderService;
-        this.conversationService = conversationService;
     }
 
     public Map<String, Object> stats(long userId) {
@@ -52,7 +48,6 @@ public class UserQueryService {
         data.put("onSaleCount", goodsService.countStatus(userId, "ON_SALE"));
         data.put("offShelfCount", goodsService.countStatus(userId, "OFF_SHELF"));
         data.put("soldCount", goodsService.countStatus(userId, "SOLD"));
-        data.put("favoriteCount", goodsService.countFavorites(userId));
         data.put("pendingOrderCount", orderService.countBuyerPending(userId));
         data.put("sellingOrderCount", orderService.countSellerActive(userId));
         return data;
@@ -61,7 +56,7 @@ public class UserQueryService {
     public Map<String, Object> badges(long userId) {
         userService.requireUser(userId);
         Map<String, Object> data = new LinkedHashMap<>();
-        data.put("unreadMessages", conversationService.countUnread(userId));
+        data.put("unreadMessages", orderService.countUnreadMessages(userId));
         data.put("unreadNotifications", notificationService.countUnread(userId));
         data.put("buyerTodos", orderService.countBuyerTodos(userId));
         return data;
@@ -80,7 +75,6 @@ public class UserQueryService {
         data.put("bio", target.getBio());
         data.put("verified", "VERIFIED".equals(target.getVerifyStatus()));
         data.put("relation", relation(viewer, target));
-        data.put("rating", orderService.rating(userId));
         data.put("soldCount", goodsService.countStatus(userId, "SOLD"));
         data.put("onSaleCount", goodsService.countStatus(userId, "ON_SALE"));
         return data;
