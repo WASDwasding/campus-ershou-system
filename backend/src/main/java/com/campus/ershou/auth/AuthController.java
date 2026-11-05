@@ -8,6 +8,7 @@ import com.campus.ershou.auth.dto.RegisterSentResponse;
 import com.campus.ershou.auth.dto.SetPasswordRequest;
 import com.campus.ershou.auth.dto.SetupTokenResponse;
 import com.campus.ershou.auth.dto.VerifyCodeRequest;
+import com.campus.ershou.auth.dto.WxCodeRequest;
 import com.campus.ershou.common.api.ApiResponse;
 import com.campus.ershou.common.security.LoginUser;
 import com.campus.ershou.common.web.ClientIp;
@@ -50,6 +51,19 @@ public class AuthController {
     @PostMapping("/api/auth/login")
     public ApiResponse<AuthTokenResponse> login(@Valid @RequestBody LoginRequest request) {
         return ApiResponse.ok(authService.login(request));
+    }
+
+    @PostMapping("/api/auth/wx-login")
+    public ApiResponse<AuthTokenResponse> wxLogin(@Valid @RequestBody WxCodeRequest request, HttpServletRequest httpRequest) {
+        return ApiResponse.ok(authService.wxLogin(request.code(), ClientIp.resolve(httpRequest)));
+    }
+
+    @PostMapping("/api/auth/wx-bind")
+    public ApiResponse<Map<String, Object>> wxBind(
+            @AuthenticationPrincipal LoginUser loginUser,
+            @Valid @RequestBody WxCodeRequest request
+    ) {
+        return ApiResponse.ok(authService.wxBind(loginUser.userId(), request.code()));
     }
 
     @PostMapping("/api/auth/logout")

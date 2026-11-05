@@ -2,41 +2,50 @@ package com.campus.ershou.order;
 
 import com.campus.ershou.common.api.ApiException;
 import com.campus.ershou.common.api.ErrorCode;
+import com.campus.ershou.common.util.Randoms;
+import com.campus.ershou.common.util.Times;
 import com.campus.ershou.goods.GoodsMapper;
-import com.campus.ershou.im.ConversationRecord;
-import com.campus.ershou.im.ConversationService;
+import com.campus.ershou.goods.GoodsRow;
 import com.campus.ershou.pay.PaymentMapper;
+import com.campus.ershou.pay.PaymentNotifyMapper;
 import com.campus.ershou.pay.PaymentRecord;
+import com.campus.ershou.user.UserMapper;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
 public class OrderTx {
 
+    public static final String LATE_PAY_REASON = "取消或释放后的迟到支付";
+
+    private static final DateTimeFormatter STAMP = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+
     private final OrderMapper orderMapper;
     private final GoodsMapper goodsMapper;
     private final PaymentMapper paymentMapper;
+    private final PaymentNotifyMapper paymentNotifyMapper;
     private final DisputeMapper disputeMapper;
-    private final ReviewMapper reviewMapper;
-    private final ConversationService conversationService;
+    private final UserMapper userMapper;
 
     public OrderTx(
             OrderMapper orderMapper,
             GoodsMapper goodsMapper,
             PaymentMapper paymentMapper,
+            PaymentNotifyMapper paymentNotifyMapper,
             DisputeMapper disputeMapper,
-            ReviewMapper reviewMapper,
-            ConversationService conversationService
+            UserMapper userMapper
     ) {
         this.orderMapper = orderMapper;
         this.goodsMapper = goodsMapper;
         this.paymentMapper = paymentMapper;
+        this.paymentNotifyMapper = paymentNotifyMapper;
         this.disputeMapper = disputeMapper;
-        this.reviewMapper = reviewMapper;
-        this.conversationService = conversationService;
+        this.userMapper = userMapper;
     }
 
     @Transactional
@@ -44,8 +53,6 @@ public class OrderTx {
         if (goodsMapper.reserve(order.getGoodsId()) != 1) {
             throw ApiException.of(ErrorCode.GOODS_NOT_AVAILABLE);
         }
-        ConversationRecord conversation = conversationService.ensure(order.getGoodsId(), order.getBuyerId(), order.getSellerId());
-        order.setConversationId(conversation.getId());
         try {
             orderMapper.insert(order);
         } catch (DuplicateKeyException ex) {
@@ -54,6 +61,20 @@ public class OrderTx {
                 throw ex;
             }
             throw ApiException.of(ErrorCode.GOODS_NOT_AVAILABLE);
+        }
+        PaymentRecord payment = new PaymentRecord();
+        payment.setPaymentNo("P" + STAMP.format(LocalDateTime.now(Times.SHANGHAI)) + Randoms.digits(4));
+        payment.setOrderId(order.getId());
+        payment.setOrderNo(order.getOrderNo());
+        payment.setBuyerId(order.getBuyerId());
+        payment.setAmount(order.getAmount());
+        payment.setChannel("MOCK");
+        payment.setStatus("PENDING");
+        payment.setExpireAt(order.getExpireAt());
+        try {
+            paymentMapper.insert(payment);
+        } catch (DuplicateKeyException ex) {
+            throw ex;
         }
         orderMapper.insertEvent(order.getId(), null, "PENDING_PAY", "BUYER", order.getBuyerId());
         return order;
@@ -64,46 +85,62 @@ public class OrderTx {
         if (orderMapper.cancel(order.getId(), "PENDING_PAY", "CANCELLED", by, reason) != 1) {
             throw ApiException.of(ErrorCode.ORDER_STATUS_INVALID);
         }
-        goodsMapper.releaseReserved(order.getGoodsId());
-        paymentMapper.closeCreated(order.getId());
+        if (goodsMapper.releaseReserved(order.getGoodsId()) != 1) {
+            throw ApiException.of(ErrorCode.ORDER_STATUS_INVALID);
+        }
+        paymentMapper.closePending(order.getId(), reason);
         orderMapper.insertEvent(order.getId(), "PENDING_PAY", "CANCELLED", actorType(by), actorId);
     }
 
     @Transactional
-    public void cancelPaid(OrderRecord order, String by, Long actorId, String reason) {
-        if (orderMapper.cancel(order.getId(), "PAID", "CANCELLED", by, reason) != 1) {
-            throw ApiException.of(ErrorCode.ORDER_STATUS_INVALID);
+    public PayOutcome applySuccess(PaymentRecord payment, String notifyNo, int amount) {
+        if (paymentNotifyMapper.findByNo(notifyNo) != null) {
+            return PayOutcome.ALREADY;
         }
-        goodsMapper.offShelfReserved(order.getGoodsId());
-        paymentMapper.refundSuccess(order.getId());
-        orderMapper.insertEvent(order.getId(), "PAID", "CANCELLED", actorType(by), actorId);
+        OrderRecord order = orderMapper.findById(payment.getOrderId());
+        if (order == null) {
+            throw new com.campus.ershou.pay.PayNotifyException("PAYMENT_NOT_FOUND");
+        }
+        GoodsRow goods = goodsMapper.findById(order.getGoodsId());
+        OrderRecord active = orderMapper.findActiveByGoods(order.getGoodsId());
+        boolean occupied = goods != null
+                && "RESERVED".equals(goods.getStatus())
+                && active != null
+                && active.getId().equals(order.getId());
+        boolean canAdopt = "PENDING_PAY".equals(order.getStatus())
+                && "PENDING".equals(payment.getStatus())
+                && occupied
+                && payment.getAmount() != null
+                && order.getAmount() != null
+                && amount == payment.getAmount()
+                && amount == order.getAmount();
+        if (canAdopt) {
+            if (paymentMapper.markPaid(payment.getPaymentNo()) != 1
+                    || orderMapper.markPaid(order.getId()) != 1
+                    || goodsMapper.markMeetup(order.getGoodsId()) != 1) {
+                throw ApiException.of(ErrorCode.ORDER_STATUS_INVALID);
+            }
+            paymentNotifyMapper.insert(payment.getId(), notifyNo, amount, true, null);
+            orderMapper.insertEvent(order.getId(), "PENDING_PAY", "PAID", "SYSTEM", null);
+            return PayOutcome.APPLIED;
+        }
+        boolean stillThisOrder = active != null && active.getId().equals(order.getId());
+        boolean late = "CANCELLED".equals(order.getStatus()) || !stillThisOrder;
+        if (late) {
+            int changed = paymentMapper.markMockRefunded(payment.getPaymentNo(), LATE_PAY_REASON);
+            paymentNotifyMapper.insert(payment.getId(), notifyNo, amount, false, LATE_PAY_REASON);
+            return changed == 1 ? PayOutcome.LATE : PayOutcome.ALREADY;
+        }
+        paymentNotifyMapper.insert(payment.getId(), notifyNo, amount, false, null);
+        return PayOutcome.IGNORED;
     }
 
     @Transactional
-    public PayOutcome applyPaid(PaymentRecord payment, String gatewayTradeNo) {
-        int marked = paymentMapper.markSuccess(payment.getPaymentNo(), gatewayTradeNo);
-        if (marked != 1) {
-            PaymentRecord current = paymentMapper.findByNo(payment.getPaymentNo());
-            if (current != null && "SUCCESS".equals(current.getStatus())) {
-                return PayOutcome.ALREADY;
-            }
-            if (current != null && "CLOSED".equals(current.getStatus())
-                    && paymentMapper.refundClosed(payment.getPaymentNo(), gatewayTradeNo) == 1) {
-                return PayOutcome.LATE_REFUND;
-            }
-            return PayOutcome.IGNORED;
+    public void recordNotify(long paymentId, String notifyNo, int amount, boolean adopted, String reason) {
+        if (paymentNotifyMapper.findByNo(notifyNo) != null) {
+            return;
         }
-        if (orderMapper.markPaid(payment.getOrderId()) != 1) {
-            paymentMapper.refundSuccess(payment.getOrderId());
-            return PayOutcome.LATE_REFUND;
-        }
-        orderMapper.insertEvent(payment.getOrderId(), "PENDING_PAY", "PAID", "SYSTEM", null);
-        return PayOutcome.APPLIED;
-    }
-
-    @Transactional
-    public void failPayment(String paymentNo) {
-        paymentMapper.markFailed(paymentNo);
+        paymentNotifyMapper.insert(paymentId, notifyNo, amount, adopted, reason);
     }
 
     @Transactional
@@ -115,7 +152,9 @@ public class OrderTx {
             throw ApiException.of(ErrorCode.ORDER_STATUS_INVALID);
         }
         if (orderMapper.completeIfBothConfirmed(order.getId()) == 1) {
-            goodsMapper.markSold(order.getGoodsId());
+            if (goodsMapper.markSoldFrom(order.getGoodsId(), "MEETUP") != 1) {
+                throw ApiException.of(ErrorCode.ORDER_STATUS_INVALID);
+            }
             orderMapper.insertEvent(order.getId(), "PAID", "COMPLETED", buyer ? "BUYER" : "SELLER",
                     buyer ? order.getBuyerId() : order.getSellerId());
             return true;
@@ -124,15 +163,8 @@ public class OrderTx {
     }
 
     @Transactional
-    public void updateMeetup(long orderId, long buildingId, String place, java.time.LocalDateTime time) {
-        if (orderMapper.updateMeetup(orderId, buildingId, place, time) != 1) {
-            throw ApiException.of(ErrorCode.ORDER_STATUS_INVALID);
-        }
-    }
-
-    @Transactional
     public DisputeRecord openDispute(OrderRecord order, long userId, String reason, String description, List<String> files) {
-        if (orderMapper.markDisputed(order.getId()) != 1) {
+        if (orderMapper.markDisputed(order.getId()) != 1 || goodsMapper.markDisputed(order.getGoodsId()) != 1) {
             throw ApiException.of(ErrorCode.ORDER_STATUS_INVALID);
         }
         DisputeRecord dispute = new DisputeRecord();
@@ -154,7 +186,7 @@ public class OrderTx {
         if (disputeMapper.withdraw(dispute.getId(), dispute.getOpenerId()) != 1) {
             throw ApiException.of(ErrorCode.DISPUTE_NOT_OPEN);
         }
-        if (orderMapper.reopenPaid(order.getId()) != 1) {
+        if (orderMapper.reopenPaid(order.getId()) != 1 || goodsMapper.reopenMeetup(order.getGoodsId()) != 1) {
             throw ApiException.of(ErrorCode.ORDER_STATUS_INVALID);
         }
         orderMapper.insertEvent(order.getId(), "DISPUTED", "PAID",
@@ -162,41 +194,53 @@ public class OrderTx {
     }
 
     @Transactional
-    public void resolveComplete(OrderRecord order, DisputeRecord dispute, String remark) {
-        if (disputeMapper.resolve(dispute.getId(), "COMPLETE", remark) != 1) {
+    public void resolveReject(OrderRecord order, DisputeRecord dispute, String remark) {
+        if (disputeMapper.resolve(dispute.getId(), "REJECTED", "REJECT", remark) != 1) {
             throw ApiException.of(ErrorCode.DISPUTE_NOT_OPEN);
         }
-        if (orderMapper.completeFromDispute(order.getId()) != 1) {
+        if (orderMapper.reopenPaid(order.getId()) != 1 || goodsMapper.reopenMeetup(order.getGoodsId()) != 1) {
             throw ApiException.of(ErrorCode.ORDER_STATUS_INVALID);
         }
-        goodsMapper.markSold(order.getGoodsId());
+        orderMapper.insertEvent(order.getId(), "DISPUTED", "PAID", "ADMIN", null);
+    }
+
+    @Transactional
+    public void resolveComplete(OrderRecord order, DisputeRecord dispute, String remark) {
+        if (order.getBuyerHandoverAt() == null || order.getSellerHandoverAt() == null) {
+            throw ApiException.of(ErrorCode.ORDER_STATUS_INVALID);
+        }
+        if (disputeMapper.resolve(dispute.getId(), "RESOLVED", "COMPLETE", remark) != 1) {
+            throw ApiException.of(ErrorCode.DISPUTE_NOT_OPEN);
+        }
+        if (orderMapper.completeFromDispute(order.getId()) != 1
+                || goodsMapper.markSoldFrom(order.getGoodsId(), "DISPUTED") != 1) {
+            throw ApiException.of(ErrorCode.ORDER_STATUS_INVALID);
+        }
         orderMapper.insertEvent(order.getId(), "DISPUTED", "COMPLETED", "ADMIN", null);
     }
 
     @Transactional
-    public void resolveRefund(OrderRecord order, DisputeRecord dispute, String remark) {
-        if (disputeMapper.resolve(dispute.getId(), "REFUND", remark) != 1) {
+    public void resolveCancel(OrderRecord order, DisputeRecord dispute, String remark, boolean fraud) {
+        if (disputeMapper.resolve(dispute.getId(), "RESOLVED", "CANCEL", remark) != 1) {
             throw ApiException.of(ErrorCode.DISPUTE_NOT_OPEN);
         }
-        if (orderMapper.cancelFrom(order.getId(), "DISPUTED", "管理员判退款") != 1) {
+        if (orderMapper.cancelFrom(order.getId(), "DISPUTED", remark) != 1) {
             throw ApiException.of(ErrorCode.ORDER_STATUS_INVALID);
         }
-        goodsMapper.offShelfReserved(order.getGoodsId());
-        paymentMapper.refundSuccess(order.getId());
+        paymentMapper.refundPaid(order.getId(), remark);
+        if (fraud) {
+            if (goodsMapper.offShelfDisputed(order.getGoodsId()) != 1) {
+                throw ApiException.of(ErrorCode.ORDER_STATUS_INVALID);
+            }
+            userMapper.banPublish(order.getSellerId());
+        } else if (goodsMapper.releaseDisputed(order.getGoodsId()) != 1) {
+            throw ApiException.of(ErrorCode.ORDER_STATUS_INVALID);
+        }
         orderMapper.insertEvent(order.getId(), "DISPUTED", "CANCELLED", "ADMIN", null);
     }
 
-    @Transactional
-    public void review(ReviewRecord review) {
-        try {
-            reviewMapper.insert(review);
-        } catch (DuplicateKeyException ex) {
-            throw ApiException.of(ErrorCode.ALREADY_REVIEWED);
-        }
-    }
-
     public enum PayOutcome {
-        APPLIED, ALREADY, LATE_REFUND, IGNORED
+        APPLIED, ALREADY, LATE, IGNORED
     }
 
     private static String actorType(String by) {

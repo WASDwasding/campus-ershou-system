@@ -143,23 +143,37 @@ class TradeFlowIT {
                 .andExpect(jsonPath("$.code").value("FAIL"));
         assertThat(jdbc.queryForObject("SELECT status FROM orders WHERE id = ?", String.class, orderId)).isEqualTo("PENDING_PAY");
 
+        mockMvc.perform(post("/api/orders/" + orderId + "/messages")
+                        .header("Authorization", "Bearer " + buyer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\":\"先聊聊\",\"clientMsgId\":\"pay-before-01\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("CHAT_NOT_OPEN"))
+                .andExpect(jsonPath("$.message").value("支付完成并进入待面交后才能聊天"));
+
         mockMvc.perform(post("/api/pay/mock/" + paymentNo + "/confirm")
                         .header("Authorization", "Bearer " + buyer)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"result\":\"SUCCESS\"}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.status").value("SUCCESS"));
-        assertThat(jdbc.queryForObject("SELECT status FROM orders WHERE id = ?", String.class, orderId)).isEqualTo("PAID");
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("UNKNOWN_FIELD"));
+        assertThat(jdbc.queryForObject("SELECT status FROM orders WHERE id = ?", String.class, orderId)).isEqualTo("PENDING_PAY");
 
-        String meetup = """
-                {"buildingId":1,"place":"东门传达室","time":"%s"}
-                """.formatted(java.time.OffsetDateTime.now().plusDays(1).withNano(0));
-        mockMvc.perform(put("/api/orders/" + orderId + "/meetup")
+        mockMvc.perform(post("/api/pay/mock/" + paymentNo + "/confirm")
                         .header("Authorization", "Bearer " + buyer)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(meetup))
+                        .content("{}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.meetup.place").value("东门传达室"));
+                .andExpect(jsonPath("$.data.status").value("PAID"));
+        assertThat(jdbc.queryForObject("SELECT status FROM orders WHERE id = ?", String.class, orderId)).isEqualTo("PAID");
+        assertThat(jdbc.queryForObject("SELECT status FROM goods WHERE id = ?", String.class, goodsId)).isEqualTo("MEETUP");
+
+        mockMvc.perform(post("/api/orders/" + orderId + "/messages")
+                        .header("Authorization", "Bearer " + buyer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\":\"明天下午东门见\",\"clientMsgId\":\"meet-0001\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content").value("明天下午东门见"));
 
         mockMvc.perform(post("/api/orders/" + orderId + "/handover-confirm")
                         .header("Authorization", "Bearer " + buyer))
@@ -169,17 +183,16 @@ class TradeFlowIT {
                         .header("Authorization", "Bearer " + seller))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("COMPLETED"));
-
-        mockMvc.perform(post("/api/orders/" + orderId + "/review")
-                        .header("Authorization", "Bearer " + buyer)
+        mockMvc.perform(post("/api/orders/" + orderId + "/messages")
+                        .header("Authorization", "Bearer " + seller)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"score\":5,\"content\":\"很好\"}"))
+                        .content("{\"content\":\"到了\",\"clientMsgId\":\"done-0001\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("CHAT_READONLY"));
+        long sellerId = jdbc.queryForObject("SELECT id FROM users WHERE email = 'trade-seller@example.com'", Long.class);
+        mockMvc.perform(get("/api/users/" + sellerId).header("Authorization", "Bearer " + buyer))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.review.mine.score").value(5));
-        mockMvc.perform(get("/api/users/" + jdbc.queryForObject("SELECT id FROM users WHERE email = 'trade-seller@example.com'", Long.class) + "/reviews")
-                        .header("Authorization", "Bearer " + buyer))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.total").value(1));
+                .andExpect(jsonPath("$.data.rating").doesNotExist());
     }
 
     private String login(String studentNo) throws Exception {
@@ -243,6 +256,18 @@ class TradeFlowIT {
                 WHERE u.email IN ('trade-seller@example.com', 'trade-buyer@example.com', 'trade-other@example.com')
                 """);
         jdbc.update("""
+                DELETE om FROM order_messages om
+                INNER JOIN orders o ON o.id = om.order_id
+                INNER JOIN users u ON u.id = o.buyer_id
+                WHERE u.email IN ('trade-seller@example.com', 'trade-buyer@example.com', 'trade-other@example.com')
+                """);
+        jdbc.update("""
+                DELETE pn FROM payment_notifies pn
+                INNER JOIN payments p ON p.id = pn.payment_id
+                INNER JOIN users u ON u.id = p.buyer_id
+                WHERE u.email IN ('trade-seller@example.com', 'trade-buyer@example.com', 'trade-other@example.com')
+                """);
+        jdbc.update("""
                 DELETE p FROM payments p
                 INNER JOIN users u ON u.id = p.buyer_id
                 WHERE u.email IN ('trade-seller@example.com', 'trade-buyer@example.com', 'trade-other@example.com')
@@ -272,6 +297,12 @@ class TradeFlowIT {
         jdbc.update("""
                 DELETE n FROM notifications n
                 INNER JOIN users u ON u.id = n.user_id
+                WHERE u.email IN ('trade-seller@example.com', 'trade-buyer@example.com', 'trade-other@example.com')
+                """);
+        jdbc.update("""
+                DELETE ga FROM goods_aliases ga
+                INNER JOIN goods g ON g.id = ga.goods_id
+                INNER JOIN users u ON u.id = g.seller_id
                 WHERE u.email IN ('trade-seller@example.com', 'trade-buyer@example.com', 'trade-other@example.com')
                 """);
         jdbc.update("""

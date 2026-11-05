@@ -15,18 +15,26 @@ public interface OrderMapper {
 
     String COLUMNS = """
             id, order_no, buyer_id, seller_id, goods_id, status, amount, quantity, goods_title,
+            goods_description, goods_category_id, goods_category_name, goods_condition, goods_price,
+            goods_trade_note, goods_meetup_building_id, goods_meetup_building_name,
+            goods_aliases_json, goods_images_json,
             goods_cover_file_id, conversation_id, meetup_building_id, meetup_place, meetup_time,
-            buyer_handover_at, seller_handover_at, cancel_by, cancel_reason, expire_at, paid_at,
+            buyer_handover_at, seller_handover_at, buyer_last_read, seller_last_read,
+            cancel_by, cancel_reason, expire_at, paid_at,
             completed_at, cancelled_at, created_at, updated_at
             """;
 
     @Insert("""
             INSERT INTO orders (
                 order_no, buyer_id, seller_id, goods_id, status, amount, quantity, goods_title,
-                goods_cover_file_id, conversation_id, expire_at
+                goods_description, goods_category_id, goods_category_name, goods_condition, goods_price,
+                goods_trade_note, goods_meetup_building_id, goods_meetup_building_name,
+                goods_aliases_json, goods_images_json, goods_cover_file_id, expire_at
             ) VALUES (
                 #{orderNo}, #{buyerId}, #{sellerId}, #{goodsId}, #{status}, #{amount}, #{quantity}, #{goodsTitle},
-                #{goodsCoverFileId}, #{conversationId}, #{expireAt}
+                #{goodsDescription}, #{goodsCategoryId}, #{goodsCategoryName}, #{goodsCondition}, #{goodsPrice},
+                #{goodsTradeNote}, #{goodsMeetupBuildingId}, #{goodsMeetupBuildingName},
+                #{goodsAliasesJson}, #{goodsImagesJson}, #{goodsCoverFileId}, #{expireAt}
             )
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
@@ -96,13 +104,13 @@ public interface OrderMapper {
 
     @Update("""
             UPDATE orders SET buyer_handover_at = IFNULL(buyer_handover_at, CURRENT_TIMESTAMP(3))
-            WHERE id = #{id} AND status = 'PAID' AND buyer_id = #{userId}
+            WHERE id = #{id} AND status IN ('PAID', 'DISPUTED') AND buyer_id = #{userId}
             """)
     int confirmBuyer(@Param("id") long id, @Param("userId") long userId);
 
     @Update("""
             UPDATE orders SET seller_handover_at = IFNULL(seller_handover_at, CURRENT_TIMESTAMP(3))
-            WHERE id = #{id} AND status = 'PAID' AND seller_id = #{userId}
+            WHERE id = #{id} AND status IN ('PAID', 'DISPUTED') AND seller_id = #{userId}
             """)
     int confirmSeller(@Param("id") long id, @Param("userId") long userId);
 
@@ -126,8 +134,30 @@ public interface OrderMapper {
     @Update("""
             UPDATE orders SET status = 'COMPLETED', completed_at = CURRENT_TIMESTAMP(3)
             WHERE id = #{id} AND status = 'DISPUTED'
+              AND buyer_handover_at IS NOT NULL AND seller_handover_at IS NOT NULL
             """)
     int completeFromDispute(long id);
+
+    @Update("""
+            UPDATE orders SET buyer_last_read = GREATEST(buyer_last_read, #{messageId})
+            WHERE id = #{id} AND buyer_id = #{userId}
+            """)
+    int markBuyerRead(@Param("id") long id, @Param("userId") long userId, @Param("messageId") long messageId);
+
+    @Update("""
+            UPDATE orders SET seller_last_read = GREATEST(seller_last_read, #{messageId})
+            WHERE id = #{id} AND seller_id = #{userId}
+            """)
+    int markSellerRead(@Param("id") long id, @Param("userId") long userId, @Param("messageId") long messageId);
+
+    @Select("""
+            SELECT COUNT(*)
+            FROM order_messages m
+            INNER JOIN orders o ON o.id = m.order_id
+            WHERE (o.buyer_id = #{userId} AND m.sender_id <> #{userId} AND m.id > o.buyer_last_read)
+               OR (o.seller_id = #{userId} AND m.sender_id <> #{userId} AND m.id > o.seller_last_read)
+            """)
+    int countUnreadMessages(long userId);
 
     @Update("""
             UPDATE orders

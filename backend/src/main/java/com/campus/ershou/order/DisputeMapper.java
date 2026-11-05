@@ -47,10 +47,10 @@ public interface DisputeMapper {
 
     @Update("""
             UPDATE disputes
-            SET status = 'RESOLVED', result = #{result}, remark = #{remark}, resolved_at = CURRENT_TIMESTAMP(3)
+            SET status = #{status}, result = #{result}, remark = #{remark}, resolved_at = CURRENT_TIMESTAMP(3)
             WHERE id = #{id} AND status = 'OPEN'
             """)
-    int resolve(@Param("id") long id, @Param("result") String result, @Param("remark") String remark);
+    int resolve(@Param("id") long id, @Param("status") String status, @Param("result") String result, @Param("remark") String remark);
 
     @Select("SELECT COUNT(*) FROM disputes WHERE status = 'OPEN'")
     long countOpen();

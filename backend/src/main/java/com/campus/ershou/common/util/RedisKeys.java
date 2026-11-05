@@ -78,4 +78,12 @@ public final class RedisKeys {
     public static String aiQuote(String token) {
         return PREFIX + "ai:quote:" + token;
     }
+
+    public static String aiDraftCount(long userId, String day) {
+        return PREFIX + "ai:draft:count:" + userId + ":" + day;
+    }
+
+    public static String aiQuoteCount(long userId, String day) {
+        return PREFIX + "ai:quote:count:" + userId + ":" + day;
+    }
 }

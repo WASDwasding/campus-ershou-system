@@ -13,7 +13,8 @@ public record GoodsWriteRequest(
         @Size(min = 2, max = 30, message = "标题长度为 2–30")
         String title,
 
-        @Size(max = 500, message = "描述最多 500 字")
+        @NotBlank(message = "描述不能为空")
+        @Size(min = 1, max = 500, message = "描述长度为 1–500")
         String description,
 
         @NotNull(message = "分类不能为空")
@@ -37,6 +38,8 @@ public record GoodsWriteRequest(
 
         @NotNull(message = "面交楼栋不能为空")
         Long meetupBuildingId,
+
+        List<String> aliases,
 
         @Size(max = 100, message = "交易说明最多 100 字")
         String tradeNote

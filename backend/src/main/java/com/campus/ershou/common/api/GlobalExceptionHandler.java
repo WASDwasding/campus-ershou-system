@@ -1,5 +1,7 @@
 package com.campus.ershou.common.api;
 
+import com.campus.ershou.admin.AuditService;
+import com.campus.ershou.common.web.ClientIp;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
@@ -33,13 +35,19 @@ public class GlobalExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     private static final Set<String> TAMPER_FIELDS = Set.of(
-            "price", "amount", "paid", "status", "stock",
-            "sellerId", "buyerId", "userId", "role", "suggestedPrice"
+            "price", "amount", "paid", "status", "orderStatus", "paymentStatus", "stock",
+            "sellerId", "buyerId", "userId", "role", "suggestedPrice", "result"
     );
+
+    private final AuditService auditService;
+
+    public GlobalExceptionHandler(AuditService auditService) {
+        this.auditService = auditService;
+    }
 
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ApiResponse<Object>> handleApi(ApiException ex) {
-        return toResponse(ex.getErrorCode(), ex.getMessage(), ex.getData(), ex.getRetryAfterSeconds());
+        return toResponse(ex);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -66,7 +74,13 @@ public class GlobalExceptionHandler {
         if (cause instanceof UnrecognizedPropertyException unknown) {
             String field = unknown.getPropertyName();
             if (TAMPER_FIELDS.contains(field)) {
-                log.warn("TAMPER_FIELD field={} ip={} path={}", field, request.getRemoteAddr(), request.getRequestURI());
+                String ip = ClientIp.resolve(request);
+                log.warn("TAMPER_FIELD field={} ip={} path={}", field, ip, request.getRequestURI());
+                try {
+                    auditService.record("SECURITY", "TAMPER_FIELD", null, null, ip, "{\"field\":\"" + field + "\"}");
+                } catch (RuntimeException ignored) {
+                    log.warn("TAMPER_FIELD audit skipped");
+                }
             }
             return toResponse(
                     ErrorCode.UNKNOWN_FIELD,
@@ -140,5 +154,17 @@ public class GlobalExceptionHandler {
             headers.set(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfterSeconds));
         }
         return new ResponseEntity<>(ApiResponse.fail(code, message, data), headers, code.getHttpStatus());
+    }
+
+    private static ResponseEntity<ApiResponse<Object>> toResponse(ApiException ex) {
+        HttpHeaders headers = new HttpHeaders();
+        if (ex.getRetryAfterSeconds() != null) {
+            headers.set(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getRetryAfterSeconds()));
+        }
+        return new ResponseEntity<>(
+                ApiResponse.fail(ex.getErrorCode(), ex.getMessage(), ex.getData()),
+                headers,
+                ex.httpStatus()
+        );
     }
 }

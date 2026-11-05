@@ -7,6 +7,8 @@ import com.campus.ershou.common.api.FieldErrorItem;
 import com.campus.ershou.common.api.Paging;
 import com.campus.ershou.common.campus.BuildingMapper;
 import com.campus.ershou.common.campus.BuildingView;
+import com.campus.ershou.common.campus.CategoryMapper;
+import com.campus.ershou.common.campus.CategoryView;
 import com.campus.ershou.common.config.AppProperties;
 import com.campus.ershou.common.file.FileService;
 import com.campus.ershou.common.file.FileUrls;
@@ -20,14 +22,17 @@ import com.campus.ershou.common.util.Times;
 import com.campus.ershou.goods.GoodsImageRow;
 import com.campus.ershou.goods.GoodsMapper;
 import com.campus.ershou.goods.GoodsRow;
-import com.campus.ershou.im.ConversationService;
 import com.campus.ershou.im.ImHub;
 import com.campus.ershou.im.NotificationService;
 import com.campus.ershou.pay.PaymentMapper;
+import com.campus.ershou.pay.PaymentNotify;
+import com.campus.ershou.pay.PaymentNotifyMapper;
 import com.campus.ershou.pay.PaymentRecord;
 import com.campus.ershou.user.UserEntity;
 import com.campus.ershou.user.UserMapper;
 import com.campus.ershou.user.UserService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -48,7 +53,9 @@ import java.util.concurrent.TimeUnit;
 public class OrderService {
 
     private static final Set<String> STATUSES = Set.of("PENDING_PAY", "PAID", "COMPLETED", "CANCELLED", "DISPUTED");
-    private static final Set<String> DISPUTE_REASONS = Set.of("NOT_AS_DESCRIBED", "NO_SHOW", "DAMAGED", "OTHER");
+    private static final Set<String> DISPUTE_REASONS = Set.of(
+            "GOODS_MISMATCH", "FALSE_DESCRIPTION", "SUSPECTED_FRAUD", "MISSED_MEETUP");
+    private static final Set<String> DISPUTE_RESULTS = Set.of("CANCEL", "COMPLETE", "REJECT");
     private static final DateTimeFormatter STAMP = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
     private final OrderMapper orderMapper;
@@ -56,14 +63,15 @@ public class OrderService {
     private final GoodsMapper goodsMapper;
     private final PaymentMapper paymentMapper;
     private final DisputeMapper disputeMapper;
-    private final ReviewMapper reviewMapper;
     private final UserMapper userMapper;
     private final UserService userService;
     private final BuildingMapper buildingMapper;
+    private final CategoryMapper categoryMapper;
     private final FileService fileService;
     private final FileUrls fileUrls;
-    private final ConversationService conversationService;
     private final NotificationService notificationService;
+    private final PaymentNotifyMapper paymentNotifyMapper;
+    private final ObjectMapper objectMapper;
     private final AuditService auditService;
     private final ImHub imHub;
     private final RateLimitService rateLimitService;
@@ -78,14 +86,15 @@ public class OrderService {
             GoodsMapper goodsMapper,
             PaymentMapper paymentMapper,
             DisputeMapper disputeMapper,
-            ReviewMapper reviewMapper,
             UserMapper userMapper,
             UserService userService,
             BuildingMapper buildingMapper,
+            CategoryMapper categoryMapper,
             FileService fileService,
             FileUrls fileUrls,
-            ConversationService conversationService,
             NotificationService notificationService,
+            PaymentNotifyMapper paymentNotifyMapper,
+            ObjectMapper objectMapper,
             AuditService auditService,
             ImHub imHub,
             RateLimitService rateLimitService,
@@ -99,14 +108,15 @@ public class OrderService {
         this.goodsMapper = goodsMapper;
         this.paymentMapper = paymentMapper;
         this.disputeMapper = disputeMapper;
-        this.reviewMapper = reviewMapper;
         this.userMapper = userMapper;
         this.userService = userService;
         this.buildingMapper = buildingMapper;
+        this.categoryMapper = categoryMapper;
         this.fileService = fileService;
         this.fileUrls = fileUrls;
-        this.conversationService = conversationService;
         this.notificationService = notificationService;
+        this.paymentNotifyMapper = paymentNotifyMapper;
+        this.objectMapper = objectMapper;
         this.auditService = auditService;
         this.imHub = imHub;
         this.rateLimitService = rateLimitService;
@@ -136,10 +146,6 @@ public class OrderService {
         if (goods.getSellerId() != null && goods.getSellerId() == userId) {
             throw ApiException.of(ErrorCode.CANNOT_BUY_OWN_GOODS);
         }
-        if (orderMapper.countPendingPay(userId) >= 3) {
-            throw ApiException.of(ErrorCode.PENDING_ORDER_LIMIT);
-        }
-        assertNotRestricted(userId);
         if (!"ON_SALE".equals(goods.getStatus())) {
             throw unavailable(goodsId, userId, ip);
         }
@@ -156,6 +162,18 @@ public class OrderService {
             order.setAmount(goods.getPrice());
             order.setQuantity(1);
             order.setGoodsTitle(goods.getTitle());
+            order.setGoodsDescription(goods.getDescription());
+            order.setGoodsCategoryId(goods.getCategoryId());
+            CategoryView category = goods.getCategoryId() == null ? null : categoryMapper.findEnabledById(goods.getCategoryId());
+            order.setGoodsCategoryName(category == null ? null : category.getName());
+            order.setGoodsCondition(goods.getConditionCode());
+            order.setGoodsPrice(goods.getPrice());
+            order.setGoodsTradeNote(goods.getTradeNote());
+            order.setGoodsMeetupBuildingId(goods.getMeetupBuildingId());
+            BuildingView meetup = goods.getMeetupBuildingId() == null ? null : buildingMapper.findEnabledById(goods.getMeetupBuildingId());
+            order.setGoodsMeetupBuildingName(meetup == null ? null : meetup.getName());
+            order.setGoodsAliasesJson(writeJson(goodsMapper.listAliases(goodsId)));
+            order.setGoodsImagesJson(writeJson(goodsMapper.listImages(List.of(goodsId)).stream().map(GoodsImageRow::getFileId).toList()));
             order.setGoodsCoverFileId(coverFileId(goodsId));
             order.setExpireAt(LocalDateTime.now(Times.SHANGHAI).plus(props.getPay().getTimeout()));
             OrderRecord saved = insertWithRetry(order);
@@ -202,81 +220,48 @@ public class OrderService {
         return Paging.of(list, paging[0], paging[1], orderMapper.countMine(userId, normalizedRole, statuses));
     }
 
-    public Map<String, Object> cancel(long userId, long orderId, String reason, String ip) {
+    public Map<String, Object> cancel(long userId, long orderId, String ip) {
         OrderRecord order = requireParty(userId, orderId, ip);
         order = expireIfNeeded(order);
-        String clean = cleanReason(reason);
-        if ("PENDING_PAY".equals(order.getStatus())) {
-            String by = order.getBuyerId() == userId ? "BUYER" : "SELLER";
-            orderTx.cancelUnpaid(order, by, userId, clean);
-            afterCancel(order, "订单已取消");
-        } else if ("PAID".equals(order.getStatus())) {
-            if (order.getSellerId() != userId) {
-                throw ApiException.of(ErrorCode.ORDER_STATUS_INVALID);
-            }
-            orderTx.cancelPaid(order, "SELLER", userId, clean);
-            afterCancel(order, "卖家已取消，款项已退回");
-        } else {
+        if (!"PENDING_PAY".equals(order.getStatus())) {
             throw ApiException.of(ErrorCode.ORDER_STATUS_INVALID);
         }
+        boolean buyer = order.getBuyerId() != null && order.getBuyerId() == userId;
+        String reason = buyer ? "买家取消" : "卖家取消";
+        orderTx.cancelUnpaid(order, buyer ? "BUYER" : "SELLER", userId, reason);
+        afterCancel(order, reason);
         auditService.record("BUSINESS", "ORDER_STATUS_CHANGED", null, userId, ip,
                 "{\"orderId\":" + orderId + ",\"to\":\"CANCELLED\"}");
         return detail(userId, orderId, ip);
     }
 
-    public Map<String, Object> meetup(long userId, long orderId, Long buildingId, String place, OffsetDateTime time, String ip) {
-        requireVerified(userId);
-        OrderRecord order = requireParty(userId, orderId, ip);
-        if (buildingId == null) {
-            throw ApiException.validation(List.of(new FieldErrorItem("buildingId", "请选择楼栋")));
-        }
-        BuildingView building = buildingMapper.findEnabledById(buildingId);
-        if (building == null) {
-            throw ApiException.validation(List.of(new FieldErrorItem("buildingId", "楼栋不存在")));
-        }
-        String clean = place == null ? "" : place.trim();
-        int length = clean.codePointCount(0, clean.length());
-        if (length < 1 || length > 40) {
-            throw ApiException.validation(List.of(new FieldErrorItem("place", "地点 1–40 字")));
-        }
-        if (ContactInfo.contains(clean)) {
-            throw ApiException.of(ErrorCode.CONTACT_INFO_NOT_ALLOWED);
-        }
-        if (time == null) {
-            throw ApiException.validation(List.of(new FieldErrorItem("time", "请选择时间")));
-        }
-        LocalDateTime local = Times.toShanghai(time);
-        LocalDateTime now = LocalDateTime.now(Times.SHANGHAI);
-        if (local.isBefore(now) || local.isAfter(now.plusDays(14))) {
-            throw ApiException.validation(List.of(new FieldErrorItem("time", "时间须在未来 14 天内")));
-        }
-        orderTx.updateMeetup(order.getId(), buildingId, clean, local);
-        if (order.getConversationId() != null) {
-            conversationService.system(order.getConversationId(), "面交信息已更新");
-        }
-        return detail(userId, orderId, ip);
+    public OrderRecord syncParty(long userId, long orderId, String ip) {
+        return expireIfNeeded(requireParty(userId, orderId, ip));
     }
 
     public Map<String, Object> handover(long userId, long orderId, String ip) {
         requireVerified(userId);
-        OrderRecord order = requireParty(userId, orderId, ip);
+        OrderRecord order = syncParty(userId, orderId, ip);
+        if (!"PAID".equals(order.getStatus()) && !"DISPUTED".equals(order.getStatus())) {
+            throw ApiException.of(ErrorCode.ORDER_STATUS_INVALID);
+        }
         boolean buyer = order.getBuyerId() == userId;
         boolean completed = orderTx.confirmHandover(order, buyer);
         if (completed) {
-            if (order.getConversationId() != null) {
-                conversationService.system(order.getConversationId(), "双方已确认，交易完成");
-            }
             notifyBoth(order, "ORDER_COMPLETED", "交易已完成", "双方已确认面交。");
             auditService.record("BUSINESS", "ORDER_STATUS_CHANGED", null, userId, ip,
                     "{\"orderId\":" + orderId + ",\"to\":\"COMPLETED\"}");
         }
-        pushStatus(order);
+        pushStatus(orderMapper.findById(orderId));
         return detail(userId, orderId, ip);
     }
 
     public Map<String, Object> dispute(long userId, long orderId, String reason, String description, List<String> evidence, String ip) {
         requireVerified(userId);
-        OrderRecord order = requireParty(userId, orderId, ip);
+        OrderRecord order = syncParty(userId, orderId, ip);
+        if (!"PAID".equals(order.getStatus())) {
+            throw ApiException.of(ErrorCode.ORDER_STATUS_INVALID);
+        }
         String cleanReason = reason == null ? "" : reason.trim().toUpperCase();
         if (!DISPUTE_REASONS.contains(cleanReason)) {
             throw ApiException.validation(List.of(new FieldErrorItem("reason", "申诉原因不合法")));
@@ -289,18 +274,18 @@ public class OrderService {
         if (ContactInfo.contains(text)) {
             throw ApiException.of(ErrorCode.CONTACT_INFO_NOT_ALLOWED);
         }
-        List<String> files = evidence == null ? List.of() : evidence;
-        if (files.size() > 6) {
-            throw ApiException.validation(List.of(new FieldErrorItem("evidenceFileIds", "最多 6 张")));
+        List<String> files = evidence == null ? List.of() : evidence.stream().filter(item -> item != null && !item.isBlank()).toList();
+        int minEvidence = "GOODS_MISMATCH".equals(cleanReason) || "FALSE_DESCRIPTION".equals(cleanReason) ? 1 : 0;
+        if (files.size() < minEvidence || files.size() > 3) {
+            throw ApiException.validation(List.of(new FieldErrorItem("evidenceFileIds",
+                    minEvidence == 1 ? "至少 1 张、最多 3 张" : "最多 3 张")));
         }
         for (String fileId : files) {
             fileService.requireUsable(fileId, userId, "EVIDENCE");
         }
         orderTx.openDispute(order, userId, cleanReason, text, files);
-        if (order.getConversationId() != null) {
-            conversationService.system(order.getConversationId(), "已发起申诉");
-        }
-        notifyBoth(order, "ORDER_DISPUTED", "订单申诉中", "有一方发起了申诉。");
+        notifyBoth(order, "DISPUTE_OPENED", "订单申诉中", "有一方发起了申诉。");
+        pushStatus(orderMapper.findById(orderId));
         return detail(userId, orderId, ip);
     }
 
@@ -311,39 +296,8 @@ public class OrderService {
             throw ApiException.of(ErrorCode.DISPUTE_NOT_OPEN);
         }
         orderTx.withdrawDispute(order, dispute);
-        if (order.getConversationId() != null) {
-            conversationService.system(order.getConversationId(), "申诉已撤回");
-        }
-        return detail(userId, orderId, ip);
-    }
-
-    public Map<String, Object> review(long userId, long orderId, Integer score, String content, String ip) {
-        requireVerified(userId);
-        OrderRecord order = requireParty(userId, orderId, ip);
-        if (!"COMPLETED".equals(order.getStatus())) {
-            throw ApiException.of(ErrorCode.ORDER_STATUS_INVALID);
-        }
-        if (order.getCompletedAt() == null || order.getCompletedAt().plusDays(30).isBefore(LocalDateTime.now(Times.SHANGHAI))) {
-            throw ApiException.of(ErrorCode.REVIEW_WINDOW_CLOSED);
-        }
-        if (score == null || score < 1 || score > 5) {
-            throw ApiException.validation(List.of(new FieldErrorItem("score", "评分 1–5")));
-        }
-        String text = content == null ? "" : content.trim();
-        if (text.codePointCount(0, text.length()) > 200) {
-            throw ApiException.validation(List.of(new FieldErrorItem("content", "评价最多 200 字")));
-        }
-        if (!text.isEmpty() && ContactInfo.contains(text)) {
-            throw ApiException.of(ErrorCode.CONTACT_INFO_NOT_ALLOWED);
-        }
-        ReviewRecord review = new ReviewRecord();
-        review.setOrderId(orderId);
-        review.setGoodsId(order.getGoodsId());
-        review.setReviewerId(userId);
-        review.setRevieweeId(order.getBuyerId() == userId ? order.getSellerId() : order.getBuyerId());
-        review.setScore(score);
-        review.setContent(text.isEmpty() ? null : text);
-        orderTx.review(review);
+        notifyBoth(order, "DISPUTE_WITHDRAWN", "申诉已撤回", "申诉已撤回，订单回到待面交。");
+        pushStatus(orderMapper.findById(orderId));
         return detail(userId, orderId, ip);
     }
 
@@ -383,7 +337,7 @@ public class OrderService {
 
     public Map<String, Object> adminDisputes(String status, Integer page, Integer size) {
         String normalized = blankToNull(status);
-        if (normalized != null && !Set.of("OPEN", "WITHDRAWN", "RESOLVED").contains(normalized)) {
+        if (normalized != null && !Set.of("OPEN", "WITHDRAWN", "REJECTED", "RESOLVED").contains(normalized)) {
             throw ApiException.validation(List.of(new FieldErrorItem("status", "申诉状态不合法")));
         }
         int[] paging = Paging.page(page, size);
@@ -397,8 +351,8 @@ public class OrderService {
 
     public Map<String, Object> resolve(long adminId, long disputeId, String result, String remark, String ip) {
         String outcome = result == null ? "" : result.trim().toUpperCase();
-        if (!"COMPLETE".equals(outcome) && !"REFUND".equals(outcome)) {
-            throw ApiException.validation(List.of(new FieldErrorItem("result", "只能是 COMPLETE 或 REFUND")));
+        if (!DISPUTE_RESULTS.contains(outcome)) {
+            throw ApiException.validation(List.of(new FieldErrorItem("result", "只能是 CANCEL、COMPLETE 或 REJECT")));
         }
         String text = remark == null ? "" : remark.trim();
         int length = text.codePointCount(0, text.length());
@@ -415,18 +369,20 @@ public class OrderService {
         }
         if ("COMPLETE".equals(outcome)) {
             orderTx.resolveComplete(order, dispute, text);
-            if (order.getConversationId() != null) {
-                conversationService.system(order.getConversationId(), "管理员已判定交易完成");
-            }
+        } else if ("REJECT".equals(outcome)) {
+            orderTx.resolveReject(order, dispute, text);
         } else {
-            orderTx.resolveRefund(order, dispute, text);
-            if (order.getConversationId() != null) {
-                conversationService.system(order.getConversationId(), "管理员已判定退款");
+            boolean fraud = "SUSPECTED_FRAUD".equals(dispute.getReason());
+            orderTx.resolveCancel(order, dispute, text, fraud);
+            if (fraud) {
+                auditService.record("ADMIN", "ADMIN_PUBLISH_BAN", adminId, order.getSellerId(), ip,
+                        "{\"orderId\":" + order.getId() + ",\"sellerId\":" + order.getSellerId() + "}");
             }
         }
-        notifyBoth(order, "ORDER_DISPUTE_RESOLVED", "申诉已处理", text);
+        notifyBoth(order, "DISPUTE_RESOLVED", "申诉已处理", text);
         auditService.record("ADMIN", "ADMIN_DISPUTE_RESOLVE", adminId, order.getBuyerId(), ip,
                 "{\"disputeId\":" + disputeId + ",\"orderId\":" + order.getId() + ",\"result\":\"" + outcome + "\"}");
+        pushStatus(orderMapper.findById(order.getId()));
         return adminDetail(order.getId());
     }
 
@@ -469,33 +425,8 @@ public class OrderService {
         return orderMapper.findActiveByGoods(goodsId);
     }
 
-    public Double rating(long userId) {
-        String raw = reviewMapper.averageScore(userId);
-        if (raw == null || raw.isBlank()) {
-            return null;
-        }
-        return Double.valueOf(raw);
-    }
-
-    public Map<String, Object> reviewsOf(long userId, Integer page, Integer size) {
-        if (userMapper.findById(userId) == null) {
-            throw ApiException.of(ErrorCode.NOT_FOUND);
-        }
-        int[] paging = Paging.page(page, size);
-        int offset = (paging[0] - 1) * paging[1];
-        List<Map<String, Object>> list = new ArrayList<>();
-        for (ReviewRecord review : reviewMapper.listForUser(userId, offset, paging[1])) {
-            Map<String, Object> item = new LinkedHashMap<>();
-            item.put("id", review.getId());
-            item.put("orderId", review.getOrderId());
-            item.put("goodsId", review.getGoodsId());
-            item.put("score", review.getScore());
-            item.put("content", review.getContent());
-            item.put("reviewer", Map.of("id", review.getReviewerId(), "nickname", review.getReviewerNickname()));
-            item.put("createdAt", Times.at(review.getCreatedAt()));
-            list.add(item);
-        }
-        return Paging.of(list, paging[0], paging[1], reviewMapper.countForUser(userId));
+    public int countUnreadMessages(long userId) {
+        return orderMapper.countUnreadMessages(userId);
     }
 
     @Scheduled(fixedDelay = 30000)
@@ -530,34 +461,23 @@ public class OrderService {
             return order;
         }
         try {
-            orderTx.cancelUnpaid(order, "TIMEOUT", null, "超时未支付");
+            orderTx.cancelUnpaid(order, "TIMEOUT", null, "超时释放");
         } catch (ApiException ex) {
             if (ex.getErrorCode() != ErrorCode.ORDER_STATUS_INVALID) {
                 throw ex;
             }
         }
-        String key = RedisKeys.orderTimeouts(order.getBuyerId());
-        Long count = redis.opsForValue().increment(key);
-        if (count != null && count == 1L) {
-            redis.expire(key, Duration.ofHours(24));
-        }
-        afterCancel(order, "订单超时已取消");
+        afterCancel(order, "超时释放");
         OrderRecord fresh = orderMapper.findById(order.getId());
         return fresh == null ? order : fresh;
     }
 
     private void afterCreate(OrderRecord order) {
-        if (order.getConversationId() != null) {
-            conversationService.system(order.getConversationId(), "买家已下单，请在 15 分钟内支付");
-        }
         notificationService.notify(order.getSellerId(), "ORDER_CREATED", "有新订单", order.getGoodsTitle(), "ORDER", order.getId());
         pushStatus(order);
     }
 
     private void afterCancel(OrderRecord order, String systemText) {
-        if (order.getConversationId() != null) {
-            conversationService.system(order.getConversationId(), systemText);
-        }
         notifyBoth(order, "ORDER_CANCELLED", "订单已取消", systemText);
         OrderRecord fresh = orderMapper.findById(order.getId());
         pushStatus(fresh == null ? order : fresh);
@@ -582,25 +502,6 @@ public class OrderService {
         return ApiException.of(ErrorCode.GOODS_NOT_AVAILABLE);
     }
 
-    private void assertNotRestricted(long userId) {
-        String raw = redis.opsForValue().get(RedisKeys.orderTimeouts(userId));
-        if (raw == null) {
-            return;
-        }
-        int count;
-        try {
-            count = Integer.parseInt(raw);
-        } catch (NumberFormatException ex) {
-            return;
-        }
-        if (count < 3) {
-            return;
-        }
-        Long ttl = redis.getExpire(RedisKeys.orderTimeouts(userId), TimeUnit.SECONDS);
-        OffsetDateTime until = OffsetDateTime.now(Times.OFFSET).plusSeconds(ttl == null || ttl < 0 ? 0 : ttl);
-        throw ApiException.of(ErrorCode.ORDER_RESTRICTED, Map.of("until", until.toString()));
-    }
-
     private Map<String, Object> toCard(OrderRecord order, Long viewerId) {
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("id", order.getId());
@@ -623,33 +524,16 @@ public class OrderService {
         data.put("quantity", order.getQuantity());
         data.put("buyer", person(userMapper.findById(order.getBuyerId())));
         data.put("seller", person(userMapper.findById(order.getSellerId())));
-        data.put("conversationId", order.getConversationId());
-        if (order.getMeetupPlace() == null) {
-            data.put("meetup", null);
-        } else {
-            BuildingView building = order.getMeetupBuildingId() == null ? null : buildingMapper.findEnabledById(order.getMeetupBuildingId());
-            Map<String, Object> meetup = new LinkedHashMap<>();
-            meetup.put("buildingId", order.getMeetupBuildingId());
-            meetup.put("buildingName", building == null ? null : building.getName());
-            meetup.put("place", order.getMeetupPlace());
-            meetup.put("time", Times.at(order.getMeetupTime()));
-            data.put("meetup", meetup);
-        }
+        data.put("goods", goodsSnapshot(order));
         Map<String, Object> handover = new LinkedHashMap<>();
         handover.put("buyerConfirmed", order.getBuyerHandoverAt() != null);
         handover.put("sellerConfirmed", order.getSellerHandoverAt() != null);
         data.put("handover", handover);
-        data.put("payment", paymentView(paymentMapper.listByOrder(order.getId())));
-        if (order.getCancelBy() == null) {
-            data.put("cancel", null);
-        } else {
-            data.put("cancel", Map.of("by", order.getCancelBy(), "reason", order.getCancelReason() == null ? "" : order.getCancelReason()));
-        }
-        boolean refunded = paymentMapper.listByOrder(order.getId()).stream().anyMatch(item -> "REFUNDED".equals(item.getStatus()));
-        data.put("refund", Map.of("refunded", refunded));
+        List<PaymentRecord> payments = paymentMapper.listByOrder(order.getId());
+        data.put("payment", paymentView(payments, order));
+        data.put("paymentEvents", paymentEvents(payments));
         DisputeRecord dispute = disputeMapper.findLatest(order.getId());
         data.put("dispute", dispute == null ? null : disputeView(dispute));
-        data.put("review", reviewView(order, viewerId));
         data.put("allowedActions", viewerId == null ? List.of() : actions(order, viewerId));
         data.put("paidAt", Times.at(order.getPaidAt()));
         data.put("completedAt", Times.at(order.getCompletedAt()));
@@ -657,18 +541,99 @@ public class OrderService {
         return data;
     }
 
-    private Map<String, Object> paymentView(List<PaymentRecord> payments) {
+    private Map<String, Object> goodsSnapshot(OrderRecord order) {
+        Map<String, Object> goods = new LinkedHashMap<>();
+        goods.put("id", order.getGoodsId());
+        goods.put("title", order.getGoodsTitle());
+        goods.put("description", order.getGoodsDescription());
+        if (order.getGoodsCategoryId() == null) {
+            goods.put("category", null);
+        } else {
+            Map<String, Object> category = new LinkedHashMap<>();
+            category.put("id", order.getGoodsCategoryId());
+            category.put("name", order.getGoodsCategoryName());
+            goods.put("category", category);
+        }
+        goods.put("condition", order.getGoodsCondition());
+        goods.put("price", order.getGoodsPrice() == null ? order.getAmount() : order.getGoodsPrice());
+        goods.put("images", imageViews(readStrings(order.getGoodsImagesJson())));
+        if (order.getGoodsMeetupBuildingId() == null) {
+            goods.put("meetupBuilding", null);
+        } else {
+            Map<String, Object> building = new LinkedHashMap<>();
+            building.put("id", order.getGoodsMeetupBuildingId());
+            building.put("name", order.getGoodsMeetupBuildingName());
+            goods.put("meetupBuilding", building);
+        }
+        goods.put("tradeNote", order.getGoodsTradeNote());
+        goods.put("aliases", readStrings(order.getGoodsAliasesJson()));
+        return goods;
+    }
+
+    private List<Map<String, Object>> imageViews(List<String> fileIds) {
+        List<Map<String, Object>> images = new ArrayList<>();
+        for (String fileId : fileIds) {
+            Map<String, Object> image = new LinkedHashMap<>();
+            image.put("fileId", fileId);
+            image.put("url", fileUrls.publicUrl(fileId));
+            image.put("thumbUrl", fileUrls.thumbUrl(fileId));
+            images.add(image);
+        }
+        return images;
+    }
+
+    private List<String> readStrings(String json) {
+        if (json == null || json.isBlank()) {
+            return List.of();
+        }
+        try {
+            return objectMapper.readValue(json, new TypeReference<List<String>>() {
+            });
+        } catch (Exception ex) {
+            return List.of();
+        }
+    }
+
+    private String writeJson(Object value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (Exception ex) {
+            return "[]";
+        }
+    }
+
+    private Map<String, Object> paymentView(List<PaymentRecord> payments, OrderRecord order) {
+        Map<String, Object> data = new LinkedHashMap<>();
         if (payments.isEmpty()) {
-            return null;
+            data.put("status", "PENDING_PAY".equals(order.getStatus()) ? "PENDING" : null);
+            data.put("reason", order.getCancelReason());
+            data.put("amount", order.getAmount());
+            return data;
         }
         PaymentRecord payment = payments.get(0);
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("paymentNo", payment.getPaymentNo());
         data.put("status", payment.getStatus());
+        data.put("reason", payment.getReason() == null ? order.getCancelReason() : payment.getReason());
         data.put("amount", payment.getAmount());
-        data.put("channel", payment.getChannel());
-        data.put("expireAt", Times.at(payment.getExpireAt()));
         return data;
+    }
+
+    private List<Map<String, Object>> paymentEvents(List<PaymentRecord> payments) {
+        List<Map<String, Object>> events = new ArrayList<>();
+        for (PaymentRecord payment : payments) {
+            if (payment.getId() == null) {
+                continue;
+            }
+            for (PaymentNotify notify : paymentNotifyMapper.listByPayment(payment.getId())) {
+                Map<String, Object> item = new LinkedHashMap<>();
+                item.put("notifyNo", notify.getNotifyNo());
+                item.put("arrivedAt", Times.at(notify.getArrivedAt()));
+                item.put("amount", notify.getAmount());
+                item.put("adopted", Boolean.TRUE.equals(notify.getAdopted()));
+                item.put("reason", notify.getReason());
+                events.add(item);
+            }
+        }
+        return events;
     }
 
     private Map<String, Object> disputeView(DisputeRecord dispute) {
@@ -687,31 +652,6 @@ public class OrderService {
         return data;
     }
 
-    private Map<String, Object> reviewView(OrderRecord order, Long viewerId) {
-        List<ReviewRecord> reviews = reviewMapper.listByOrder(order.getId());
-        ReviewRecord mine = null;
-        ReviewRecord peer = null;
-        for (ReviewRecord review : reviews) {
-            if (viewerId != null && review.getReviewerId() != null && review.getReviewerId().equals(viewerId)) {
-                mine = review;
-            } else {
-                peer = review;
-            }
-        }
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("mine", mine == null ? null : reviewItem(mine));
-        data.put("peer", peer == null ? null : reviewItem(peer));
-        return data;
-    }
-
-    private Map<String, Object> reviewItem(ReviewRecord review) {
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("score", review.getScore());
-        data.put("content", review.getContent());
-        data.put("createdAt", Times.at(review.getCreatedAt()));
-        return data;
-    }
-
     private List<String> actions(OrderRecord order, long userId) {
         List<String> actions = new ArrayList<>();
         boolean buyer = order.getBuyerId() == userId;
@@ -723,26 +663,15 @@ public class OrderService {
                 actions.add("CANCEL");
             }
             case "PAID" -> {
-                actions.add("UPDATE_MEETUP");
                 if (buyer && order.getBuyerHandoverAt() == null || !buyer && order.getSellerHandoverAt() == null) {
                     actions.add("CONFIRM_HANDOVER");
                 }
                 actions.add("OPEN_DISPUTE");
-                if (!buyer) {
-                    actions.add("CANCEL");
-                }
             }
             case "DISPUTED" -> {
                 DisputeRecord open = disputeMapper.findOpen(order.getId());
                 if (open != null && open.getOpenerId() != null && open.getOpenerId() == userId) {
                     actions.add("WITHDRAW_DISPUTE");
-                }
-            }
-            case "COMPLETED" -> {
-                if (order.getCompletedAt() != null
-                        && !order.getCompletedAt().plusDays(30).isBefore(LocalDateTime.now(Times.SHANGHAI))
-                        && reviewMapper.listByOrder(order.getId()).stream().noneMatch(item -> item.getReviewerId() != null && item.getReviewerId() == userId)) {
-                    actions.add("REVIEW");
                 }
             }
             default -> {

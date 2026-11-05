@@ -42,8 +42,9 @@ public class GoodsService {
     private static final Logger log = LoggerFactory.getLogger(GoodsService.class);
     private static final Set<String> CONDITIONS = Set.of("NEW", "LIKE_NEW", "GOOD", "FAIR", "POOR");
     private static final Set<String> SORTS = Set.of("latest", "price_asc", "price_desc", "nearby");
-    private static final Set<String> PUBLIC_STATUS = Set.of("ON_SALE", "RESERVED", "SOLD");
-    private static final Set<String> MINE_STATUS = Set.of("ON_SALE", "RESERVED", "SOLD", "OFF_SHELF", "REMOVED");
+    private static final Set<String> PUBLIC_STATUS = Set.of("ON_SALE", "RESERVED", "MEETUP", "DISPUTED", "SOLD");
+    private static final Set<String> MINE_STATUS = Set.of(
+            "ON_SALE", "RESERVED", "MEETUP", "DISPUTED", "SOLD", "OFF_SHELF", "REMOVED");
     private static final ZoneOffset SHANGHAI = ZoneOffset.ofHours(8);
 
     private final GoodsMapper goodsMapper;
@@ -111,7 +112,6 @@ public class GoodsService {
             recordView(goodsId, viewerId);
             goods = goodsMapper.findById(goodsId);
         }
-        rememberHistory(viewerId, goodsId);
         return toDetail(goods, viewer);
     }
 
@@ -127,6 +127,9 @@ public class GoodsService {
     @Transactional
     public Map<String, Object> create(long sellerId, GoodsWriteRequest request) {
         UserEntity seller = requireVerified(sellerId);
+        if (seller.isPublishBanned()) {
+            throw ApiException.of(ErrorCode.PUBLISH_BANNED);
+        }
         CheckedGoods checked = check(sellerId, request);
         GoodsRow goods = new GoodsRow();
         goods.setSellerId(sellerId);
@@ -136,6 +139,7 @@ public class GoodsService {
         goods.setVersion(0);
         goodsMapper.insert(goods);
         saveImages(goods.getId(), checked.fileIds());
+        saveAliases(goods.getId(), checked.aliases());
         return toDetail(goodsMapper.findById(goods.getId()), seller);
     }
 
@@ -156,13 +160,17 @@ public class GoodsService {
         }
         goodsMapper.deleteImages(goodsId);
         saveImages(goodsId, checked.fileIds());
+        saveAliases(goodsId, checked.aliases());
         return toDetail(goodsMapper.findById(goodsId), seller);
     }
 
     @Transactional
     public Map<String, Object> changeShelf(long sellerId, long goodsId, boolean onShelf) {
         if (onShelf) {
-            requireVerified(sellerId);
+            UserEntity seller = requireVerified(sellerId);
+            if (seller.isPublishBanned()) {
+                throw ApiException.of(ErrorCode.PUBLISH_BANNED);
+            }
         } else {
             userService.requireUser(sellerId);
         }
@@ -182,7 +190,7 @@ public class GoodsService {
     public Map<String, Object> delete(long sellerId, long goodsId) {
         userService.requireUser(sellerId);
         GoodsRow goods = requireSellerGoods(sellerId, goodsId);
-        if ("RESERVED".equals(goods.getStatus()) || "DELETED".equals(goods.getStatus())) {
+        if ("DELETED".equals(goods.getStatus()) || orderService.findActive(goodsId) != null) {
             throw ApiException.of(ErrorCode.GOODS_NOT_EDITABLE);
         }
         if (goodsMapper.changeStatus(goodsId, sellerId, goods.getStatus(), "DELETED") != 1) {
@@ -315,8 +323,17 @@ public class GoodsService {
     }
 
     private CheckedGoods check(long sellerId, GoodsWriteRequest request) {
-        if (ContactInfo.contains(request.title()) || ContactInfo.contains(request.description()) || ContactInfo.contains(request.tradeNote())) {
+        List<String> aliases = normalizeAliases(request.aliases());
+        if (ContactInfo.contains(request.title())
+                || ContactInfo.contains(request.description())
+                || ContactInfo.contains(request.tradeNote())
+                || aliases.stream().anyMatch(ContactInfo::contains)) {
             throw ApiException.of(ErrorCode.CONTACT_INFO_NOT_ALLOWED);
+        }
+        String description = request.description() == null ? "" : request.description();
+        int descriptionLength = description.codePointCount(0, description.length());
+        if (descriptionLength < 1 || descriptionLength > 500) {
+            throw ApiException.validation(List.of(new FieldErrorItem("description", "描述长度为 1–500")));
         }
         if (!CONDITIONS.contains(request.condition())) {
             throw ApiException.validation(List.of(new FieldErrorItem("condition", "成色不合法")));
@@ -347,8 +364,35 @@ public class GoodsService {
                 request.originalPrice(),
                 request.meetupBuildingId(),
                 request.tradeNote(),
-                fileIds.stream().map(String::trim).toList()
+                fileIds.stream().map(String::trim).toList(),
+                aliases
         );
+    }
+
+    private static List<String> normalizeAliases(List<String> raw) {
+        if (raw == null || raw.isEmpty()) {
+            return List.of();
+        }
+        if (raw.size() > 5) {
+            throw ApiException.validation(List.of(new FieldErrorItem("aliases", "同义叫法最多 5 条")));
+        }
+        List<String> aliases = new ArrayList<>();
+        for (String item : raw) {
+            String text = item == null ? "" : item.trim();
+            int length = text.codePointCount(0, text.length());
+            if (length < 1 || length > 20) {
+                throw ApiException.validation(List.of(new FieldErrorItem("aliases", "每条同义叫法 1–20 字")));
+            }
+            aliases.add(text);
+        }
+        return aliases;
+    }
+
+    private void saveAliases(long goodsId, List<String> aliases) {
+        goodsMapper.deleteAliases(goodsId);
+        for (int i = 0; i < aliases.size(); i++) {
+            goodsMapper.insertAlias(goodsId, i, aliases.get(i));
+        }
     }
 
     private static void apply(GoodsRow goods, CheckedGoods checked) {
@@ -479,6 +523,7 @@ public class GoodsService {
         List<GoodsImageRow> images = goodsMapper.listImages(List.of(goods.getId()));
         Map<String, Object> data = base(goods, catalog, images);
         data.put("description", goods.getDescription());
+        data.put("aliases", goodsMapper.listAliases(goods.getId()));
         data.put("tradeNote", goods.getTradeNote());
         data.put("images", imageList(images));
         data.put("viewCount", goods.getViewCount() == null ? 0 : goods.getViewCount());
@@ -488,9 +533,7 @@ public class GoodsService {
         boolean onSale = "ON_SALE".equals(goods.getStatus());
         Map<String, Object> viewerView = new LinkedHashMap<>();
         viewerView.put("isMine", mine);
-        viewerView.put("favorited", catalog.favorited.contains(goods.getId()));
         viewerView.put("canBuy", onSale && !mine && verified);
-        viewerView.put("canChat", onSale && !mine && verified);
         OrderRecord active = orderService.findActive(goods.getId());
         viewerView.put("activeOrderId", active != null && active.getBuyerId() != null && active.getBuyerId().equals(viewer.getId())
                 ? active.getId() : null);
@@ -514,7 +557,6 @@ public class GoodsService {
         data.put("status", goods.getStatus());
         data.put("category", category(catalog.categories.get(goods.getCategoryId())));
         data.put("meetupBuilding", building(catalog.buildings.get(goods.getMeetupBuildingId())));
-        data.put("favoriteCount", goods.getFavoriteCount() == null ? 0 : goods.getFavoriteCount());
         data.put("createdAt", offset(goods.getCreatedAt()));
         return data;
     }
@@ -536,9 +578,6 @@ public class GoodsService {
         if (!sellerIds.isEmpty()) {
             catalog.users = userMapper.findByIds(sellerIds).stream()
                     .collect(Collectors.toMap(UserEntity::getId, Function.identity()));
-        }
-        if (!goodsIds.isEmpty()) {
-            catalog.favorited = new HashSet<>(goodsMapper.favoritedIds(viewerId, goodsIds));
         }
         return catalog;
     }
@@ -576,9 +615,6 @@ public class GoodsService {
         data.put("avatarUrl", fileService.publicUrlIfOwned(user.getAvatarFileId()));
         data.put("verified", "VERIFIED".equals(user.getVerifyStatus()));
         data.put("relation", relation(viewer, user));
-        if (withRating) {
-            data.put("rating", orderService.rating(user.getId()));
-        }
         return data;
     }
 
@@ -654,7 +690,8 @@ public class GoodsService {
             Integer originalPrice,
             Long meetupBuildingId,
             String tradeNote,
-            List<String> fileIds
+            List<String> fileIds,
+            List<String> aliases
     ) {
     }
 

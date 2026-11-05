@@ -32,8 +32,7 @@ public class ReportController {
             @RequestBody CreateReportRequest request
     ) {
         return ApiResponse.ok(reportService.create(
-                loginUser.userId(), request.targetType(), request.targetId(), request.reason(),
-                request.description(), request.evidenceFileIds()));
+                loginUser.userId(), request.goodsId(), request.description(), request.evidenceFileIds()));
     }
 
     @GetMapping("/api/me/reports")
@@ -72,6 +71,6 @@ public class ReportController {
             HttpServletRequest httpRequest
     ) {
         return ApiResponse.ok(reportService.handle(
-                loginAdmin.adminId(), id, request.action(), request.banDays(), request.reason(), ClientIp.resolve(httpRequest)));
+                loginAdmin.adminId(), id, request.action(), request.reason(), ClientIp.resolve(httpRequest)));
     }
 }

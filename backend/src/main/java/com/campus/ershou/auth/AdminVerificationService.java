@@ -131,6 +131,9 @@ public class AdminVerificationService {
         Map<String, Object> userView = userView(user);
         userView.put("verifyStatus", user == null ? null : user.getVerifyStatus());
         data.put("user", userView);
+        data.put("realName", verification.getRealName());
+        data.put("studentNo", verification.getStudentNo());
+        data.put("college", verification.getCollege());
         long exp = fileUrls.privateExpiryEpoch();
         Map<String, Object> card = new LinkedHashMap<>();
         card.put("fileId", verification.getCardFileId());

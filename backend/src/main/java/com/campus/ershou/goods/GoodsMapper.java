@@ -22,7 +22,14 @@ public interface GoodsMapper {
 
     String LIST_FILTER = """
             <if test="keyword != null">
-              AND (g.title LIKE #{keyword} ESCAPE '\\\\' OR IFNULL(g.description, '') LIKE #{keyword} ESCAPE '\\\\')
+              AND (
+                g.title LIKE #{keyword} ESCAPE '\\\\'
+                OR IFNULL(g.description, '') LIKE #{keyword} ESCAPE '\\\\'
+                OR EXISTS (
+                  SELECT 1 FROM goods_aliases ga
+                  WHERE ga.goods_id = g.id AND ga.alias LIKE #{keyword} ESCAPE '\\\\'
+                )
+              )
             </if>
             <if test="categoryId != null">AND g.category_id = #{categoryId}</if>
             <if test="condition != null">AND g.condition_code = #{condition}</if>
@@ -189,10 +196,45 @@ public interface GoodsMapper {
 
     @Update("""
             UPDATE goods
-            SET status = 'SOLD', version = version + 1
+            SET status = 'MEETUP', version = version + 1
             WHERE id = #{id} AND status = 'RESERVED'
             """)
-    int markSold(long id);
+    int markMeetup(long id);
+
+    @Update("""
+            UPDATE goods
+            SET status = 'DISPUTED', version = version + 1
+            WHERE id = #{id} AND status = 'MEETUP'
+            """)
+    int markDisputed(long id);
+
+    @Update("""
+            UPDATE goods
+            SET status = 'MEETUP', version = version + 1
+            WHERE id = #{id} AND status = 'DISPUTED'
+            """)
+    int reopenMeetup(long id);
+
+    @Update("""
+            UPDATE goods
+            SET status = 'SOLD', version = version + 1
+            WHERE id = #{id} AND status = #{fromStatus}
+            """)
+    int markSoldFrom(@Param("id") long id, @Param("fromStatus") String fromStatus);
+
+    @Update("""
+            UPDATE goods
+            SET status = 'ON_SALE', stock = 1, version = version + 1
+            WHERE id = #{id} AND status = 'DISPUTED'
+            """)
+    int releaseDisputed(long id);
+
+    @Update("""
+            UPDATE goods
+            SET status = 'OFF_SHELF', stock = 1, version = version + 1
+            WHERE id = #{id} AND status = 'DISPUTED'
+            """)
+    int offShelfDisputed(long id);
 
     @Update("""
             UPDATE goods
@@ -320,4 +362,13 @@ public interface GoodsMapper {
             </script>
             """)
     long adminCount(@Param("status") String status, @Param("keyword") String keyword, @Param("sellerId") Long sellerId);
+
+    @Delete("DELETE FROM goods_aliases WHERE goods_id = #{goodsId}")
+    int deleteAliases(long goodsId);
+
+    @Insert("INSERT INTO goods_aliases (goods_id, sort, alias) VALUES (#{goodsId}, #{sort}, #{alias})")
+    int insertAlias(@Param("goodsId") long goodsId, @Param("sort") int sort, @Param("alias") String alias);
+
+    @Select("SELECT alias FROM goods_aliases WHERE goods_id = #{goodsId} ORDER BY sort ASC")
+    List<String> listAliases(long goodsId);
 }

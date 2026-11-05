@@ -108,7 +108,7 @@ class AdminReviewIT {
                         .header("Authorization", "Bearer " + userToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"dormBuildingId":1,"cardImageFileId":"%s"}
+                                {"realName":"审核用户","studentNo":"91004411","college":"软件学院","dormBuildingId":1,"cardImageFileId":"%s"}
                                 """.formatted(cardId)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("PENDING"));
@@ -142,6 +142,9 @@ class AdminReviewIT {
                 .andExpect(jsonPath("$.data.cardImage.url").isNotEmpty())
                 .andExpect(jsonPath("$.data.user.emailMasked").value("r***@example.com"))
                 .andExpect(jsonPath("$.data.user.studentNoMasked").value("9100****11"))
+                .andExpect(jsonPath("$.data.realName").value("审核用户"))
+                .andExpect(jsonPath("$.data.studentNo").value("91004411"))
+                .andExpect(jsonPath("$.data.college").value("软件学院"))
                 .andExpect(jsonPath("$.data.dormBuilding.name").value("学上公寓1"))
                 .andExpect(jsonPath("$.data.history").isEmpty());
 
@@ -198,7 +201,7 @@ class AdminReviewIT {
                         .header("Authorization", "Bearer " + userToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"dormBuildingId":1,"cardImageFileId":"%s"}
+                                {"realName":"审核用户","studentNo":"91004411","college":"软件学院","dormBuildingId":1,"cardImageFileId":"%s"}
                                 """.formatted(cardId2)))
                 .andExpect(status().isOk());
         MvcResult listedAgain = mockMvc.perform(get("/api/admin/verifications")

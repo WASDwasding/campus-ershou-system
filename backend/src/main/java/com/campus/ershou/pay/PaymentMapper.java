@@ -13,7 +13,7 @@ import java.util.List;
 public interface PaymentMapper {
 
     String COLUMNS = """
-            id, payment_no, order_id, order_no, buyer_id, amount, channel, status,
+            id, payment_no, order_id, order_no, buyer_id, amount, channel, status, reason,
             gateway_trade_no, gateway_result, notify_attempts, expire_at, created_at
             """;
 
@@ -31,7 +31,7 @@ public interface PaymentMapper {
             SELECT
             """ + COLUMNS + """
             FROM payments
-            WHERE order_id = #{orderId} AND status = 'CREATED' AND expire_at > CURRENT_TIMESTAMP(3)
+            WHERE order_id = #{orderId} AND status = 'PENDING' AND expire_at > CURRENT_TIMESTAMP(3)
             ORDER BY id DESC LIMIT 1
             """)
     PaymentRecord findOpen(long orderId);
@@ -40,26 +40,28 @@ public interface PaymentMapper {
     List<PaymentRecord> listByOrder(long orderId);
 
     @Update("""
-            UPDATE payments SET status = 'SUCCESS', gateway_trade_no = #{tradeNo}
-            WHERE payment_no = #{paymentNo} AND status = 'CREATED'
+            UPDATE payments SET status = 'PAID'
+            WHERE payment_no = #{paymentNo} AND status = 'PENDING'
             """)
-    int markSuccess(@Param("paymentNo") String paymentNo, @Param("tradeNo") String tradeNo);
-
-    @Update("UPDATE payments SET status = 'FAILED' WHERE payment_no = #{paymentNo} AND status = 'CREATED'")
-    int markFailed(String paymentNo);
-
-    @Update("UPDATE payments SET status = 'CLOSED' WHERE order_id = #{orderId} AND status = 'CREATED'")
-    int closeCreated(long orderId);
-
-    @Update("UPDATE payments SET status = 'REFUNDED' WHERE order_id = #{orderId} AND status = 'SUCCESS'")
-    int refundSuccess(long orderId);
+    int markPaid(String paymentNo);
 
     @Update("""
-            UPDATE payments
-            SET status = 'REFUNDED', gateway_trade_no = #{tradeNo}
-            WHERE payment_no = #{paymentNo} AND status = 'CLOSED'
+            UPDATE payments SET status = 'CANCELLED', reason = #{reason}
+            WHERE order_id = #{orderId} AND status = 'PENDING'
             """)
-    int refundClosed(@Param("paymentNo") String paymentNo, @Param("tradeNo") String tradeNo);
+    int closePending(@Param("orderId") long orderId, @Param("reason") String reason);
+
+    @Update("""
+            UPDATE payments SET status = 'MOCK_REFUNDED', reason = #{reason}
+            WHERE payment_no = #{paymentNo} AND status IN ('PENDING', 'CANCELLED')
+            """)
+    int markMockRefunded(@Param("paymentNo") String paymentNo, @Param("reason") String reason);
+
+    @Update("""
+            UPDATE payments SET status = 'MOCK_REFUNDED', reason = #{reason}
+            WHERE order_id = #{orderId} AND status = 'PAID'
+            """)
+    int refundPaid(@Param("orderId") long orderId, @Param("reason") String reason);
 
     @Update("""
             UPDATE payments SET gateway_result = #{result}, notify_attempts = notify_attempts + 1

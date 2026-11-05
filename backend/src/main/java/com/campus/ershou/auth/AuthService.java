@@ -61,6 +61,7 @@ public class AuthService {
     private final RateLimitService rateLimitService;
     private final AppProperties props;
     private final AuditService auditService;
+    private final WxSessionClient wxSessionClient;
 
     public AuthService(
             UserMapper userMapper,
@@ -73,7 +74,8 @@ public class AuthService {
             StudentNoHasher studentNoHasher,
             RateLimitService rateLimitService,
             AppProperties props,
-            AuditService auditService
+            AuditService auditService,
+            WxSessionClient wxSessionClient
     ) {
         this.userMapper = userMapper;
         this.userService = userService;
@@ -86,6 +88,7 @@ public class AuthService {
         this.rateLimitService = rateLimitService;
         this.props = props;
         this.auditService = auditService;
+        this.wxSessionClient = wxSessionClient;
     }
 
     public RegisterSentResponse register(RegisterRequest request, String clientIp) {
@@ -250,12 +253,71 @@ public class AuthService {
         return new AuthTokenResponse(issued.token(), issued.expiresAt(), createdNow, userService.toMe(userMapper.findById(user.getId())));
     }
 
+    public AuthTokenResponse wxLogin(String code, String clientIp) {
+        rateLimitService.check("wx-login", clientIp == null ? "unknown" : clientIp, 10, Duration.ofMinutes(1));
+        String openid = wxSessionClient.exchange(code);
+        UserEntity user = userMapper.findByOpenid(openid);
+        boolean created = false;
+        if (user == null) {
+            user = new UserEntity();
+            user.setUsername(newWxUsername());
+            user.setNickname(user.getUsername());
+            user.setOpenid(openid);
+            user.setStatus("ACTIVE");
+            user.setVerifyStatus("UNVERIFIED");
+            user.setPublishBanned(false);
+            user.setTokenVersion(1);
+            try {
+                userMapper.insert(user);
+                created = true;
+            } catch (DuplicateKeyException ex) {
+                user = userMapper.findByOpenid(openid);
+                if (user == null) {
+                    throw mapDuplicate(ex);
+                }
+            }
+        }
+        if ("BANNED".equals(user.getStatus())) {
+            throw ApiException.of(ErrorCode.USER_BANNED, bannedData(user));
+        }
+        IssuedToken issued = jwtService.issueUser(user.getId(), user.getTokenVersion());
+        return new AuthTokenResponse(issued.token(), issued.expiresAt(), created, userService.toMe(userMapper.findById(user.getId())));
+    }
+
+    @Transactional
+    public Map<String, Object> wxBind(long userId, String code) {
+        String openid = wxSessionClient.exchange(code);
+        UserEntity current = userService.requireUser(userId);
+        UserEntity owner = userMapper.findByOpenid(openid);
+        if (owner != null && !owner.getId().equals(userId)) {
+            throw ApiException.of(ErrorCode.WX_ALREADY_BOUND);
+        }
+        if (current.getOpenid() != null && !current.getOpenid().isBlank() && !current.getOpenid().equals(openid)) {
+            throw ApiException.of(ErrorCode.WX_ALREADY_BOUND);
+        }
+        if (current.getOpenid() != null && current.getOpenid().equals(openid)) {
+            return Map.of("wxBound", true);
+        }
+        try {
+            if (userMapper.bindOpenid(userId, openid) != 1) {
+                throw ApiException.of(ErrorCode.WX_ALREADY_BOUND);
+            }
+        } catch (DuplicateKeyException ex) {
+            throw ApiException.of(ErrorCode.WX_ALREADY_BOUND);
+        }
+        return Map.of("wxBound", true);
+    }
+
     public AuthTokenResponse login(LoginRequest request) {
         String studentNoHash = studentNoHasher.hash(request.studentNo());
         assertLoginNotLocked(studentNoHash);
         UserEntity user = userMapper.findByStudentNoHash(studentNoHash);
-        boolean matches = passwordEncoder.matches(request.password(), user == null ? DUMMY_BCRYPT : user.getPasswordHash());
-        if (user == null || !matches) {
+        String stored = user == null || user.getPasswordHash() == null || user.getPasswordHash().isBlank()
+                ? DUMMY_BCRYPT
+                : user.getPasswordHash();
+        boolean passwordOk = passwordEncoder.matches(request.password(), stored);
+        boolean matches = user != null && user.getPasswordHash() != null && !user.getPasswordHash().isBlank() && passwordOk;
+        if (!matches) {
             recordLoginFailure(studentNoHash);
             throw ApiException.of(ErrorCode.BAD_CREDENTIALS);
         }
@@ -275,6 +337,16 @@ public class AuthService {
         }
         redis.delete(RedisKeys.tokenVer(loginUser.userId()));
         log.info("user logout userId={}", loginUser.userId());
+    }
+
+    private String newWxUsername() {
+        for (int i = 0; i < 8; i++) {
+            String username = "wx" + Randoms.hex(5);
+            if (userMapper.findByUsername(username) == null) {
+                return username;
+            }
+        }
+        throw ApiException.of(ErrorCode.CONFLICT);
     }
 
     private void assertLoginNotLocked(String studentNoHash) {
@@ -314,6 +386,9 @@ public class AuthService {
         }
         if (message.contains("uk_users_email")) {
             return ApiException.of(ErrorCode.EMAIL_TAKEN);
+        }
+        if (message.contains("uk_users_openid")) {
+            return ApiException.of(ErrorCode.WX_ALREADY_BOUND);
         }
         return ApiException.of(ErrorCode.CONFLICT);
     }

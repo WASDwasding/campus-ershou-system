@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class AiCompletionClient {
 
     private static final Logger log = LoggerFactory.getLogger(AiCompletionClient.class);
-    private static final Duration CAP = Duration.ofSeconds(8);
+    private static final Duration CAP = Duration.ofSeconds(10);
 
     private final AppProperties props;
     private final ObjectMapper objectMapper;
@@ -71,7 +71,7 @@ public class AiCompletionClient {
         AppProperties.Ai ai = props.getAi();
         boolean ready = ai.isEnabled() && text(ai.getApiKey()) && text(ai.getBaseUrl()) && text(ai.getModel());
         if (!ready && ai.isEnabled() && missingWarned.compareAndSet(false, true)) {
-            log.warn("AI 已开启但地址、密钥或模型名为空，改为规则结果");
+            log.warn("AI 已开启但地址、密钥或模型名为空");
         }
         return ready;
     }

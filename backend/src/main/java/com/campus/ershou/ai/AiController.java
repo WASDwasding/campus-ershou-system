@@ -1,6 +1,5 @@
 package com.campus.ershou.ai;
 
-import com.campus.ershou.ai.dto.BargainRequest;
 import com.campus.ershou.ai.dto.GoodsDraftRequest;
 import com.campus.ershou.ai.dto.QuoteRequest;
 import com.campus.ershou.common.api.ApiResponse;
@@ -39,20 +38,5 @@ public class AiController {
             HttpServletRequest httpRequest
     ) {
         return ApiResponse.ok(aiService.quote(loginUser.userId(), request.goodsId(), ClientIp.resolve(httpRequest)));
-    }
-
-    @PostMapping("/api/ai/bargain")
-    public ApiResponse<Map<String, Object>> bargain(
-            @AuthenticationPrincipal LoginUser loginUser,
-            @Valid @RequestBody BargainRequest request,
-            HttpServletRequest httpRequest
-    ) {
-        return ApiResponse.ok(aiService.bargain(
-                loginUser.userId(),
-                request.goodsId(),
-                request.quoteToken(),
-                request.message(),
-                ClientIp.resolve(httpRequest)
-        ));
     }
 }

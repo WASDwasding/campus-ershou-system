@@ -117,8 +117,8 @@ class CatalogFlowIT {
                         .header("Authorization", "Bearer " + buyerToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"dormBuildingId":1,"cardImageFileId":"%s"}
-                                """.formatted(cardId)))
+                                {"realName":"买家甲","studentNo":"%s","college":"计算机学院","dormBuildingId":1,"cardImageFileId":"%s"}
+                                """.formatted(BUYER_NO, cardId)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("PENDING"));
         mockMvc.perform(get("/api/auth/campus-verification").header("Authorization", "Bearer " + buyerToken))
@@ -148,22 +148,18 @@ class CatalogFlowIT {
         mockMvc.perform(get("/api/goods").header("Authorization", "Bearer " + buyerToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.total").value(1))
-                .andExpect(jsonPath("$.data.list[0].title").value("高数教材"));
+                .andExpect(jsonPath("$.data.list[0].title").value("高等数学教材"));
 
         mockMvc.perform(get("/api/goods/" + goodsId).header("Authorization", "Bearer " + buyerToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.viewer.canBuy").value(false))
-                .andExpect(jsonPath("$.data.viewer.favorited").value(false));
+                .andExpect(jsonPath("$.data.viewer.canChat").doesNotExist())
+                .andExpect(jsonPath("$.data.favoriteCount").doesNotExist())
+                .andExpect(jsonPath("$.data.aliases[0]").value("高数"));
 
-        mockMvc.perform(put("/api/goods/" + goodsId + "/favorite").header("Authorization", "Bearer " + buyerToken))
+        mockMvc.perform(get("/api/goods").param("keyword", "高数").header("Authorization", "Bearer " + buyerToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.favoriteCount").value(1));
-        mockMvc.perform(get("/api/me/favorites").header("Authorization", "Bearer " + buyerToken))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.total").value(1));
-        mockMvc.perform(get("/api/me/history").header("Authorization", "Bearer " + buyerToken))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.list[0].id").value(goodsId));
+                .andExpect(jsonPath("$.data.list[0].title").value("高等数学教材"));
 
         mockMvc.perform(get("/api/users/" + sellerId).header("Authorization", "Bearer " + buyerToken))
                 .andExpect(status().isOk())
@@ -183,7 +179,7 @@ class CatalogFlowIT {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.list[0].status").value("OFF_SHELF"));
 
-        assertThat(redis.opsForList().size(RedisKeys.history(buyerId))).isEqualTo(1);
+        assertThat(redis.hasKey(RedisKeys.history(buyerId))).isFalse();
     }
 
     private String login(String studentNo) throws Exception {
@@ -209,8 +205,8 @@ class CatalogFlowIT {
 
     private static String goodsJson(String imageId) {
         return """
-                {"title":"高数教材","description":"九成新","categoryId":1,"condition":"GOOD","price":1500,
-                 "imageFileIds":["%s"],"meetupBuildingId":1,"tradeNote":"宿舍楼下"}
+                {"title":"高等数学教材","description":"九成新","categoryId":1,"condition":"GOOD","price":1500,
+                 "aliases":["高数"],"imageFileIds":["%s"],"meetupBuildingId":1,"tradeNote":"宿舍楼下"}
                 """.formatted(imageId);
     }
 
@@ -241,6 +237,12 @@ class CatalogFlowIT {
         jdbc.update("""
                 DELETE f FROM favorites f
                 INNER JOIN users u ON u.id = f.user_id
+                WHERE u.email IN ('seller-it@example.com', 'buyer-it@example.com')
+                """);
+        jdbc.update("""
+                DELETE ga FROM goods_aliases ga
+                INNER JOIN goods g ON g.id = ga.goods_id
+                INNER JOIN users u ON u.id = g.seller_id
                 WHERE u.email IN ('seller-it@example.com', 'buyer-it@example.com')
                 """);
         jdbc.update("""

@@ -410,7 +410,7 @@ limits：`payTimeoutMinutes` 15，`priceMin` 1，`priceMax` 9999900，标题 2�
 
 **超时：** 满 15 分钟仍没有可采纳的成功通知，原因写成「超时释放」，支付 `CANCELLED`，商品 `ON_SALE`。之后到达的成功通知走迟到支付，不能把订单改回 `PAID`。
 
-**面交确认：** 无请求体，按 token 区分角色，重复确认保持原确认时间。只有一方确认时订单仍是 `PAID`，商品仍是 `MEETUP`。双方都确认后订单 `COMPLETED`，商品 `SOLD`，双方收到 `ORDER_COMPLETED`。时间和地点由双方在 §10 的文字里约定，本接口不接收楼栋、地点和时间。
+**面交确认：** 无请求体，按 token 区分角色，重复确认保持原确认时间。待面交时只有一方确认，订单仍是 `PAID`，商品仍是 `MEETUP`。待面交时双方都确认后订单 `COMPLETED`，商品 `SOLD`，双方收到 `ORDER_COMPLETED`。申诉中也可以确认，只记下确认时间，不因此自动完成。时间和地点由双方在 §10 的文字里约定，本接口不接收楼栋、地点和时间。
 
 **申诉：** `{ "reason", "description", "evidenceFileIds" }`。`reason` 只能是四种枚举。说明 10–500 字，无联系方式。`GOODS_MISMATCH` 和 `FALSE_DESCRIPTION` 的 `evidenceFileIds` 至少 1 张，否则 400，`fieldErrors.field` 为 `evidenceFileIds`。四种都最多 3 张，用途 `EVIDENCE`。订单变为 `DISPUTED`，商品变为 `DISPUTED`。双方收到 `DISPUTE_OPENED`。
 
@@ -567,7 +567,7 @@ Redis 键都加 `campus:`：`lock:goods:{id}` 5 秒；`idem:{userId}:{key}` 10 �
 | `NOT_VERIFIED` | 403 | 需要校园认证 |
 | `PUBLISH_BANNED` | 403 | 因疑似欺诈被禁止再发布，账号仍可登录 |
 | `PASSWORD_CHANGE_REQUIRED` | 403 | 管理员须先改初始密码 |
-| `CHAT_NOT_OPEN` | 409 | 未到待面交，或管理员不在处理该申诉 |
+| `CHAT_NOT_OPEN` | 409 | 未到待面交。管理员在申诉不是 `OPEN` 时读取该聊天仍用这个 code，但 HTTP 是 403，响应没有消息正文 |
 | `CHAT_READONLY` | 409 | 订单已结束，只能看记录 |
 | `NOT_FOUND` | 404 | 不存在或不可见 |
 | `CONFLICT` | 409 | 请求处理中或并发冲突 |

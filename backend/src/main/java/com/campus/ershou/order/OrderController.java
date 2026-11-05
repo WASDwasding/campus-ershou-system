@@ -7,9 +7,8 @@ import com.campus.ershou.common.web.ClientIp;
 import com.campus.ershou.order.dto.CancelOrderRequest;
 import com.campus.ershou.order.dto.CreateOrderRequest;
 import com.campus.ershou.order.dto.DisputeRequest;
-import com.campus.ershou.order.dto.MeetupRequest;
 import com.campus.ershou.order.dto.ResolveDisputeRequest;
-import com.campus.ershou.order.dto.ReviewRequest;
+import com.campus.ershou.order.dto.SendOrderMessageRequest;
 import com.campus.ershou.pay.PayService;
 import com.campus.ershou.pay.dto.CreatePaymentRequest;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,7 +16,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -29,10 +27,12 @@ import java.util.Map;
 public class OrderController {
 
     private final OrderService orderService;
+    private final OrderMessageService orderMessageService;
     private final PayService payService;
 
-    public OrderController(OrderService orderService, PayService payService) {
+    public OrderController(OrderService orderService, OrderMessageService orderMessageService, PayService payService) {
         this.orderService = orderService;
+        this.orderMessageService = orderMessageService;
         this.payService = payService;
     }
 
@@ -74,19 +74,31 @@ public class OrderController {
             @RequestBody(required = false) CancelOrderRequest request,
             HttpServletRequest httpRequest
     ) {
-        String reason = request == null ? null : request.reason();
-        return ApiResponse.ok(orderService.cancel(loginUser.userId(), orderId, reason, ClientIp.resolve(httpRequest)));
+        return ApiResponse.ok(orderService.cancel(loginUser.userId(), orderId, ClientIp.resolve(httpRequest)));
     }
 
-    @PutMapping("/api/orders/{orderId}/meetup")
-    public ApiResponse<Map<String, Object>> meetup(
+    @GetMapping("/api/orders/{orderId}/messages")
+    public ApiResponse<Map<String, Object>> messages(
             @AuthenticationPrincipal LoginUser loginUser,
             @PathVariable long orderId,
-            @RequestBody MeetupRequest request,
+            @RequestParam(required = false) Long beforeId,
+            @RequestParam(required = false) Long afterId,
+            @RequestParam(required = false) Integer size,
             HttpServletRequest httpRequest
     ) {
-        return ApiResponse.ok(orderService.meetup(
-                loginUser.userId(), orderId, request.buildingId(), request.place(), request.time(), ClientIp.resolve(httpRequest)));
+        return ApiResponse.ok(orderMessageService.list(
+                loginUser.userId(), orderId, beforeId, afterId, size, ClientIp.resolve(httpRequest)));
+    }
+
+    @PostMapping("/api/orders/{orderId}/messages")
+    public ApiResponse<Map<String, Object>> sendMessage(
+            @AuthenticationPrincipal LoginUser loginUser,
+            @PathVariable long orderId,
+            @RequestBody SendOrderMessageRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        return ApiResponse.ok(orderMessageService.send(
+                loginUser.userId(), orderId, request.content(), request.clientMsgId(), ClientIp.resolve(httpRequest)));
     }
 
     @PostMapping("/api/orders/{orderId}/handover-confirm")
@@ -118,17 +130,6 @@ public class OrderController {
         return ApiResponse.ok(orderService.withdrawDispute(loginUser.userId(), orderId, ClientIp.resolve(httpRequest)));
     }
 
-    @PostMapping("/api/orders/{orderId}/review")
-    public ApiResponse<Map<String, Object>> review(
-            @AuthenticationPrincipal LoginUser loginUser,
-            @PathVariable long orderId,
-            @RequestBody ReviewRequest request,
-            HttpServletRequest httpRequest
-    ) {
-        return ApiResponse.ok(orderService.review(
-                loginUser.userId(), orderId, request.score(), request.content(), ClientIp.resolve(httpRequest)));
-    }
-
     @PostMapping("/api/orders/{orderId}/payments")
     public ApiResponse<Map<String, Object>> pay(
             @AuthenticationPrincipal LoginUser loginUser,
@@ -139,16 +140,6 @@ public class OrderController {
     ) {
         return ApiResponse.ok(payService.create(
                 loginUser.userId(), orderId, request.channel(), idempotencyKey, ClientIp.resolve(httpRequest)));
-    }
-
-    @GetMapping("/api/users/{userId}/reviews")
-    public ApiResponse<Map<String, Object>> reviews(
-            @AuthenticationPrincipal LoginUser loginUser,
-            @PathVariable long userId,
-            @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size
-    ) {
-        return ApiResponse.ok(orderService.reviewsOf(userId, page, size));
     }
 
     @GetMapping("/api/admin/orders")
@@ -180,6 +171,15 @@ public class OrderController {
             @RequestParam(required = false) Integer size
     ) {
         return ApiResponse.ok(orderService.adminDisputes(status, page, size));
+    }
+
+    @GetMapping("/api/admin/disputes/{id}/messages")
+    public ApiResponse<Map<String, Object>> disputeMessages(
+            @AuthenticationPrincipal LoginAdmin loginAdmin,
+            @PathVariable long id,
+            HttpServletRequest httpRequest
+    ) {
+        return ApiResponse.ok(orderMessageService.adminList(id, ClientIp.resolve(httpRequest)));
     }
 
     @PostMapping("/api/admin/disputes/{id}/resolve")
