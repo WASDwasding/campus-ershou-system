@@ -58,6 +58,12 @@ const api = {
   login(body) {
     return raw({ url: '/api/auth/login', method: 'POST', data: body, auth: false })
   },
+  wxLogin(body) {
+    return raw({ url: '/api/auth/wx-login', method: 'POST', data: body, auth: false })
+  },
+  wxBind(body) {
+    return raw({ url: '/api/auth/wx-bind', method: 'POST', data: body })
+  },
   logout() {
     return raw({ url: '/api/auth/logout', method: 'POST', data: {} })
   },
@@ -85,9 +91,6 @@ const api = {
   userGoods(userId, status) {
     return raw({ url: '/api/users/' + userId + '/goods', data: status ? { status } : {} })
   },
-  userReviews(userId) {
-    return raw({ url: '/api/users/' + userId + '/reviews' })
-  },
   upload,
   goods(query) {
     return raw({ url: '/api/goods', data: query })
@@ -113,21 +116,6 @@ const api = {
   myGoods(status) {
     return raw({ url: '/api/me/goods', data: status ? { status } : {} })
   },
-  favorite(id) {
-    return raw({ url: '/api/goods/' + id + '/favorite', method: 'PUT', data: {} })
-  },
-  unfavorite(id) {
-    return raw({ url: '/api/goods/' + id + '/favorite', method: 'DELETE' })
-  },
-  favorites(query) {
-    return raw({ url: '/api/me/favorites', data: query || {} })
-  },
-  history(query) {
-    return raw({ url: '/api/me/history', data: query || {} })
-  },
-  clearHistory() {
-    return raw({ url: '/api/me/history', method: 'DELETE' })
-  },
   createOrder(goodsId) {
     return raw({
       url: '/api/orders',
@@ -142,13 +130,8 @@ const api = {
   myOrders(query) {
     return raw({ url: '/api/me/orders', data: query || {} })
   },
-  cancelOrder(id, reason) {
-    const data = {}
-    if (reason) data.reason = reason
-    return raw({ url: '/api/orders/' + id + '/cancel', method: 'POST', data })
-  },
-  meetup(id, body) {
-    return raw({ url: '/api/orders/' + id + '/meetup', method: 'PUT', data: body })
+  cancelOrder(id) {
+    return raw({ url: '/api/orders/' + id + '/cancel', method: 'POST', data: {} })
   },
   handover(id) {
     return raw({ url: '/api/orders/' + id + '/handover-confirm', method: 'POST', data: {} })
@@ -159,8 +142,11 @@ const api = {
   withdrawDispute(id) {
     return raw({ url: '/api/orders/' + id + '/dispute/withdraw', method: 'POST', data: {} })
   },
-  review(id, body) {
-    return raw({ url: '/api/orders/' + id + '/review', method: 'POST', data: body })
+  orderMessages(orderId, query) {
+    return raw({ url: '/api/orders/' + orderId + '/messages', data: query || {} })
+  },
+  sendOrderMessage(orderId, body) {
+    return raw({ url: '/api/orders/' + orderId + '/messages', method: 'POST', data: body })
   },
   createPayment(orderId) {
     return raw({
@@ -173,34 +159,18 @@ const api = {
   payment(paymentNo) {
     return raw({ url: '/api/payments/' + paymentNo })
   },
-  mockPay(paymentNo, result) {
+  mockPay(paymentNo) {
     return raw({
       url: '/api/pay/mock/' + paymentNo + '/confirm',
       method: 'POST',
-      data: { result: result || 'SUCCESS' }
+      data: {}
     })
   },
-  openConversation(goodsId) {
-    return raw({ url: '/api/im/conversations', method: 'POST', data: { goodsId: Number(goodsId) } })
+  goodsDraft(body) {
+    return raw({ url: '/api/ai/goods-draft', method: 'POST', data: body })
   },
-  conversations(query) {
-    return raw({ url: '/api/im/conversations', data: query || {} })
-  },
-  conversation(id) {
-    return raw({ url: '/api/im/conversations/' + id })
-  },
-  messages(id, query) {
-    return raw({ url: '/api/im/conversations/' + id + '/messages', data: query || {} })
-  },
-  sendMessage(id, body) {
-    return raw({ url: '/api/im/conversations/' + id + '/messages', method: 'POST', data: body })
-  },
-  readConversation(id, lastReadMessageId) {
-    return raw({
-      url: '/api/im/conversations/' + id + '/read',
-      method: 'POST',
-      data: { lastReadMessageId: Number(lastReadMessageId) }
-    })
+  quote(goodsId) {
+    return raw({ url: '/api/ai/quotes', method: 'POST', data: { goodsId: Number(goodsId) } })
   },
   notifications(query) {
     return raw({ url: '/api/notifications', data: query || {} })
@@ -211,9 +181,104 @@ const api = {
   report(body) {
     return raw({ url: '/api/reports', method: 'POST', data: body })
   },
-  myReports() {
-    return raw({ url: '/api/me/reports' })
+  myReports(query) {
+    return raw({ url: '/api/me/reports', data: query || {} })
+  },
+  adminLogin(body) {
+    return raw({ url: '/api/admin/auth/login', method: 'POST', data: body, auth: false })
+  },
+  adminLogout() {
+    return raw({ url: '/api/admin/auth/logout', method: 'POST', data: {}, auth: 'admin' })
+  },
+  adminMe() {
+    return raw({ url: '/api/admin/me', auth: 'admin' })
+  },
+  adminPassword(body) {
+    return raw({ url: '/api/admin/auth/password', method: 'POST', data: body, auth: 'admin' })
+  },
+  adminVerifications(query) {
+    return raw({ url: '/api/admin/verifications', data: query || {}, auth: 'admin' })
+  },
+  adminVerification(id) {
+    return raw({ url: '/api/admin/verifications/' + id, auth: 'admin' })
+  },
+  approveVerification(id) {
+    return raw({ url: '/api/admin/verifications/' + id + '/approve', method: 'POST', data: {}, auth: 'admin' })
+  },
+  rejectVerification(id, reason) {
+    return raw({ url: '/api/admin/verifications/' + id + '/reject', method: 'POST', data: { reason }, auth: 'admin' })
+  },
+  adminDisputes(query) {
+    return raw({ url: '/api/admin/disputes', data: query || {}, auth: 'admin' })
+  },
+  adminOrder(id) {
+    return raw({ url: '/api/admin/orders/' + id, auth: 'admin' })
+  },
+  adminDisputeMessages(id) {
+    return raw({ url: '/api/admin/disputes/' + id + '/messages', auth: 'admin' })
+  },
+  resolveDispute(id, body) {
+    return raw({ url: '/api/admin/disputes/' + id + '/resolve', method: 'POST', data: body, auth: 'admin' })
+  },
+  adminReports(query) {
+    return raw({ url: '/api/admin/reports', data: query || {}, auth: 'admin' })
+  },
+  adminReport(id) {
+    return raw({ url: '/api/admin/reports/' + id, auth: 'admin' })
+  },
+  handleReport(id, body) {
+    return raw({ url: '/api/admin/reports/' + id + '/handle', method: 'POST', data: body, auth: 'admin' })
+  },
+  pickFiles(purpose, max) {
+    return pickFiles(purpose, max)
   }
+}
+
+function pickFiles(purpose, max) {
+  return new Promise((resolve, reject) => {
+    wx.chooseMedia({
+      count: max,
+      mediaType: ['image'],
+      sizeType: ['compressed'],
+      success(res) {
+        const files = res.tempFiles || []
+        const ids = []
+        const run = (i) => {
+          if (i >= files.length) {
+            wx.hideLoading()
+            resolve(ids)
+            return
+          }
+          const file = files[i]
+          if (file.size > 5242880) {
+            wx.hideLoading()
+            reject({ code: 'FILE_TOO_LARGE', message: '有图片超过 5MB' })
+            return
+          }
+          wx.showLoading({ title: '上传中' })
+          upload(file.tempFilePath, purpose)
+            .then((data) => {
+              ids.push(data.fileId)
+              run(i + 1)
+            })
+            .catch((err) => {
+              wx.hideLoading()
+              reject(err)
+            })
+        }
+        if (!files.length) {
+          resolve([])
+          return
+        }
+        run(0)
+      },
+      fail(err) {
+        const msg = (err && err.errMsg) || ''
+        if (msg.indexOf('cancel') >= 0) resolve([])
+        else reject({ message: '没有选到图片' })
+      }
+    })
+  })
 }
 
 module.exports = api

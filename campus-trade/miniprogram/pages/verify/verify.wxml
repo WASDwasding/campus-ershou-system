@@ -5,6 +5,12 @@
     <view class="hint" wx:if="{{status === 'PENDING'}}">审核中，请等待管理员处理。</view>
     <view class="hint" wx:if="{{rejectReason}}">驳回原因：{{rejectReason}}</view>
     <block wx:if="{{status === 'UNVERIFIED' || status === 'REJECTED'}}">
+      <view class="label">姓名</view>
+      <input class="inp" maxlength="20" placeholder="1–20 字" value="{{realName}}" bindinput="onRealName" />
+      <view class="label">学号</view>
+      <input class="inp" type="number" maxlength="12" placeholder="须与注册学号一致" value="{{studentNo}}" bindinput="onStudentNo" />
+      <view class="label">学院</view>
+      <input class="inp" maxlength="30" placeholder="1–30 字" value="{{college}}" bindinput="onCollege" />
       <view class="label">宿舍楼</view>
       <picker range="{{dormNames}}" bindchange="onDorm">
         <view class="inp">{{dormNames[dormIndex] || '请选择'}}</view>

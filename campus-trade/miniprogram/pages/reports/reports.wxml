@@ -1,0 +1,9 @@
+<view class="page">
+  <view class="card item" wx:for="{{list}}" wx:key="id" bindtap="open" data-id="{{item.goodsId}}">
+    <view class="t">{{item.statusLabel}}</view>
+    <text class="c">{{item.description}}</text>
+    <view class="m" wx:if="{{item.reason}}">处理理由：{{item.reason}}</view>
+    <view class="m">{{item.timeText}}<text wx:if="{{item.handledText}}"> · 处理于 {{item.handledText}}</text></view>
+  </view>
+  <view class="empty" wx:if="{{!list.length}}">还没有举报</view>
+</view>

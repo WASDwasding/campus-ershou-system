@@ -36,6 +36,9 @@ function toOffsetIso(dateStr, timeStr) {
 
 function labelOf(enumName, value) {
   if (value == null || value === '') return ''
+  if (enumName === 'goodsStatus' && (value === 'RESERVED' || value === 'MEETUP' || value === 'DISPUTED')) {
+    return '交易进行中'
+  }
   let meta = null
   try {
     meta = getApp().globalData.meta
@@ -68,7 +71,8 @@ function presentGoods(g) {
     statusLabel: labelOf('goodsStatus', g.status),
     meetupName: meetup.name || '',
     sellerName: seller.nickname || '同学',
-    categoryName: (g.category && g.category.name) || ''
+    categoryName: (g.category && g.category.name) || '',
+    aliasText: Array.isArray(g.aliases) ? g.aliases.filter(Boolean).join('、') : ''
   })
 }
 

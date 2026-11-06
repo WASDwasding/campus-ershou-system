@@ -1,2 +1,0 @@
-.grid { display: flex; flex-wrap: wrap; padding: 16rpx; }
-.cell { width: 50%; box-sizing: border-box; padding: 10rpx; }

@@ -9,7 +9,6 @@
     <view class="meta">{{item.meetupName}} {{item.conditionLabel}}</view>
     <view class="foot">
       <text class="price">¥{{item.priceText}}</text>
-      <text class="fav">♡ {{item.favoriteCount || 0}}</text>
     </view>
   </view>
 </view>

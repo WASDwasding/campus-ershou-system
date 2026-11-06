@@ -1,11 +1,14 @@
 <view class="page">
   <view class="bar">
-    <input class="inp" focus maxlength="30" placeholder="标题或描述，1–30 字" value="{{keyword}}" bindinput="onQ" confirm-type="search" bindconfirm="go" />
+    <input class="inp" focus maxlength="30" placeholder="标题、描述或同义叫法" value="{{keyword}}" bindinput="onQ" confirm-type="search" bindconfirm="go" />
     <view class="go" bindtap="go">搜索</view>
   </view>
   <view class="filters">
     <input class="mini" type="digit" placeholder="最低元" value="{{minYuan}}" bindinput="onMin" />
     <input class="mini" type="digit" placeholder="最高元" value="{{maxYuan}}" bindinput="onMax" />
+    <picker class="mini pick" range="{{meetupNames}}" value="{{meetupIndex}}" bindchange="onMeetup">
+      <view class="pick-text">{{meetupNames[meetupIndex]}}</view>
+    </picker>
   </view>
   <view class="item" wx:for="{{list}}" wx:key="id" bindtap="open" data-id="{{item.id}}">
     <image wx:if="{{item.coverUrl}}" class="thumb" src="{{item.coverUrl}}" mode="aspectFill" />

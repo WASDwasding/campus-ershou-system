@@ -1,0 +1,27 @@
+<view class="page" wx:if="{{order.orderNo}}">
+  <view class="card box">
+    <view class="t">{{order.goodsTitle}}</view>
+    <view class="price">¥{{order.amountText}}</view>
+    <view class="m">订单 {{order.orderNo}} · {{order.statusLabel}}</view>
+    <view class="m" wx:if="{{order.paymentLabel}}">支付 {{order.paymentLabel}}</view>
+    <view class="m">申诉 {{order.statusLabel}} · {{order.reasonLabel}}</view>
+    <view class="m">{{order.description}}</view>
+    <view class="m">{{order.handoverText}}</view>
+    <view class="m" wx:if="{{order.resultLabel}}">结案 {{order.resultLabel}} {{order.remark}}</view>
+  </view>
+  <view class="card box">
+    <view class="section-title">聊天记录</view>
+    <view class="hint">{{chatHint}}</view>
+    <view class="bubble" wx:for="{{messages}}" wx:key="id">
+      <text>{{item.who}}：{{item.content}}</text>
+    </view>
+  </view>
+  <view class="card box" wx:if="{{order.open}}">
+    <view class="label">结案说明（2–300 字，双方可见）</view>
+    <textarea class="area" maxlength="300" value="{{remark}}" bindinput="onRemark" />
+    <view class="hint" wx:if="{{!order.bothConfirmed}}">继续完成需要买卖双方都已确认面交。</view>
+    <view class="btn btn-primary" data-result="REJECT" bindtap="resolve">驳回</view>
+    <view class="btn btn-ghost" data-result="COMPLETE" bindtap="resolve">继续完成</view>
+    <view class="btn btn-warn" data-result="CANCEL" bindtap="resolve">取消订单</view>
+  </view>
+</view>

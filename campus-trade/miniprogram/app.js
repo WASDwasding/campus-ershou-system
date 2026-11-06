@@ -35,7 +35,7 @@ App({
     api
       .badges()
       .then((data) => {
-        const n = Number((data && (data.imUnread || data.unreadMessages || data.messages)) || 0)
+        const n = Number((data && data.unreadNotifications) || 0)
         if (n > 0) wx.setTabBarBadge({ index: 2, text: n > 99 ? '99+' : String(n) })
         else wx.removeTabBarBadge({ index: 2 })
       })

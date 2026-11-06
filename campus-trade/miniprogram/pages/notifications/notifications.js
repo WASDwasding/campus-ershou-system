@@ -25,7 +25,12 @@ Page({
     if (!item) return
     if (!item.read && item.id) api.readNotifications({ ids: [item.id] }).catch(() => {})
     const ref = item.ref || {}
+    if (item.type === 'CHAT_MESSAGE' && ref.type === 'ORDER' && ref.id) {
+      wx.navigateTo({ url: '/pages/chat-room/chat-room?orderId=' + ref.id })
+      return
+    }
     if (ref.type === 'ORDER' && ref.id) wx.navigateTo({ url: '/pages/order-detail/order-detail?id=' + ref.id })
     else if (ref.type === 'GOODS' && ref.id) wx.navigateTo({ url: '/pages/detail/detail?id=' + ref.id })
+    else if (ref.type === 'REPORT') wx.navigateTo({ url: '/pages/reports/reports' })
   }
 })

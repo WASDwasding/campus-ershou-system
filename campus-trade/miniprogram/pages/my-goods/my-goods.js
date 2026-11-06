@@ -8,6 +8,8 @@ Page({
     statuses: [
       { value: 'ON_SALE', label: '在售' },
       { value: 'RESERVED', label: '已预约' },
+      { value: 'MEETUP', label: '待面交' },
+      { value: 'DISPUTED', label: '申诉中' },
       { value: 'SOLD', label: '已售出' },
       { value: 'OFF_SHELF', label: '已下架' },
       { value: 'REMOVED', label: '被下架' }

@@ -1,13 +1,16 @@
 const api = require('../../utils/api')
 const session = require('../../utils/session')
 const { showError } = require('../../utils/request')
-const { labelOf } = require('../../utils/format')
+const { labelOf, chars } = require('../../utils/format')
 
 Page({
   data: {
     status: 'UNVERIFIED',
     statusLabel: '',
     rejectReason: '',
+    realName: '',
+    studentNo: '',
+    college: '',
     dorms: [],
     dormNames: [],
     dormIndex: 0,
@@ -28,6 +31,9 @@ Page({
       this.setData({ dorms, dormNames: dorms.map((d) => d.name) })
     }).catch(() => {})
   },
+  onRealName(e) { this.setData({ realName: e.detail.value }) },
+  onStudentNo(e) { this.setData({ studentNo: e.detail.value }) },
+  onCollege(e) { this.setData({ college: e.detail.value }) },
   onDorm(e) { this.setData({ dormIndex: Number(e.detail.value) }) },
   card() {
     wx.chooseMedia({
@@ -44,10 +50,19 @@ Page({
     })
   },
   submit() {
+    const realName = (this.data.realName || '').trim()
+    const studentNo = (this.data.studentNo || '').trim()
+    const college = (this.data.college || '').trim()
     const dorm = this.data.dorms[this.data.dormIndex]
+    if (chars(realName) < 1 || chars(realName) > 20) return wx.showToast({ title: '姓名 1–20 字', icon: 'none' })
+    if (!/^\d{8,12}$/.test(studentNo)) return wx.showToast({ title: '学号为 8–12 位数字', icon: 'none' })
+    if (chars(college) < 1 || chars(college) > 30) return wx.showToast({ title: '学院 1–30 字', icon: 'none' })
     if (!dorm) return wx.showToast({ title: '请选择宿舍楼', icon: 'none' })
     if (!this.data.fileId) return wx.showToast({ title: '请上传证件照', icon: 'none' })
     api.submitVerification({
+      realName,
+      studentNo,
+      college,
       dormBuildingId: dorm.id,
       cardImageFileId: this.data.fileId
     }).then(() => {
