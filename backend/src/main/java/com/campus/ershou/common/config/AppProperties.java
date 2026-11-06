@@ -325,7 +325,7 @@ public class AppProperties {
         private boolean enabled = false;
         private String baseUrl = "";
         private String apiKey = "";
-        private String model = "qwen3-vl-flash";
+        private String model = "qwen3-vl-plus";
         private Duration timeout = Duration.ofSeconds(10);
         private int draftPerMinute = 5;
         private int quotePerMinute = 10;
