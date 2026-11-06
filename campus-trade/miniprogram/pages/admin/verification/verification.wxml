@@ -1,0 +1,15 @@
+<view class="page" wx:if="{{item.id}}">
+  <view class="card box">
+    <view class="t">{{item.realName}} · {{item.statusLabel}}</view>
+    <view class="m">学号 {{item.studentNo}}</view>
+    <view class="m">学院 {{item.college}}</view>
+    <view class="m" wx:if="{{item.dormName}}">宿舍 {{item.dormName}}</view>
+    <view class="m" wx:if="{{item.nickname}}">账号 {{item.nickname}}</view>
+    <view class="m" wx:if="{{item.rejectReason}}">驳回原因：{{item.rejectReason}}</view>
+    <image wx:if="{{item.cardUrl}}" class="card-img" src="{{item.cardUrl}}" mode="aspectFit" bindtap="preview" />
+  </view>
+  <block wx:if="{{item.status === 'PENDING'}}">
+    <view class="btn btn-primary" bindtap="approve">通过</view>
+    <view class="btn btn-ghost" bindtap="reject">驳回</view>
+  </block>
+</view>

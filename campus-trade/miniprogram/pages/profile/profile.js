@@ -27,15 +27,27 @@ Page({
       const s = stats || {}
       this.setData({
         stats: {
-          onSale: s.onSaleCount != null ? s.onSaleCount : s.onSale || 0,
-          sold: s.soldCount != null ? s.soldCount : s.sold || 0,
-          bought: s.boughtCount != null ? s.boughtCount : s.bought || 0,
-          rating: s.rating != null ? s.rating : '—'
+          onSale: s.onSaleCount || 0,
+          sold: s.soldCount || 0,
+          pending: s.pendingOrderCount || 0,
+          selling: s.sellingOrderCount || 0
         }
       })
     }).catch(() => {})
   },
   go(e) { wx.navigateTo({ url: e.currentTarget.dataset.url }) },
+  bindWx() {
+    wx.login({
+      success: (res) => {
+        if (!res.code) return wx.showToast({ title: '没有拿到微信登录凭证', icon: 'none' })
+        api.wxBind({ code: res.code }).then(() => {
+          wx.showToast({ title: '已绑定微信', icon: 'success' })
+          this.onShow()
+        }).catch(showError)
+      },
+      fail: () => wx.showToast({ title: '微信登录失败', icon: 'none' })
+    })
+  },
   logout() {
     api.logout().catch(() => {}).then(() => {
       socket.close()

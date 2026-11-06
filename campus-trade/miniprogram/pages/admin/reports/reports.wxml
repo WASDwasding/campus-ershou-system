@@ -1,0 +1,11 @@
+<view class="page">
+  <view class="tabs">
+    <view class="chip {{status === item.id ? 'chip-on' : ''}}" wx:for="{{tabs}}" wx:key="id" bindtap="setStatus" data-id="{{item.id}}">{{item.label}}</view>
+  </view>
+  <view class="card item" wx:for="{{list}}" wx:key="id" bindtap="open" data-id="{{item.id}}">
+    <view class="t">商品 {{item.goodsId}} · {{item.statusLabel}}</view>
+    <view class="m">{{item.description}}</view>
+    <view class="m">{{item.timeText}}</view>
+  </view>
+  <view class="empty" wx:if="{{!list.length}}">没有举报</view>
+</view>

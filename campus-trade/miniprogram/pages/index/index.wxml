@@ -1,6 +1,6 @@
 <view class="page">
   <view class="search" bindtap="goSearch">
-    <text class="ph">搜索商品标题或描述</text>
+    <text class="ph">搜索标题、描述或同义叫法</text>
   </view>
   <scroll-view scroll-x class="cats">
     <view class="chip {{categoryId === 0 ? 'chip-on' : ''}}" bindtap="setCat" data-id="0">全部</view>

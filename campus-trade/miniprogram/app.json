@@ -3,20 +3,27 @@
     "pages/login/login",
     "pages/index/index",
     "pages/publish/publish",
-    "pages/chat/chat",
+    "pages/notifications/notifications",
     "pages/profile/profile",
     "pages/detail/detail",
     "pages/search/search",
     "pages/chat-room/chat-room",
     "pages/orders/orders",
     "pages/order-detail/order-detail",
-    "pages/favorite/favorite",
     "pages/verify/verify",
     "pages/settings/settings",
-    "pages/notifications/notifications",
-    "pages/history/history",
+    "pages/reports/reports",
     "pages/user/user",
-    "pages/my-goods/my-goods"
+    "pages/my-goods/my-goods",
+    "pages/admin/login/login",
+    "pages/admin/home/home",
+    "pages/admin/password/password",
+    "pages/admin/verifications/verifications",
+    "pages/admin/verification/verification",
+    "pages/admin/disputes/disputes",
+    "pages/admin/dispute/dispute",
+    "pages/admin/reports/reports",
+    "pages/admin/report/report"
   ],
   "window": {
     "navigationBarBackgroundColor": "#7EB6D9",
@@ -44,8 +51,8 @@
         "selectedIconPath": "images/tab-plus-on.png"
       },
       {
-        "pagePath": "pages/chat/chat",
-        "text": "消息",
+        "pagePath": "pages/notifications/notifications",
+        "text": "通知",
         "iconPath": "images/tab-msg.png",
         "selectedIconPath": "images/tab-msg-on.png"
       },

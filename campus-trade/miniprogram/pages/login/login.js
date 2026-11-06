@@ -46,6 +46,37 @@ Page({
   onConfirm(e) { this.setData({ confirm: e.detail.value }) },
   onCode(e) { this.setData({ code: e.detail.value }) },
   showLogin() { this.setData({ mode: 'login' }) },
+  openAdmin() { wx.navigateTo({ url: '/pages/admin/login/login' }) },
+  wxLogin() {
+    if (this._busy) return
+    this._busy = true
+    wx.showLoading({ title: '微信登录中' })
+    wx.login({
+      success: (res) => {
+        if (!res.code) {
+          wx.hideLoading()
+          this._busy = false
+          wx.showToast({ title: '没有拿到微信登录凭证', icon: 'none' })
+          return
+        }
+        api
+          .wxLogin({ code: res.code })
+          .then((data) => this.enter(data))
+          .catch((err) => {
+            wx.hideLoading()
+            showError(err)
+          })
+          .finally(() => {
+            this._busy = false
+          })
+      },
+      fail: () => {
+        wx.hideLoading()
+        this._busy = false
+        wx.showToast({ title: '微信登录失败', icon: 'none' })
+      }
+    })
+  },
   showRegister() { this.setData({ mode: 'register' }) },
   login() {
     const studentNo = (this.data.studentNo || '').trim()

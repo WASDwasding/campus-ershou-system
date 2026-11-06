@@ -1,5 +1,6 @@
 const { baseUrl } = require('./config')
 const session = require('./session')
+const adminSession = require('./admin-session')
 
 function showError(err) {
   if (!err) {
@@ -9,10 +10,29 @@ function showError(err) {
   if (err.code === 'NOT_VERIFIED') {
     wx.showModal({
       title: '需要校园认证',
-      content: '认证通过后才能发布、下单、支付和聊天',
+      content: '认证通过后才能发布、下单、支付、确认面交和申诉',
       confirmText: '去认证',
       success(r) {
         if (r.confirm) wx.navigateTo({ url: '/pages/verify/verify' })
+      }
+    })
+    return
+  }
+  if (err.code === 'PUBLISH_BANNED') {
+    wx.showModal({
+      title: '不能再发布',
+      content: '该账号因疑似欺诈被禁止发布商品，仍可以登录和购买。',
+      showCancel: false
+    })
+    return
+  }
+  if (err.code === 'PASSWORD_CHANGE_REQUIRED') {
+    wx.showModal({
+      title: '请先修改密码',
+      content: '初始密码必须先修改，之后才能处理审核、申诉和举报。',
+      showCancel: false,
+      success() {
+        wx.redirectTo({ url: '/pages/admin/password/password' })
       }
     })
     return
@@ -35,7 +55,11 @@ function showError(err) {
 function raw(options) {
   const method = options.method || 'GET'
   const header = Object.assign({ 'Content-Type': 'application/json' }, options.header || {})
-  if (options.auth !== false && session.token()) header.Authorization = 'Bearer ' + session.token()
+  if (options.auth === 'admin') {
+    if (adminSession.token()) header.Authorization = 'Bearer ' + adminSession.token()
+  } else if (options.auth !== false && session.token()) {
+    header.Authorization = 'Bearer ' + session.token()
+  }
   if (options.idempotencyKey) header['Idempotency-Key'] = options.idempotencyKey
   return new Promise((resolve, reject) => {
     wx.request({
@@ -61,6 +85,12 @@ function raw(options) {
           message: body.message || '请求失败',
           data: body.data || null,
           traceId: body.traceId || ''
+        }
+        if (res.statusCode === 401 && options.auth === 'admin') {
+          adminSession.clear()
+          wx.reLaunch({ url: '/pages/admin/login/login' })
+          reject(err)
+          return
         }
         if (res.statusCode === 401 && options.auth !== false) {
           session.clear()

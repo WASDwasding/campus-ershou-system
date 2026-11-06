@@ -1,9 +1,21 @@
 const api = require('../../utils/api')
 const { showError } = require('../../utils/request')
-const { presentGoods } = require('../../utils/format')
+const { presentGoods, fenToYuan, chars } = require('../../utils/format')
+
+function buyBlockReason(item) {
+  const viewer = item.viewer || {}
+  if (viewer.canBuy || viewer.isMine) return ''
+  if (item.status === 'SOLD') return '已售出，不能再下单。'
+  if (item.status === 'RESERVED' || item.status === 'MEETUP' || item.status === 'DISPUTED') {
+    return '交易进行中，暂时不能下单。'
+  }
+  if (item.status === 'OFF_SHELF' || item.status === 'REMOVED') return '商品已下架，不能下单。'
+  if (item.status === 'ON_SALE') return '校园认证通过后才能下单。'
+  return '当前不能下单。'
+}
 
 Page({
-  data: { item: {} },
+  data: { item: {}, quote: null, blockReason: '' },
   onLoad(q) {
     this.id = q.id
   },
@@ -19,28 +31,35 @@ Page({
         const item = presentGoods(g)
         if (!item.viewer) item.viewer = {}
         if (!item.seller) item.seller = {}
-        this.setData({ item })
+        this.setData({ item, blockReason: buyBlockReason(item) })
       })
       .catch(showError)
   },
   preview(e) {
     wx.previewImage({ current: e.currentTarget.dataset.src, urls: this.data.item.imageUrls })
   },
-  fav() {
-    const item = this.data.item
-    const req = item.viewer && item.viewer.favorited ? api.unfavorite(item.id) : api.favorite(item.id)
-    req.then(() => this.load()).catch(showError)
-  },
-  chat() {
+  loadQuote() {
     api
-      .openConversation(this.data.item.id)
-      .then((c) => wx.navigateTo({ url: '/pages/chat-room/chat-room?id=' + c.id }))
-      .catch(showError)
+      .quote(this.id)
+      .then((q) => {
+        const available = !!(q && q.available && q.suggestedPrice != null)
+        this.setData({
+          quote: {
+            available,
+            priceText: available ? fenToYuan(q.suggestedPrice) : '',
+            hint: (q && (q.hint || q.disclaimer)) || '暂无建议价',
+            disclaimer: (q && q.disclaimer) || '仅供参考'
+          }
+        })
+      })
+      .catch(() => {
+        this.setData({ quote: { available: false, priceText: '', hint: '暂无建议价', disclaimer: '仅供参考' } })
+      })
   },
   buy() {
     wx.showModal({
       title: '确认下单？',
-      content: '将按当前标价生成待支付订单，15 分钟内完成模拟付款。',
+      content: '将按当前标价生成待支付订单，15 分钟内完成模拟付款。建议价不能作为成交价。',
       success: (r) => {
         if (!r.confirm) return
         api
@@ -71,39 +90,41 @@ Page({
     if (id) wx.navigateTo({ url: '/pages/user/user?id=' + id })
   },
   report() {
-    api
-      .ensureMeta()
-      .then((meta) => {
-        const reasons = ((meta && meta.enums && meta.enums.reportReason) || []).filter((x) => x && x.value)
-        if (!reasons.length) {
-          wx.showToast({ title: '举报原因还没下发', icon: 'none' })
+    wx.showModal({
+      title: '举报商品',
+      editable: true,
+      placeholderText: '说明 1–300 字',
+      success: (m) => {
+        if (!m.confirm) return
+        const description = (m.content || '').trim()
+        if (chars(description) < 1 || chars(description) > 300) {
+          wx.showToast({ title: '说明 1–300 字', icon: 'none' })
           return
         }
-        wx.showActionSheet({
-          itemList: reasons.map((x) => x.label),
-          success: (r) => {
-            const reason = reasons[r.tapIndex].value
-            wx.showModal({
-              title: '举报说明',
-              editable: true,
-              placeholderText: '选填，300 字以内',
-              success: (m) => {
-                if (!m.confirm) return
-                api
-                  .report({
-                    targetType: 'GOODS',
-                    targetId: Number(this.data.item.id),
-                    reason,
-                    description: (m.content || '').trim(),
-                    evidenceFileIds: []
-                  })
-                  .then(() => wx.showToast({ title: '已提交', icon: 'success' }))
-                  .catch(showError)
-              }
-            })
+        wx.showModal({
+          title: '上传凭证',
+          content: '可以上传 0–3 张图片，每张不超过 5MB。',
+          confirmText: '选择图片',
+          cancelText: '直接提交',
+          success: (ask) => {
+            const send = (ids) => {
+              api
+                .report({
+                  goodsId: Number(this.data.item.id),
+                  description,
+                  evidenceFileIds: ids || []
+                })
+                .then(() => wx.showToast({ title: '已提交', icon: 'success' }))
+                .catch(showError)
+            }
+            if (!ask.confirm) {
+              send([])
+              return
+            }
+            api.pickFiles('EVIDENCE', 3).then(send).catch(showError)
           }
         })
-      })
-      .catch(showError)
+      }
+    })
   }
 })

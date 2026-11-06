@@ -4,7 +4,7 @@
       <image class="logo" src="/images/logo.png" mode="aspectFill" />
     </view>
     <view class="name">校园二手</view>
-    <view class="sub">学号登录 · 校园认证后交易</view>
+    <view class="sub">学号登录或微信登录 · 认证后交易</view>
   </view>
   <view class="card form">
     <view class="tabs" wx:if="{{mode === 'login' || mode === 'register'}}">
@@ -18,6 +18,8 @@
       <view class="label">密码</view>
       <input class="inp" password maxlength="64" placeholder="请输入密码" value="{{password}}" bindinput="onPassword" />
       <view class="btn btn-primary" bindtap="login">登录</view>
+      <view class="hint center">或</view>
+      <view class="btn btn-ghost" bindtap="wxLogin">微信登录</view>
     </block>
 
     <block wx:if="{{mode === 'register'}}">
@@ -53,5 +55,6 @@
 
     <view class="hint center">{{healthText}}</view>
     <view class="hint center">登录后请填写资料并提交校园认证。认证通过才能发布和下单。</view>
+    <view class="link" bindtap="openAdmin">管理员入口</view>
   </view>
 </view>

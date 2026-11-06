@@ -1,0 +1,11 @@
+<view class="page">
+  <view class="card box">
+    <view class="t">管理端</view>
+    <view class="hint">审核校园身份、处理申诉和商品举报。学生账号不能进入这里。</view>
+    <view class="label">用户名</view>
+    <input class="inp" maxlength="32" value="{{username}}" bindinput="onUser" />
+    <view class="label">密码</view>
+    <input class="inp" password maxlength="64" value="{{password}}" bindinput="onPassword" />
+    <view class="btn btn-primary" bindtap="submit">登录</view>
+  </view>
+</view>
