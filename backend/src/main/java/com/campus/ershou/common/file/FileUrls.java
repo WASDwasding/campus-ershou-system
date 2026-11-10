@@ -10,6 +10,8 @@ import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Component
 public class FileUrls {
@@ -49,6 +51,15 @@ public class FileUrls {
 
     public long privateExpiryEpoch() {
         return Instant.now().plus(props.getFile().getPrivateUrlTtl()).getEpochSecond();
+    }
+
+    public Map<String, Object> privateImage(String fileId) {
+        long exp = privateExpiryEpoch();
+        Map<String, Object> image = new LinkedHashMap<>();
+        image.put("fileId", fileId);
+        image.put("url", privateUrl(fileId, "", exp));
+        image.put("thumbUrl", privateUrl(fileId, "thumb", exp));
+        return image;
     }
 
     public String normalizeSize(String size) {

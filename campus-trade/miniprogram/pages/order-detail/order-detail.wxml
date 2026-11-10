@@ -10,10 +10,13 @@
     <view class="m" wx:if="{{order.expireAt}}">支付截止 {{order.expireText}}</view>
     <view class="m" wx:if="{{order.handoverText}}">{{order.handoverText}}</view>
     <view class="m" wx:if="{{order.disputeText}}">{{order.disputeText}}</view>
-    <view class="hint">面交时间和校内地点在本单聊天里约定。已支付后不能取消。</view>
+    <view class="hint" wx:if="{{order.status === 'PENDING_PAY'}}">支付完成并进入待面交后才能聊天</view>
+    <view class="hint" wx:elif="{{order.status === 'PAID' || order.status === 'DISPUTED'}}">面交时间和校内地点在本单聊天里约定。已支付后不能取消。</view>
+    <view class="hint" wx:elif="{{order.status === 'COMPLETED' || order.status === 'CANCELLED'}}">订单已结束，只能查看聊天记录，不能再发消息。</view>
   </view>
   <view class="btn btn-primary" wx:if="{{can.PAY}}" bindtap="pay">模拟付款</view>
-  <view class="btn btn-ghost" bindtap="openChat">本单聊天</view>
+  <view class="btn btn-ghost" wx:if="{{order.status === 'PAID' || order.status === 'DISPUTED'}}" bindtap="openChat">本单聊天</view>
+  <view class="btn btn-ghost" wx:if="{{order.status === 'COMPLETED' || order.status === 'CANCELLED'}}" bindtap="openChat">查看聊天记录</view>
   <view class="btn btn-primary" wx:if="{{can.CONFIRM_HANDOVER}}" bindtap="handover">确认已面交</view>
   <view class="btn btn-warn" wx:if="{{can.OPEN_DISPUTE}}" bindtap="openDispute">申诉</view>
   <view class="btn btn-ghost" wx:if="{{can.WITHDRAW_DISPUTE}}" bindtap="withdraw">撤回申诉</view>

@@ -55,6 +55,5 @@
 
     <view class="hint center">{{healthText}}</view>
     <view class="hint center">登录后请填写资料并提交校园认证。认证通过才能发布和下单。</view>
-    <view class="link" bindtap="openAdmin">管理员入口</view>
   </view>
 </view>

@@ -6,6 +6,7 @@ import com.campus.ershou.common.api.ErrorCode;
 import com.campus.ershou.common.api.FieldErrorItem;
 import com.campus.ershou.common.api.Paging;
 import com.campus.ershou.common.file.FileService;
+import com.campus.ershou.common.file.FileUrls;
 import com.campus.ershou.common.rate.RateLimitService;
 import com.campus.ershou.common.util.Times;
 import com.campus.ershou.goods.GoodsAdminService;
@@ -45,6 +46,7 @@ public class ReportService {
     private final ConversationMapper conversationMapper;
     private final ConversationService conversationService;
     private final FileService fileService;
+    private final FileUrls fileUrls;
     private final RateLimitService rateLimitService;
     private final NotificationService notificationService;
     private final AdminUserService adminUserService;
@@ -60,6 +62,7 @@ public class ReportService {
             ConversationMapper conversationMapper,
             ConversationService conversationService,
             FileService fileService,
+            FileUrls fileUrls,
             RateLimitService rateLimitService,
             NotificationService notificationService,
             AdminUserService adminUserService,
@@ -74,6 +77,7 @@ public class ReportService {
         this.conversationMapper = conversationMapper;
         this.conversationService = conversationService;
         this.fileService = fileService;
+        this.fileUrls = fileUrls;
         this.rateLimitService = rateLimitService;
         this.notificationService = notificationService;
         this.adminUserService = adminUserService;
@@ -212,8 +216,16 @@ public class ReportService {
     private Map<String, Object> adminView(ReportRecord report, boolean withSnapshot) {
         Map<String, Object> data = mineView(report);
         data.put("reporterId", report.getReporterId());
-        data.put("evidenceFileIds", reportMapper.listFiles(report.getId()));
+        List<String> evidenceIds = reportMapper.listFiles(report.getId());
+        data.put("evidenceFileIds", evidenceIds);
         if (withSnapshot) {
+            List<Map<String, Object>> evidence = new ArrayList<>();
+            for (String fileId : evidenceIds) {
+                if (fileId != null && !fileId.isBlank()) {
+                    evidence.add(fileUrls.privateImage(fileId));
+                }
+            }
+            data.put("evidence", evidence);
             data.put("messageSnapshot", report.getMessageSnapshot());
         }
         return data;

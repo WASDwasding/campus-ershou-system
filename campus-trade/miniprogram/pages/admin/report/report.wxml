@@ -1,8 +1,11 @@
 <view class="page" wx:if="{{item.id}}">
   <view class="card box">
     <view class="t">商品 {{item.goodsId}} · {{item.statusLabel}}</view>
-    <text class="m">{{item.description}}</text>
-    <view class="m" wx:if="{{item.evidenceCount}}">凭证 {{item.evidenceCount}} 张</view>
+    <text class="copy">{{item.description}}</text>
+    <view class="shots" wx:if="{{item.evidence.length}}">
+      <image wx:for="{{item.evidence}}" wx:key="fileId" class="shot" src="{{item.thumbUrl || item.url}}" mode="aspectFill" data-src="{{item.url}}" bindtap="preview" />
+    </view>
+    <view class="hint" wx:else>没有上传凭证</view>
     <view class="m" wx:if="{{item.handleReason}}">处理理由：{{item.handleReason}}</view>
   </view>
   <view class="card box" wx:if="{{item.pending}}">

@@ -46,7 +46,6 @@ Page({
   onConfirm(e) { this.setData({ confirm: e.detail.value }) },
   onCode(e) { this.setData({ code: e.detail.value }) },
   showLogin() { this.setData({ mode: 'login' }) },
-  openAdmin() { wx.navigateTo({ url: '/pages/admin/login/login' }) },
   wxLogin() {
     if (this._busy) return
     this._busy = true
