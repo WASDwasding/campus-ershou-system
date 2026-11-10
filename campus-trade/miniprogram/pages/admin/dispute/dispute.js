@@ -14,12 +14,23 @@ Page({
     api.ensureMeta().catch(() => {}).then(() => this.load())
   },
   onRemark(e) { this.setData({ remark: e.detail.value }) },
+  preview(e) {
+    const group = e.currentTarget.dataset.group
+    const list = group === 'evidence' ? this.data.order.evidence : this.data.order.snapshot
+    const urls = (list || []).map((item) => item.url || item.thumbUrl).filter(Boolean)
+    const current = e.currentTarget.dataset.src
+    if (!current || !urls.length) return
+    wx.previewImage({ current, urls })
+  },
   load() {
     api.adminOrder(this.orderId).then((o) => {
       const dispute = o.dispute || {}
       const payment = o.payment || {}
       const handover = o.handover || {}
       const goods = o.goods || {}
+      const category = goods.category || {}
+      const meetup = goods.meetupBuilding || {}
+      const aliases = Array.isArray(goods.aliases) ? goods.aliases.filter(Boolean) : []
       const open = dispute.status === 'OPEN'
       let handoverText = '双方都还没确认面交'
       if (handover.buyerConfirmed && handover.sellerConfirmed) handoverText = '双方都已确认面交'
@@ -29,13 +40,22 @@ Page({
         order: {
           orderNo: o.orderNo,
           goodsTitle: goods.title || '商品',
+          goodsDescription: goods.description || '',
           amountText: fenToYuan(o.amount),
-          statusLabel: labelOf('orderStatus', o.status),
+          orderStatusLabel: labelOf('orderStatus', o.status),
           paymentLabel: payment.status ? labelOf('paymentStatus', payment.status) : '',
+          paymentReason: payment.reason || '',
+          conditionLabel: goods.condition ? labelOf('goodsCondition', goods.condition) : '',
+          categoryName: category.name || '',
+          meetupName: meetup.name || '',
+          tradeNote: goods.tradeNote || '',
+          aliasText: aliases.join('、'),
+          snapshot: (goods.images || []).filter((item) => item && (item.url || item.thumbUrl)),
+          evidence: (dispute.evidence || []).filter((item) => item && (item.url || item.thumbUrl)),
           reasonLabel: labelOf('disputeReason', dispute.reason),
           description: dispute.description || '',
           status: dispute.status,
-          statusLabel: labelOf('disputeStatus', dispute.status),
+          disputeStatusLabel: labelOf('disputeStatus', dispute.status),
           resultLabel: dispute.result ? labelOf('disputeResult', dispute.result) : '',
           remark: dispute.remark || '',
           handoverText,

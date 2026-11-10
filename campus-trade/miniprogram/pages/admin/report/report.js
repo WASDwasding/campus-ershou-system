@@ -11,9 +11,15 @@ Page({
     api.ensureMeta().catch(() => {}).then(() => this.load())
   },
   onReason(e) { this.setData({ reason: e.detail.value }) },
+  preview(e) {
+    const urls = (this.data.item.evidence || []).map((item) => item.url || item.thumbUrl).filter(Boolean)
+    const current = e.currentTarget.dataset.src
+    if (!current || !urls.length) return
+    wx.previewImage({ current, urls })
+  },
   load() {
     api.adminReport(this.id).then((item) => {
-      const files = item.evidenceFileIds || []
+      const files = (item.evidence || []).filter((file) => file && (file.url || file.thumbUrl))
       this.setData({
         item: {
           id: item.id,
@@ -22,7 +28,7 @@ Page({
           statusLabel: labelOf('reportStatus', item.status),
           description: item.description || '',
           handleReason: item.reason || '',
-          evidenceCount: files.length,
+          evidence: files,
           pending: item.status === 'PENDING'
         }
       })

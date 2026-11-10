@@ -2,12 +2,31 @@
   <view class="card box">
     <view class="t">{{order.goodsTitle}}</view>
     <view class="price">¥{{order.amountText}}</view>
-    <view class="m">订单 {{order.orderNo}} · {{order.statusLabel}}</view>
+    <view class="m">订单 {{order.orderNo}} · {{order.orderStatusLabel}}</view>
     <view class="m" wx:if="{{order.paymentLabel}}">支付 {{order.paymentLabel}}</view>
-    <view class="m">申诉 {{order.statusLabel}} · {{order.reasonLabel}}</view>
+    <view class="m" wx:if="{{order.paymentReason}}">{{order.paymentReason}}</view>
+    <view class="m">申诉 {{order.disputeStatusLabel}} · {{order.reasonLabel}}</view>
     <view class="m">{{order.description}}</view>
     <view class="m">{{order.handoverText}}</view>
     <view class="m" wx:if="{{order.resultLabel}}">结案 {{order.resultLabel}} {{order.remark}}</view>
+  </view>
+  <view class="card box">
+    <view class="section-title">下单快照</view>
+    <view class="shots" wx:if="{{order.snapshot.length}}">
+      <image wx:for="{{order.snapshot}}" wx:key="fileId" class="shot" src="{{item.thumbUrl || item.url}}" mode="aspectFill" data-group="snapshot" data-src="{{item.url}}" bindtap="preview" />
+    </view>
+    <view class="m" wx:if="{{order.conditionLabel || order.categoryName || order.meetupName}}">{{order.conditionLabel}} {{order.categoryName}} {{order.meetupName}}</view>
+    <text class="copy" wx:if="{{order.goodsDescription}}">{{order.goodsDescription}}</text>
+    <view class="m" wx:if="{{order.tradeNote}}">交易说明：{{order.tradeNote}}</view>
+    <view class="m" wx:if="{{order.aliasText}}">也叫：{{order.aliasText}}</view>
+    <view class="hint" wx:if="{{!order.snapshot.length && !order.goodsDescription}}">这张订单没有快照内容。</view>
+  </view>
+  <view class="card box">
+    <view class="section-title">申诉材料</view>
+    <view class="shots" wx:if="{{order.evidence.length}}">
+      <image wx:for="{{order.evidence}}" wx:key="fileId" class="shot" src="{{item.thumbUrl || item.url}}" mode="aspectFill" data-group="evidence" data-src="{{item.url}}" bindtap="preview" />
+    </view>
+    <view class="hint" wx:else>没有上传图片</view>
   </view>
   <view class="card box">
     <view class="section-title">聊天记录</view>

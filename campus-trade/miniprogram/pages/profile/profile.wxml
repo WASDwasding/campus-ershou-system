@@ -22,7 +22,6 @@
     <view class="mi" bindtap="go" data-url="/pages/my-goods/my-goods">我的商品</view>
     <view class="mi" bindtap="go" data-url="/pages/orders/orders">买入和卖出订单</view>
     <view class="mi" bindtap="go" data-url="/pages/reports/reports">我的举报</view>
-    <view class="mi" bindtap="go" data-url="/pages/admin/login/login">管理端</view>
     <view class="mi" wx:if="{{!user.wxBound}}" bindtap="bindWx">绑定微信</view>
     <view class="mi" wx:else>微信已绑定</view>
   </view>

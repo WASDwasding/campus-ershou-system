@@ -646,7 +646,15 @@ public class OrderService {
         data.put("status", dispute.getStatus());
         data.put("result", dispute.getResult());
         data.put("remark", dispute.getRemark());
-        data.put("evidenceFileIds", dispute.getId() == null ? List.of() : disputeMapper.listFiles(dispute.getId()));
+        List<String> evidenceIds = dispute.getId() == null ? List.of() : disputeMapper.listFiles(dispute.getId());
+        data.put("evidenceFileIds", evidenceIds);
+        List<Map<String, Object>> evidence = new ArrayList<>();
+        for (String fileId : evidenceIds) {
+            if (fileId != null && !fileId.isBlank()) {
+                evidence.add(fileUrls.privateImage(fileId));
+            }
+        }
+        data.put("evidence", evidence);
         data.put("createdAt", Times.at(dispute.getCreatedAt()));
         data.put("resolvedAt", Times.at(dispute.getResolvedAt()));
         return data;

@@ -13,8 +13,8 @@
     mysql -u ... ershou < /tmp/seed-demo.sql
 
 重复执行会先删掉 bio 为 SEED-DEMO 的用户及其商品、订单，再重新插入。
-图片行都指向同一个 fileId demo-cover。把一张 jpg 放到文件目录的
-demo-cover.jpg 和 demo-cover_thumb.jpg，列表才能显示封面。
+每种商品用 sql/demo-images 里对应的封面。文件名是 fileId.jpg 和
+fileId_thumb.jpg，放到服务器图片目录（线上是 /opt/campus-ershou/files）。
 """
 
 import argparse
@@ -28,12 +28,24 @@ BIO = "SEED-DEMO"
 USER_COUNT = 200
 GOODS_COUNT = 500
 ON_SALE_BULK = 317
-FILE_ID = "demo-cover"
 
-TITLES = [
-    "高等数学", "线性代数", "大学物理", "台灯", "计算器", "篮球",
-    "耳机", "键盘", "书桌", "收纳箱", "运动鞋", "书包", "词典", "充电宝",
-]
+COVERS = {
+    "高等数学": "demo-math",
+    "线性代数": "demo-linalg",
+    "大学物理": "demo-physics",
+    "台灯": "demo-lamp",
+    "计算器": "demo-calc",
+    "篮球": "demo-ball",
+    "耳机": "demo-earphone",
+    "键盘": "demo-keyboard",
+    "书桌": "demo-desk",
+    "收纳箱": "demo-box",
+    "运动鞋": "demo-shoes",
+    "书包": "demo-bag",
+    "词典": "demo-dict",
+    "充电宝": "demo-power",
+}
+TITLES = list(COVERS)
 CONDITIONS = ["NEW", "LIKE_NEW", "GOOD", "FAIR", "POOR"]
 NAMES = {1: "周宁", 2: "林晓", 3: "陈可"}
 
@@ -109,8 +121,11 @@ def main():
         )
     w(",\n".join(rows) + ";")
     w("")
-    w(f"INSERT INTO stored_files (id, owner_id, purpose, public_access) "
-      f"SELECT {q(FILE_ID)}, id, 'GOODS', 1 FROM users WHERE username = {q(username(1))};")
+    file_rows = ",\n".join(
+        f"SELECT {q(file_id)}, id, 'GOODS', 1 FROM users WHERE username = {q(username(1))}"
+        for file_id in COVERS.values()
+    )
+    w("INSERT INTO stored_files (id, owner_id, purpose, public_access)\n" + file_rows + ";")
     w("")
 
     goods_rows = []
@@ -136,9 +151,6 @@ def main():
     w("INSERT INTO goods (seller_id, title, description, category_id, condition_code, price, original_price, meetup_building_id, trade_note, status, stock, version) VALUES")
     w(",\n".join(goods_rows) + ";")
     w("")
-    w("INSERT INTO goods_images (goods_id, file_id, sort) "
-      "SELECT g.id, " + q(FILE_ID) + ", 0 FROM goods g JOIN users u ON u.id = g.seller_id WHERE u.bio = " + q(BIO) + ";")
-    w("")
 
     def user_id(index):
         return f"(SELECT id FROM users WHERE username = {q(username(index))})"
@@ -148,9 +160,8 @@ def main():
     w(f"({user_id(1)}, '高等数学第七版', '同济教材，笔记少量，无缺页', 1, 'GOOD', 1800, 4500, 1, '晚上图书馆方向的宿舍区面交', 'ON_SALE', 1, 0);")
     w("SET @g_mismatch = LAST_INSERT_ID();")
     w(f"INSERT INTO goods_aliases (goods_id, sort, alias) VALUES (@g_mismatch, 0, '高数');")
-    w(f"INSERT INTO goods_images (goods_id, file_id, sort) VALUES (@g_mismatch, {q(FILE_ID)}, 0);")
     w(f"INSERT INTO orders (order_no, buyer_id, seller_id, goods_id, status, amount, quantity, goods_title, goods_cover_file_id, goods_description, goods_category_id, goods_category_name, goods_condition, goods_price, goods_meetup_building_id, goods_meetup_building_name, goods_aliases_json, cancel_by, cancel_reason, paid_at, cancelled_at) VALUES")
-    w(f"('ODEMO-MISMATCH', {user_id(2)}, {user_id(1)}, @g_mismatch, 'CANCELLED', 1800, 1, '高等数学第七版', {q(FILE_ID)}, '同济教材，笔记少量，无缺页', 1, '教材书籍', 'GOOD', 1800, 1, '学上公寓1', '[\"高数\"]', 'ADMIN', '货不对版，取消订单', NOW(3), NOW(3));")
+    w(f"('ODEMO-MISMATCH', {user_id(2)}, {user_id(1)}, @g_mismatch, 'CANCELLED', 1800, 1, '高等数学第七版', {q(COVERS['高等数学'])}, '同济教材，笔记少量，无缺页', 1, '教材书籍', 'GOOD', 1800, 1, '学上公寓1', '[\"高数\"]', 'ADMIN', '货不对版，取消订单', NOW(3), NOW(3));")
     w("SET @o_mismatch = LAST_INSERT_ID();")
     w(f"INSERT INTO payments (payment_no, order_id, order_no, buyer_id, amount, channel, status, reason, expire_at) VALUES")
     w(f"('PDEMO-MISMATCH', @o_mismatch, 'ODEMO-MISMATCH', {user_id(2)}, 1800, 'MOCK', 'MOCK_REFUNDED', '货不对版，取消订单', DATE_ADD(NOW(3), INTERVAL 1 DAY));")
@@ -169,16 +180,15 @@ def main():
     w("INSERT INTO goods (seller_id, title, description, category_id, condition_code, price, meetup_building_id, trade_note, status, stock, version) VALUES")
     w(f"({user_id(1)}, '宿舍台灯样例', '迟到支付演示，旧单不能恢复', 3, 'LIKE_NEW', 3500, 2, '宿舍楼下见面', 'RESERVED', 1, 0);")
     w("SET @g_late = LAST_INSERT_ID();")
-    w(f"INSERT INTO goods_images (goods_id, file_id, sort) VALUES (@g_late, {q(FILE_ID)}, 0);")
     w(f"INSERT INTO orders (order_no, buyer_id, seller_id, goods_id, status, amount, quantity, goods_title, goods_cover_file_id, goods_price, cancel_by, cancel_reason, cancelled_at) VALUES")
-    w(f"('ODEMO-LATE-OLD', {user_id(2)}, {user_id(1)}, @g_late, 'CANCELLED', 3500, 1, '宿舍台灯样例', {q(FILE_ID)}, 3500, 'BUYER', '买家取消', NOW(3));")
+    w(f"('ODEMO-LATE-OLD', {user_id(2)}, {user_id(1)}, @g_late, 'CANCELLED', 3500, 1, '宿舍台灯样例', {q(COVERS['台灯'])}, 3500, 'BUYER', '买家取消', NOW(3));")
     w("SET @o_late_old = LAST_INSERT_ID();")
     w(f"INSERT INTO payments (payment_no, order_id, order_no, buyer_id, amount, channel, status, reason, expire_at) VALUES")
     w(f"('PDEMO-LATE-OLD', @o_late_old, 'ODEMO-LATE-OLD', {user_id(2)}, 3500, 'MOCK', 'MOCK_REFUNDED', '取消或释放后的迟到支付', DATE_ADD(NOW(3), INTERVAL 1 DAY));")
     w("SET @p_late_old = LAST_INSERT_ID();")
     w("INSERT INTO payment_notifies (payment_id, notify_no, amount, adopted, reason) VALUES (@p_late_old, 'NDEMO-LATE', 3500, 0, '取消或释放后的迟到支付');")
     w(f"INSERT INTO orders (order_no, buyer_id, seller_id, goods_id, status, amount, quantity, goods_title, goods_cover_file_id, goods_price, expire_at) VALUES")
-    w(f"('ODEMO-LATE-NEW', {user_id(3)}, {user_id(1)}, @g_late, 'PENDING_PAY', 3500, 1, '宿舍台灯样例', {q(FILE_ID)}, 3500, DATE_ADD(NOW(3), INTERVAL 2 HOUR));")
+    w(f"('ODEMO-LATE-NEW', {user_id(3)}, {user_id(1)}, @g_late, 'PENDING_PAY', 3500, 1, '宿舍台灯样例', {q(COVERS['台灯'])}, 3500, DATE_ADD(NOW(3), INTERVAL 2 HOUR));")
     w("SET @o_late_new = LAST_INSERT_ID();")
     w(f"INSERT INTO payments (payment_no, order_id, order_no, buyer_id, amount, channel, status, expire_at) VALUES")
     w(f"('PDEMO-LATE-NEW', @o_late_new, 'ODEMO-LATE-NEW', {user_id(3)}, 3500, 'MOCK', 'PENDING', DATE_ADD(NOW(3), INTERVAL 2 HOUR));")
@@ -191,9 +201,8 @@ def main():
     w("INSERT INTO goods (seller_id, title, description, category_id, condition_code, price, meetup_building_id, trade_note, status, stock, version) VALUES")
     w(f"({user_id(1)}, '篮球面交样例', '待面交聊天演示，页面不出现微信号', 5, 'FAIR', 2500, 1, '先在订单里约时间', 'MEETUP', 1, 0);")
     w("SET @g_meet = LAST_INSERT_ID();")
-    w(f"INSERT INTO goods_images (goods_id, file_id, sort) VALUES (@g_meet, {q(FILE_ID)}, 0);")
     w(f"INSERT INTO orders (order_no, buyer_id, seller_id, goods_id, status, amount, quantity, goods_title, goods_cover_file_id, goods_price, paid_at, expire_at) VALUES")
-    w(f"('ODEMO-MEET', {user_id(2)}, {user_id(1)}, @g_meet, 'PAID', 2500, 1, '篮球面交样例', {q(FILE_ID)}, 2500, NOW(3), DATE_ADD(NOW(3), INTERVAL 1 DAY));")
+    w(f"('ODEMO-MEET', {user_id(2)}, {user_id(1)}, @g_meet, 'PAID', 2500, 1, '篮球面交样例', {q(COVERS['篮球'])}, 2500, NOW(3), DATE_ADD(NOW(3), INTERVAL 1 DAY));")
     w("SET @o_meet = LAST_INSERT_ID();")
     w(f"INSERT INTO payments (payment_no, order_id, order_no, buyer_id, amount, channel, status, expire_at) VALUES")
     w(f"('PDEMO-MEET', @o_meet, 'ODEMO-MEET', {user_id(2)}, 2500, 'MOCK', 'PAID', DATE_ADD(NOW(3), INTERVAL 1 DAY));")
@@ -203,6 +212,14 @@ def main():
     w(f"INSERT INTO notifications (user_id, type, title, content, ref_type, ref_id) VALUES")
     w(f"({user_id(1)}, 'CHAT_MESSAGE', '新消息', '你有一条新的订单消息', 'ORDER', @o_meet);")
     w("")
+    cases = " ".join(
+        f"WHEN g.title LIKE {q(name + '%')} THEN {q(file_id)}"
+        for name, file_id in COVERS.items()
+    )
+    cases += " WHEN g.title LIKE " + q("宿舍台灯%") + " THEN " + q(COVERS["台灯"])
+    w("INSERT INTO goods_images (goods_id, file_id, sort)")
+    w("SELECT g.id, CASE " + cases + " ELSE " + q(COVERS["高等数学"]) + " END, 0")
+    w("FROM goods g JOIN users u ON u.id = g.seller_id WHERE u.bio = " + q(BIO) + ";")
     w("COMMIT;")
 
     sys.stdout.write("\n".join(out) + "\n")
