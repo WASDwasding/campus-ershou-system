@@ -1,14 +1,53 @@
 <view class="page">
-  <view class="search" bindtap="goSearch">
-    <text class="ph">搜索标题、描述或同义叫法</text>
+  <view class="nav" style="padding-top: {{statusBarHeight}}px; padding-right: {{navSide}}px;">
+    <view class="nav-row" style="min-height: {{navBarHeight}}px;">
+      <image class="brand-logo" src="/images/brand-mark.png" mode="aspectFit" />
+      <view class="brand-text">
+        <view class="brand-name">校园二手</view>
+        <view class="brand-sub">同学之间，当面交易</view>
+      </view>
+    </view>
   </view>
-  <scroll-view scroll-x class="cats">
-    <view class="chip {{categoryId === 0 ? 'chip-on' : ''}}" bindtap="setCat" data-id="0">全部</view>
-    <view class="chip {{categoryId === item.id ? 'chip-on' : ''}}" wx:for="{{categories}}" wx:key="id" bindtap="setCat" data-id="{{item.id}}">{{item.name}}</view>
-  </scroll-view>
-  <scroll-view scroll-x class="cats">
-    <view class="chip {{sort === item.id ? 'chip-on' : ''}}" wx:for="{{sorts}}" wx:key="id" bindtap="setSort" data-id="{{item.id}}">{{item.name}}</view>
-  </scroll-view>
+
+  <view class="search" style="top: {{statusBarHeight}}px;" bindtap="goSearch">
+    <image class="search-ico" src="/images/icons/search.png" mode="aspectFit" />
+    <text class="ph">搜索教材、数码、日用</text>
+  </view>
+
+  <view class="cat-grid">
+    <view
+      class="cat {{categoryId === item.id ? 'cat-on' : ''}}"
+      wx:for="{{categories}}"
+      wx:key="id"
+      bindtap="setCat"
+      data-id="{{item.id}}"
+    >
+      <image wx:if="{{item.icon === 'books'}}" class="cat-tile" src="/images/cats/books.png" mode="aspectFit" />
+      <image wx:elif="{{item.icon === 'digital'}}" class="cat-tile" src="/images/cats/digital.png" mode="aspectFit" />
+      <image wx:elif="{{item.icon === 'appliance'}}" class="cat-tile" src="/images/cats/appliance.png" mode="aspectFit" />
+      <image wx:elif="{{item.icon === 'daily'}}" class="cat-tile" src="/images/cats/daily.png" mode="aspectFit" />
+      <image wx:elif="{{item.icon === 'sports'}}" class="cat-tile" src="/images/cats/sports.png" mode="aspectFit" />
+      <image wx:elif="{{item.icon === 'clothing'}}" class="cat-tile" src="/images/cats/clothing.png" mode="aspectFit" />
+      <image wx:elif="{{item.icon === 'exam'}}" class="cat-tile" src="/images/cats/exam.png" mode="aspectFit" />
+      <image wx:else class="cat-tile" src="/images/cats/other.png" mode="aspectFit" />
+      <text class="cat-name">{{item.name}}</text>
+    </view>
+  </view>
+
+  <view class="banner-wrap" bindtap="goNearby">
+    <image class="banner" src="/images/home-banner.png" mode="widthFix" />
+  </view>
+
+  <view class="sorts">
+    <view
+      class="sort {{sort === item.id ? 'sort-on' : ''}}"
+      wx:for="{{sorts}}"
+      wx:key="id"
+      bindtap="setSort"
+      data-id="{{item.id}}"
+    >{{item.name}}</view>
+  </view>
+
   <view class="grid">
     <view class="cell" wx:for="{{list}}" wx:key="id">
       <product-card item="{{item}}" bind:open="open" />

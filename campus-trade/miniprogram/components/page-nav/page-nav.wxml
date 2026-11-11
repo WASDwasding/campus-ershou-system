@@ -1,0 +1,3 @@
+<view class="nav" style="padding-top: {{statusBarHeight}}px; height: {{statusBarHeight + navBarHeight}}px;">
+  <view class="title">{{title}}</view>
+</view>

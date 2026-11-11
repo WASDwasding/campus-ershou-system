@@ -1,0 +1,14 @@
+.nav {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f8fc;
+}
+
+.title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #2e4150;
+  line-height: 1.2;
+}

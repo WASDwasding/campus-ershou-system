@@ -45,6 +45,23 @@ COVERS = {
     "词典": "demo-dict",
     "充电宝": "demo-power",
 }
+# 与 categories 初始数据一致：1 教材书籍 2 数码电子 3 宿舍电器 4 生活日用 5 运动户外 6 服饰鞋包
+CATEGORIES = {
+    "高等数学": 1,
+    "线性代数": 1,
+    "大学物理": 1,
+    "词典": 1,
+    "计算器": 2,
+    "耳机": 2,
+    "键盘": 2,
+    "台灯": 3,
+    "充电宝": 3,
+    "书桌": 4,
+    "收纳箱": 4,
+    "篮球": 5,
+    "运动鞋": 6,
+    "书包": 6,
+}
 TITLES = list(COVERS)
 CONDITIONS = ["NEW", "LIKE_NEW", "GOOD", "FAIR", "POOR"]
 NAMES = {1: "周宁", 2: "林晓", 3: "陈可"}
@@ -132,14 +149,15 @@ def main():
     for n in range(1, GOODS_COUNT - 2):
         status = "ON_SALE" if n <= ON_SALE_BULK else "SOLD"
         seller = ((n - 1) % USER_COUNT) + 1
-        title = f"{TITLES[n % len(TITLES)]}{n:03d}"
+        kind = TITLES[n % len(TITLES)]
+        title = f"{kind}{n:03d}"
         price = 800 + (n * 37) % 9000
         goods_rows.append(
             "({seller}, {title}, {desc}, {cat}, {cond}, {price}, {orig}, {meetup}, {note}, {status}, 1, 0)".format(
                 seller=f"(SELECT id FROM users WHERE username = {q(username(seller))})",
                 title=q(title[:30]),
                 desc=q("演示商品，用于列表和性能测量"),
-                cat=(n % 8) + 1,
+                cat=CATEGORIES[kind],
                 cond=q(CONDITIONS[n % len(CONDITIONS)]),
                 price=price,
                 orig=price + 2000,

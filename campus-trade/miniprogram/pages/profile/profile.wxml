@@ -1,4 +1,6 @@
-<view class="page" wx:if="{{user}}">
+<view class="page">
+  <page-nav title="我的" />
+  <block wx:if="{{user}}">
   <view class="hero">
     <image wx:if="{{user.avatarUrl}}" class="ava" src="{{user.avatarUrl}}" mode="aspectFill" />
     <view wx:else class="ava">{{user.nickname0}}</view>
@@ -26,4 +28,5 @@
     <view class="mi" wx:else>微信已绑定</view>
   </view>
   <view class="btn btn-ghost out" bindtap="logout">退出登录</view>
+  </block>
 </view>

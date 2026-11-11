@@ -1,15 +1,19 @@
 .pcard {
   background: #fff;
-  border-radius: 20rpx;
+  border-radius: 24rpx;
   overflow: hidden;
   box-shadow: 0 8rpx 20rpx rgba(46, 65, 80, 0.06);
 }
 .cover {
-  height: 220rpx;
+  height: 248rpx;
+  margin: 12rpx 12rpx 0;
+  border-radius: 18rpx;
+  overflow: hidden;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #f3f8fc;
 }
 .cover-img {
   width: 100%;
@@ -32,16 +36,20 @@
   padding: 16rpx 18rpx 20rpx;
 }
 .title {
-  font-size: 26rpx;
-  font-weight: 600;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #2e4150;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .meta {
-  font-size: 20rpx;
+  font-size: 22rpx;
   color: #7d8f9c;
   margin-top: 6rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .foot {
   display: flex;
@@ -52,7 +60,7 @@
 .price {
   color: #4f90b8;
   font-weight: 700;
-  font-size: 28rpx;
+  font-size: 32rpx;
 }
 .fav {
   font-size: 20rpx;
