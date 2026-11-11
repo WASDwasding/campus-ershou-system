@@ -1,4 +1,5 @@
 <view class="page">
+  <page-nav title="通知" />
   <view class="row space pad">
     <view class="chip {{unreadOnly ? 'chip-on' : ''}}" bindtap="toggle">只看未读</view>
     <view class="chip" bindtap="readAll">全部已读</view>

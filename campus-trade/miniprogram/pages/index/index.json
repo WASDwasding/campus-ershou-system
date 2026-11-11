@@ -1,5 +1,8 @@
 {
-  "navigationBarTitleText": "市集",
+  "navigationStyle": "custom",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#F3F8FC",
+  "backgroundTextStyle": "dark",
   "enablePullDownRefresh": true,
   "usingComponents": {
     "product-card": "/components/product-card/product-card"

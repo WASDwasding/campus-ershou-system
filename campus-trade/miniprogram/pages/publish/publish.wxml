@@ -1,4 +1,5 @@
 <view class="page">
+  <page-nav title="发布商品" />
   <view class="card box" wx:if="{{!verified}}">
     <view class="section-title">发布前需要校园认证</view>
     <view class="hint">登录后可以浏览。认证通过后才能上传商品图并发布。</view>

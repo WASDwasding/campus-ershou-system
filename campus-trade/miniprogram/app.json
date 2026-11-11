@@ -26,9 +26,9 @@
     "pages/admin/report/report"
   ],
   "window": {
-    "navigationBarBackgroundColor": "#7EB6D9",
+    "navigationBarBackgroundColor": "#F3F8FC",
     "navigationBarTitleText": "校园二手",
-    "navigationBarTextStyle": "white",
+    "navigationBarTextStyle": "black",
     "backgroundColor": "#F3F8FC",
     "backgroundTextStyle": "dark"
   },
