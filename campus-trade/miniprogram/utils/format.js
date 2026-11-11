@@ -57,13 +57,21 @@ function imageUrl(img) {
   return img.url || img.thumbUrl || ''
 }
 
+function thumbFrom(url) {
+  if (!url) return ''
+  if (/[?&]size=thumb(?:&|$)/.test(url)) return url
+  return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'size=thumb'
+}
+
 function presentGoods(g) {
   if (!g) return {}
   const meetup = g.meetupBuilding || {}
   const seller = g.seller || {}
   const images = (g.images || []).map(imageUrl).filter(Boolean)
+  const cover = g.coverUrl || images[0] || ''
   return Object.assign({}, g, {
-    coverUrl: g.coverUrl || images[0] || '',
+    coverUrl: cover,
+    coverThumbUrl: thumbFrom(cover),
     imageUrls: images,
     priceText: fenToYuan(g.price),
     originalPriceText: g.originalPrice ? fenToYuan(g.originalPrice) : '',
