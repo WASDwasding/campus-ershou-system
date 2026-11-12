@@ -12,10 +12,6 @@
         "type": "folder"
       },
       {
-        "value": "homework",
-        "type": "folder"
-      },
-      {
         "value": ".md",
         "type": "suffix"
       }
