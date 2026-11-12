@@ -1,7 +1,7 @@
 <view class="pcard" bindtap="onTap">
   <view class="cover">
     <view class="cover-inner">
-      <image wx:if="{{item.coverThumbUrl || item.coverUrl}}" class="cover-img" src="{{item.coverThumbUrl || item.coverUrl}}" mode="aspectFill" />
+      <image wx:if="{{item.coverThumbUrl || item.coverUrl}}" class="cover-img" src="{{item.coverThumbUrl || item.coverUrl}}" mode="aspectFill" lazy-load />
       <image wx:else class="cover-mark" src="/images/brand-mark.png" mode="aspectFit" />
     </view>
     <view

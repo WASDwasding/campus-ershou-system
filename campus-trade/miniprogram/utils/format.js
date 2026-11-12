@@ -58,6 +58,12 @@ function imageUrl(img) {
   return img.url || img.thumbUrl || ''
 }
 
+function thumbUrl(img) {
+  if (!img) return ''
+  if (typeof img === 'string') return thumbFrom(img)
+  return img.thumbUrl || thumbFrom(img.url || '')
+}
+
 function thumbFrom(url) {
   if (!url) return ''
   if (/[?&]size=thumb(?:&|$)/.test(url)) return url
@@ -69,11 +75,13 @@ function presentGoods(g) {
   const meetup = g.meetupBuilding || {}
   const seller = g.seller || {}
   const images = (g.images || []).map(imageUrl).filter(Boolean)
-  const cover = g.coverUrl || images[0] || ''
+  const imageThumbs = (g.images || []).map(thumbUrl).filter(Boolean)
+  const cover = g.coverUrl || imageThumbs[0] || images[0] || ''
   return Object.assign({}, g, {
     coverUrl: cover,
     coverThumbUrl: thumbFrom(cover),
     imageUrls: images,
+    imageThumbs: imageThumbs.length ? imageThumbs : images.map(thumbFrom),
     priceText: fenToYuan(g.price),
     originalPriceText: g.originalPrice ? fenToYuan(g.originalPrice) : '',
     conditionLabel: labelOf('goodsCondition', g.condition),

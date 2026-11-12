@@ -12,7 +12,7 @@
   </view>
   <view class="card item" wx:for="{{list}}" wx:key="id" bindtap="open" data-id="{{item.id}}">
     <view class="thumb-box">
-      <image wx:if="{{item.coverThumbUrl || item.coverUrl}}" class="thumb" src="{{item.coverThumbUrl || item.coverUrl}}" mode="aspectFill" />
+      <image wx:if="{{item.coverThumbUrl || item.coverUrl}}" class="thumb" src="{{item.coverThumbUrl || item.coverUrl}}" mode="aspectFill" lazy-load />
       <image wx:else class="thumb-mark" src="/images/brand-mark.png" mode="aspectFit" />
     </view>
     <view class="mid">

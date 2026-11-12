@@ -15,8 +15,8 @@
         indicator-color="rgba(46, 65, 80, 0.2)"
         indicator-active-color="#3E7EA3"
       >
-        <swiper-item wx:for="{{item.imageUrls}}" wx:key="*this" wx:for-item="img">
-          <image src="{{img}}" mode="aspectFill" class="img" bindtap="preview" data-src="{{img}}" />
+        <swiper-item wx:for="{{item.imageThumbs}}" wx:key="*this" wx:for-item="img" wx:for-index="i">
+          <image src="{{img}}" mode="aspectFill" class="img" lazy-load bindtap="preview" data-src="{{item.imageUrls[i]}}" />
         </swiper-item>
       </swiper>
       <image wx:else class="cover-mark" src="/images/brand-mark.png" mode="aspectFit" />
