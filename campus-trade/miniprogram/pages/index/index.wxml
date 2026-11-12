@@ -14,28 +14,55 @@
     <text class="ph">搜索教材、数码、日用</text>
   </view>
 
-  <view class="cat-grid">
+  <view class="cat-grid {{categoryId ? 'cat-grid-filtering' : ''}}">
     <view
       class="cat {{categoryId === item.id ? 'cat-on' : ''}}"
+      hover-class="cat-press"
+      hover-start-time="0"
+      hover-stay-time="90"
       wx:for="{{categories}}"
       wx:key="id"
       bindtap="setCat"
       data-id="{{item.id}}"
     >
-      <image wx:if="{{item.icon === 'books'}}" class="cat-tile" src="/images/cats/books.png" mode="aspectFit" />
-      <image wx:elif="{{item.icon === 'digital'}}" class="cat-tile" src="/images/cats/digital.png" mode="aspectFit" />
-      <image wx:elif="{{item.icon === 'appliance'}}" class="cat-tile" src="/images/cats/appliance.png" mode="aspectFit" />
-      <image wx:elif="{{item.icon === 'daily'}}" class="cat-tile" src="/images/cats/daily.png" mode="aspectFit" />
-      <image wx:elif="{{item.icon === 'sports'}}" class="cat-tile" src="/images/cats/sports.png" mode="aspectFit" />
-      <image wx:elif="{{item.icon === 'clothing'}}" class="cat-tile" src="/images/cats/clothing.png" mode="aspectFit" />
-      <image wx:elif="{{item.icon === 'exam'}}" class="cat-tile" src="/images/cats/exam.png" mode="aspectFit" />
-      <image wx:else class="cat-tile" src="/images/cats/other.png" mode="aspectFit" />
+      <view class="cat-icon-wrap">
+        <image wx:if="{{item.icon === 'books'}}" class="cat-tile" src="/images/cats/books.png" mode="aspectFit" />
+        <image wx:elif="{{item.icon === 'digital'}}" class="cat-tile" src="/images/cats/digital.png" mode="aspectFit" />
+        <image wx:elif="{{item.icon === 'appliance'}}" class="cat-tile" src="/images/cats/appliance.png" mode="aspectFit" />
+        <image wx:elif="{{item.icon === 'daily'}}" class="cat-tile" src="/images/cats/daily.png" mode="aspectFit" />
+        <image wx:elif="{{item.icon === 'sports'}}" class="cat-tile" src="/images/cats/sports.png" mode="aspectFit" />
+        <image wx:elif="{{item.icon === 'clothing'}}" class="cat-tile" src="/images/cats/clothing.png" mode="aspectFit" />
+        <image wx:elif="{{item.icon === 'exam'}}" class="cat-tile" src="/images/cats/exam.png" mode="aspectFit" />
+        <image wx:else class="cat-tile" src="/images/cats/other.png" mode="aspectFit" />
+      </view>
       <text class="cat-name">{{item.name}}</text>
     </view>
   </view>
 
-  <view class="banner-wrap" bindtap="goNearby">
-    <image class="banner" src="/images/home-banner.png" mode="widthFix" />
+  <view
+    class="banner-card"
+    hover-class="banner-press"
+    hover-start-time="0"
+    hover-stay-time="90"
+    bindtap="goNearby"
+  >
+    <view class="banner-glow"></view>
+    <view class="banner-copy">
+      <view class="banner-head">
+        <view class="banner-title">约好时间<text class="banner-comma">，</text>楼下拿走</view>
+        <view class="banner-sub">
+          <text class="banner-tag-text">同校面交</text>
+          <text class="banner-dot">·</text>
+          <text>认证同学之间</text>
+        </view>
+      </view>
+      <view class="banner-cta {{sort === 'nearby' ? 'banner-cta-on' : ''}}">
+        <image class="banner-cta-ico" src="/images/btns/filter-pin.png" mode="aspectFit" />
+        <text>{{sort === 'nearby' ? '已按就近排序' : '就近看看'}}</text>
+        <text class="banner-arr" wx:if="{{sort !== 'nearby'}}">›</text>
+      </view>
+    </view>
+    <image class="banner-art" src="/images/home-banner-art.png" mode="aspectFit" />
   </view>
 
   <view class="sorts">
@@ -55,12 +82,18 @@
   </view>
   <view class="load-fail {{list.length ? 'load-fail-more' : ''}}" wx:if="{{error && !loading}}">
     <text>{{list.length ? '更多商品没加载出来：' : ''}}{{error}}</text>
-    <view class="retry" bindtap="retry">重试</view>
+    <view class="retry" bindtap="retry">
+      <image class="retry-ico" src="/images/btns/retry-undo.png" mode="aspectFit" />
+      <text>重试</text>
+    </view>
   </view>
   <view class="empty" wx:elif="{{!loading && !list.length}}">
-    <image class="empty-mark" src="/images/brand-mark.png" mode="aspectFit" />
+    <image class="empty-illust" src="/images/empty/goods.png" mode="aspectFit" />
     <view class="empty-text">还没有在售商品</view>
-    <view class="btn btn-ghost empty-btn" bindtap="goPublish">去发布</view>
+    <view class="btn btn-primary empty-btn" bindtap="goPublish">
+      <image class="btn-ico-sm" src="/images/btns/pri-publish.png" mode="aspectFit" />
+      <text>去发布</text>
+    </view>
   </view>
   <view class="hint pad" wx:if="{{loading}}">加载中…</view>
 </view>

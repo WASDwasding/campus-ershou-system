@@ -70,10 +70,10 @@ Page({
   },
   noop() {},
   onMyAvatarErr() {
-    this.setData({ myAvatar: '' })
+    if (this.data.myAvatar) this.setData({ myAvatar: '' })
   },
   onPeerAvatarErr() {
-    this.setData({ peerAvatar: '' })
+    if (this.data.peerAvatar) this.setData({ peerAvatar: '' })
   },
   onKeyboard(e) {
     this.applyKeyboard(e && e.detail && e.detail.height)

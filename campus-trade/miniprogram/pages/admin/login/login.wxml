@@ -1,4 +1,7 @@
 <view class="page">
+  <view class="admin-hero">
+    <image class="admin-logo" src="/images/app-logo-3d.png" mode="aspectFit" />
+  </view>
   <view class="card box">
     <view class="t">管理端</view>
     <view class="hint">审核校园身份、处理申诉和商品举报。学生账号不能进入这里。</view>
@@ -6,6 +9,9 @@
     <input class="inp" maxlength="32" value="{{username}}" bindinput="onUser" />
     <view class="label">密码</view>
     <input class="inp" password maxlength="64" value="{{password}}" bindinput="onPassword" />
-    <view class="btn btn-primary" bindtap="submit">登录</view>
+    <view class="btn btn-primary" bindtap="submit">
+      <image class="btn-ico" src="/images/btns/pri-login.png" mode="aspectFit" />
+      <text>登录</text>
+    </view>
   </view>
 </view>

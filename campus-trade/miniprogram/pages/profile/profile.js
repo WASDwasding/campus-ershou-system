@@ -41,6 +41,11 @@ Page({
     }).catch(showError)
   },
   go(e) { wx.navigateTo({ url: e.currentTarget.dataset.url }) },
+  onAvatarErr() {
+    if (this.data.user && this.data.user.avatarUrl) {
+      this.setData({ 'user.avatarUrl': '' })
+    }
+  },
   bindWx() {
     wx.login({
       success: (res) => {

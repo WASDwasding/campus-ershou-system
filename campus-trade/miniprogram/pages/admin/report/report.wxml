@@ -11,7 +11,13 @@
   <view class="card box" wx:if="{{item.pending}}">
     <view class="label">处理理由（2–100 字，两种结果都要写）</view>
     <textarea class="area" maxlength="100" value="{{reason}}" bindinput="onReason" />
-    <view class="btn btn-ghost" data-action="DISMISS" bindtap="handle">驳回</view>
-    <view class="btn btn-warn" data-action="REMOVE_GOODS" bindtap="handle">下架商品</view>
+    <view class="btn btn-ghost" data-action="DISMISS" bindtap="handle">
+      <image class="btn-ico" src="/images/btns/retry-undo.png" mode="aspectFit" />
+      <text>驳回</text>
+    </view>
+    <view class="btn btn-warn" data-action="REMOVE_GOODS" bindtap="handle">
+      <image class="btn-ico" src="/images/btns/warn-action.png" mode="aspectFit" />
+      <text>下架商品</text>
+    </view>
   </view>
 </view>

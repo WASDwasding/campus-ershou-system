@@ -14,17 +14,18 @@
 .photos {
   display: flex;
   flex-wrap: wrap;
-  gap: 16rpx;
+  gap: 18rpx;
   margin-top: 20rpx;
 }
 
 .ph {
-  width: 160rpx;
-  height: 160rpx;
-  border-radius: 18rpx;
+  width: 164rpx;
+  height: 164rpx;
+  border-radius: 26rpx;
   overflow: hidden;
   position: relative;
   background: var(--soft);
+  box-shadow: 0 6rpx 16rpx rgba(46, 65, 80, 0.06);
 }
 
 .ph-img {
@@ -33,29 +34,48 @@
 }
 
 .add {
+  background: transparent;
+  overflow: visible;
+  box-shadow: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 44rpx;
-  font-weight: 400;
-  color: var(--muted);
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.16s ease;
+}
+
+.add-tile {
+  width: 164rpx;
+  height: 164rpx;
+  display: block;
+  filter: drop-shadow(0 8rpx 20rpx rgba(62, 126, 163, 0.16)) drop-shadow(0 2rpx 6rpx rgba(46, 65, 80, 0.06));
+}
+
+.add-press {
+  transform: scale(0.94);
+  opacity: 0.92;
 }
 
 .x {
   position: absolute;
   right: 8rpx;
   top: 8rpx;
-  width: 40rpx;
-  height: 40rpx;
-  border-radius: 50%;
-  background: var(--card);
-  color: var(--ink);
-  font-size: 26rpx;
-  font-weight: 600;
+  width: 44rpx;
+  height: 44rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2rpx 8rpx rgba(46, 65, 80, 0.16);
+  transition: transform 0.15s ease;
+}
+
+.x-press {
+  transform: scale(0.9);
+}
+
+.x-ico {
+  width: 44rpx;
+  height: 44rpx;
+  display: block;
+  filter: drop-shadow(0 3rpx 8rpx rgba(22, 36, 48, 0.28));
 }
 
 .label {
@@ -88,10 +108,40 @@
   line-height: 84rpx;
 }
 
-.pick {
+.pick-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
+.pick-left {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-width: 0;
+  flex: 1;
+}
+
+.loc-ico {
+  width: 34rpx;
+  height: 34rpx;
+  flex-shrink: 0;
+  display: block;
+}
+
+.pick-val {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.pick-arr {
+  font-size: 32rpx;
+  line-height: 1;
+  color: var(--muted);
+  flex-shrink: 0;
 }
 
 .area {
@@ -160,6 +210,9 @@
   bottom: 0;
   z-index: 10;
   padding: 16rpx 24rpx;
-  background: var(--card);
-  border-top: 1rpx solid var(--line);
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1rpx solid rgba(222, 236, 246, 0.9);
+  box-shadow: 0 -6rpx 20rpx rgba(46, 65, 80, 0.04);
 }

@@ -1,24 +1,112 @@
-<view class="page">
-  <scroll-view scroll-x class="tabs">
-    <view class="chip {{status === item.value ? 'chip-on' : ''}}" wx:for="{{statuses}}" wx:key="value" bindtap="setStatus" data-id="{{item.value}}">{{item.label}}</view>
+<view class="page safe-bottom">
+  <scroll-view scroll-x enhanced show-scrollbar="{{false}}" class="tabs">
+    <view
+      class="chip {{status === item.value ? 'chip-on' : ''}}"
+      wx:for="{{statuses}}"
+      wx:key="value"
+      bindtap="setStatus"
+      data-id="{{item.value}}"
+    >{{item.label}}</view>
   </scroll-view>
-  <view class="item-row" wx:for="{{list}}" wx:key="id">
-    <view class="grow">
-      <product-card item="{{item}}" bind:open="open" />
+
+  <view class="goods-card" wx:for="{{list}}" wx:key="id">
+    <view
+      class="gc-main"
+      hover-class="gc-main-press"
+      hover-start-time="0"
+      hover-stay-time="80"
+      bindtap="open"
+      data-id="{{item.id}}"
+    >
+      <view class="gc-cover">
+        <image
+          wx:if="{{item.coverThumbUrl || item.coverUrl}}"
+          class="gc-img"
+          src="{{item.coverThumbUrl || item.coverUrl}}"
+          mode="aspectFill"
+          lazy-load
+        />
+        <image wx:else class="gc-mark" src="/images/brand-mark.png" mode="aspectFit" />
+      </view>
+
+      <view class="gc-body">
+        <view class="gc-title">{{item.title}}</view>
+
+        <view class="gc-meta">
+          <text class="gc-st {{item.status === 'ON_SALE' ? 'gc-st-sale' : (item.status === 'OFF_SHELF' || item.status === 'REMOVED' || item.status === 'SOLD' ? 'gc-st-muted' : 'gc-st-active')}}" wx:if="{{item.statusLabel}}">{{item.statusLabel}}</text>
+          <text class="tag" wx:if="{{item.conditionLabel}}">{{item.conditionLabel}}</text>
+          <text class="gc-loc" wx:if="{{item.meetupName}}">{{item.meetupName}}</text>
+        </view>
+
+        <view class="gc-foot">
+          <view class="gc-price-wrap">
+            <text class="price">¥{{item.priceText}}</text>
+            <text class="gc-orig" wx:if="{{item.originalPriceText}}">¥{{item.originalPriceText}}</text>
+          </view>
+          <text class="gc-more">详情 ›</text>
+        </view>
+      </view>
     </view>
-    <view class="ops">
-      <view class="op" wx:if="{{item.status === 'ON_SALE'}}" catchtap="off" data-id="{{item.id}}">下架</view>
-      <view class="op" wx:if="{{item.status === 'OFF_SHELF'}}" catchtap="on" data-id="{{item.id}}">上架</view>
-      <view class="op" wx:if="{{item.status === 'ON_SALE' || item.status === 'OFF_SHELF'}}" catchtap="edit" data-id="{{item.id}}">编辑</view>
-      <view class="op danger" wx:if="{{item.status === 'ON_SALE' || item.status === 'OFF_SHELF'}}" catchtap="del" data-id="{{item.id}}">删除</view>
+
+    <view class="gc-ops" wx:if="{{item.status === 'ON_SALE' || item.status === 'OFF_SHELF'}}">
+      <view
+        wx:if="{{item.status === 'ON_SALE'}}"
+        class="op-btn op-offshelf"
+        hover-class="op-press"
+        hover-start-time="0"
+        hover-stay-time="80"
+        catchtap="off"
+        data-id="{{item.id}}"
+      >
+        <image class="op-ico" src="/images/btns/op-offshelf.png" mode="aspectFit" />
+        <text>下架</text>
+      </view>
+      <view
+        wx:if="{{item.status === 'OFF_SHELF'}}"
+        class="op-btn op-onshelf"
+        hover-class="op-press"
+        hover-start-time="0"
+        hover-stay-time="80"
+        catchtap="on"
+        data-id="{{item.id}}"
+      >
+        <image class="op-ico" src="/images/btns/op-onshelf.png" mode="aspectFit" />
+        <text>上架</text>
+      </view>
+      <view
+        class="op-btn op-edit"
+        hover-class="op-press"
+        hover-start-time="0"
+        hover-stay-time="80"
+        catchtap="edit"
+        data-id="{{item.id}}"
+      >
+        <image class="op-ico" src="/images/btns/op-edit.png" mode="aspectFit" />
+        <text>编辑</text>
+      </view>
+      <view
+        class="op-btn op-del"
+        hover-class="op-press"
+        hover-start-time="0"
+        hover-stay-time="80"
+        catchtap="del"
+        data-id="{{item.id}}"
+      >
+        <image class="op-ico" src="/images/btns/op-delete.png" mode="aspectFit" />
+        <text>删除</text>
+      </view>
     </view>
   </view>
+
   <view class="load-fail" wx:if="{{error && !loading}}">
     <text>{{error}}</text>
-    <view class="retry" bindtap="load">重试</view>
+    <view class="retry" bindtap="load">
+      <image class="retry-ico" src="/images/btns/retry-undo.png" mode="aspectFit" />
+      <text>重试</text>
+    </view>
   </view>
   <view class="empty" wx:elif="{{!loading && !list.length}}">
-    <image class="empty-mark" src="/images/brand-mark.png" mode="aspectFit" />
+    <image class="empty-illust" src="/images/empty/goods.png" mode="aspectFit" />
     <view class="empty-text">这个状态下没有商品</view>
   </view>
   <view class="hint empty" wx:if="{{loading && !list.length}}">加载中…</view>

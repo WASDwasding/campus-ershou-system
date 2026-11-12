@@ -7,5 +7,8 @@
     <view class="m" wx:if="{{item.dormName}}">宿舍 {{item.dormName}}</view>
     <view class="m">{{item.timeText}}</view>
   </view>
-  <view class="empty" wx:if="{{!list.length}}">没有申请</view>
+  <view class="empty" wx:if="{{!list.length}}">
+    <image class="empty-illust" src="/images/empty/order.png" mode="aspectFit" />
+    <view class="empty-text">没有申请</view>
+  </view>
 </view>

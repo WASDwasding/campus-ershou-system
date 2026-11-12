@@ -22,5 +22,10 @@ Page({
       showError(err)
     })
   },
-  open(e) { wx.navigateTo({ url: '/pages/detail/detail?id=' + e.detail.id }) }
+  open(e) { wx.navigateTo({ url: '/pages/detail/detail?id=' + e.detail.id }) },
+  onAvatarErr() {
+    if (this.data.profile && this.data.profile.avatarUrl) {
+      this.setData({ 'profile.avatarUrl': '' })
+    }
+  }
 })

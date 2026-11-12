@@ -4,7 +4,10 @@
   <view class="card box" wx:if="{{!verified}}">
     <view class="section-title">发布前需要校园认证</view>
     <view class="hint">登录后可以浏览。认证通过后才能上传商品图并发布。</view>
-    <view class="btn btn-primary card-btn" bindtap="goVerify">去认证</view>
+    <view class="btn btn-primary card-btn" bindtap="goVerify">
+      <image class="btn-ico" src="/images/btns/pri-confirm.png" mode="aspectFit" />
+      <text>去认证</text>
+    </view>
   </view>
 
   <view class="card box" wx:elif="{{publishBanned && !goodsId}}">
@@ -20,13 +23,20 @@
       <view class="photos">
         <view class="ph" wx:for="{{images}}" wx:key="fileId">
           <image class="ph-img" src="{{item.url}}" mode="aspectFill" />
-          <view class="x" catchtap="delImg" data-i="{{index}}">×</view>
+          <view class="x" hover-class="x-press" hover-start-time="0" hover-stay-time="70" catchtap="delImg" data-i="{{index}}">
+            <image class="x-ico" src="/images/btns/photo-del.png" mode="aspectFit" />
+          </view>
         </view>
-        <view class="ph add" wx:if="{{images.length < 9}}" bindtap="choose">＋</view>
+        <view class="ph add" wx:if="{{images.length < 9}}" hover-class="add-press" hover-start-time="0" hover-stay-time="80" bindtap="choose">
+          <image class="add-tile" src="/images/btns/tile-photo-add.png" mode="aspectFit" />
+        </view>
       </view>
       <view class="label">补充说明（可选，给草稿用）</view>
       <input class="inp" maxlength="200" placeholder="例如教材名称、成色" placeholder-class="inp-ph" value="{{form.prompt}}" bindinput="setF" data-k="prompt" />
-      <view class="btn btn-ghost card-btn" bindtap="draft">生成草稿</view>
+      <view class="btn btn-ai card-btn" hover-class="btn-ai-press" bindtap="draft">
+        <image class="ai-ico" src="/images/icons/ai-sparkle.png" mode="aspectFit" />
+        <text>生成草稿</text>
+      </view>
       <view class="hint draft-hint">草稿只填进还空着的项。失败时已填内容保留，仍可手填发布。</view>
     </view>
 
@@ -50,12 +60,18 @@
 
       <view class="label">分类</view>
       <picker range="{{categoryNames}}" bindchange="onCat">
-        <view class="inp pick">{{categoryNames[catIndex] || '请选择'}}</view>
+        <view class="inp pick-row">
+          <text class="pick-val">{{categoryNames[catIndex] || '请选择'}}</text>
+          <text class="pick-arr">›</text>
+        </view>
       </picker>
 
       <view class="label">成色</view>
       <picker range="{{conditionNames}}" bindchange="onCond">
-        <view class="inp pick">{{conditionNames[condIndex] || '请选择'}}</view>
+        <view class="inp pick-row">
+          <text class="pick-val">{{conditionNames[condIndex] || '请选择'}}</text>
+          <text class="pick-arr">›</text>
+        </view>
       </picker>
 
       <view class="label">同义叫法（可选，最多 5 条，用逗号分隔）</view>
@@ -67,7 +83,13 @@
       <view class="section-title">怎么面交</view>
       <view class="label first-label">面交地点</view>
       <picker range="{{meetupNames}}" bindchange="onMeetup">
-        <view class="inp pick">{{meetupNames[meetupIndex] || '请选择'}}</view>
+        <view class="inp pick-row">
+          <view class="pick-left">
+            <image class="loc-ico" src="/images/btns/filter-pin.png" mode="aspectFit" />
+            <text class="pick-val">{{meetupNames[meetupIndex] || '请选择'}}</text>
+          </view>
+          <text class="pick-arr">›</text>
+        </view>
       </picker>
 
       <view class="label">交易说明（100 字以内）</view>
@@ -75,7 +97,10 @@
     </view>
 
     <view class="pub-bar">
-      <view class="btn btn-primary" bindtap="submit">{{goodsId ? '保存' : '发布'}}</view>
+      <view class="btn btn-primary" bindtap="submit">
+        <image class="btn-ico" src="/images/btns/pri-publish.png" mode="aspectFit" />
+        <text>{{goodsId ? '保存' : '发布'}}</text>
+      </view>
     </view>
   </block>
 </view>

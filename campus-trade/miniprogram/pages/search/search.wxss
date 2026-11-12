@@ -8,11 +8,13 @@
   display: block;
   flex: 1;
   min-width: 0;
-  height: 76rpx;
-  line-height: 76rpx;
+  height: 78rpx;
+  line-height: 78rpx;
   box-sizing: border-box;
   background: var(--card);
-  border-radius: 38rpx;
+  border-radius: 39rpx;
+  border: 1rpx solid rgba(206, 224, 238, 0.9);
+  box-shadow: inset 0 2rpx 0 #ffffff, 0 4rpx 12rpx rgba(46, 65, 80, 0.04);
   padding: 0 28rpx;
   font-size: 26rpx;
   color: var(--ink);
@@ -20,37 +22,35 @@
 
 .inp-ph {
   color: var(--muted);
-  line-height: 76rpx;
+  line-height: 78rpx;
 }
 
 .go {
-  width: 132rpx;
-  height: 76rpx;
-  background: var(--action);
-  color: #ffffff;
-  border-radius: 38rpx;
+  width: 158rpx;
+  height: 78rpx;
+  border-radius: 39rpx;
   font-size: 26rpx;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  gap: 8rpx;
+  flex-shrink: 0;
 }
 
 .filters {
   display: flex;
   gap: 12rpx;
-  padding: 8rpx 24rpx 16rpx;
+  padding: 10rpx 24rpx 18rpx;
 }
 
 .mini {
   display: block;
   flex: 1;
   min-width: 0;
-  height: 68rpx;
-  line-height: 68rpx;
+  height: 70rpx;
+  line-height: 70rpx;
   box-sizing: border-box;
-  background: var(--card);
-  border-radius: 16rpx;
+  background: linear-gradient(180deg, #ffffff 0%, #f5fafe 100%);
+  border: 1rpx solid rgba(210, 226, 238, 0.9);
+  box-shadow: inset 0 2rpx 0 #ffffff, 0 4rpx 10rpx rgba(46, 65, 80, 0.04);
+  border-radius: 18rpx;
   padding: 0 18rpx;
   font-size: 22rpx;
   color: var(--ink);
@@ -58,17 +58,34 @@
 
 .mini-ph {
   color: var(--muted);
-  line-height: 68rpx;
+  line-height: 70rpx;
 }
 
 .pick {
   display: flex;
   align-items: center;
+  padding: 0 14rpx;
   line-height: 1.4;
+}
+
+.pick-inner {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  min-width: 0;
+  width: 100%;
+}
+
+.pin-ico {
+  width: 28rpx;
+  height: 28rpx;
+  flex-shrink: 0;
+  display: block;
 }
 
 .pick-text {
   font-size: 22rpx;
+  font-weight: 500;
   color: var(--ink);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -101,9 +118,9 @@
 }
 
 .thumb-mark {
-  width: 56rpx;
-  height: 35rpx;
-  opacity: 0.35;
+  width: 60rpx;
+  height: 38rpx;
+  opacity: 0.62;
 }
 
 .mid {

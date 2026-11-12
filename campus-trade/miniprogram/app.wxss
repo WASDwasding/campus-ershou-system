@@ -36,75 +36,189 @@ page {
   box-shadow: 0 8rpx 24rpx rgba(46, 65, 80, 0.05);
 }
 
-/* 按钮体系：主按钮、浅蓝次按钮、白底描边次按钮、危险线框按钮 */
+/* 按钮体系：Apple 轻三维柔光果冻/磨砂玻璃按钮（主按钮、冰蓝次按钮、珠光描边按钮、柔樱警示按钮、AI 星徽按钮） */
 .btn {
-  height: 88rpx;
-  border-radius: 44rpx;
+  height: 92rpx;
+  border-radius: 46rpx;
   box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 12rpx;
   font-size: 30rpx;
   font-weight: 600;
+  letter-spacing: 0.5rpx;
+  position: relative;
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s ease, opacity 0.16s ease;
+}
+
+.btn-ico {
+  width: 38rpx;
+  height: 38rpx;
+  flex-shrink: 0;
+  display: block;
+}
+
+.btn-ico-sm {
+  width: 32rpx;
+  height: 32rpx;
+  flex-shrink: 0;
+  display: block;
 }
 
 .btn-primary {
-  background: var(--action);
+  background: linear-gradient(180deg, #569bc4 0%, #3e7ea3 56%, #346f92 100%);
   color: #ffffff;
+  border: 1rpx solid rgba(45, 100, 133, 0.46);
+  box-shadow:
+    inset 0 2rpx 1rpx rgba(255, 255, 255, 0.44),
+    inset 0 -3rpx 6rpx rgba(25, 60, 82, 0.22),
+    0 10rpx 24rpx rgba(62, 126, 163, 0.26),
+    0 2rpx 6rpx rgba(46, 65, 80, 0.08);
+  text-shadow: 0 1rpx 2rpx rgba(25, 60, 82, 0.18);
+}
+
+.btn-primary .btn-ico {
+  filter: drop-shadow(0 2rpx 5rpx rgba(22, 54, 74, 0.24));
 }
 
 .btn-primary:active {
-  background: var(--action-press);
+  transform: scale(0.975) translateY(2rpx);
+  background: linear-gradient(180deg, #4b8eb6 0%, #357093 100%);
+  box-shadow:
+    inset 0 2rpx 2rpx rgba(25, 60, 82, 0.18),
+    0 4rpx 12rpx rgba(62, 126, 163, 0.20);
 }
 
 .btn-ghost {
-  background: var(--soft);
-  color: var(--action);
+  background: linear-gradient(180deg, #f4fafe 0%, #dfeffa 100%);
+  color: #336d8e;
+  border: 1rpx solid rgba(160, 204, 232, 0.75);
+  box-shadow:
+    inset 0 2rpx 0 rgba(255, 255, 255, 0.96),
+    0 6rpx 16rpx rgba(62, 126, 163, 0.10),
+    0 1rpx 3rpx rgba(46, 65, 80, 0.04);
+}
+
+.btn-ghost .btn-ico {
+  filter: drop-shadow(0 2rpx 5rpx rgba(62, 126, 163, 0.15));
 }
 
 .btn-ghost:active {
-  opacity: 0.85;
+  transform: scale(0.975) translateY(1rpx);
+  background: linear-gradient(180deg, #e8f4fc 0%, #d4e9f7 100%);
+  box-shadow: inset 0 1rpx 2rpx rgba(62, 126, 163, 0.08), 0 3rpx 8rpx rgba(62, 126, 163, 0.08);
+}
+
+.btn-ai {
+  gap: 12rpx;
+  background: linear-gradient(135deg, #e8f5fe 0%, #f4effb 52%, #fdf5e2 100%);
+  color: var(--ink);
+  border: 1rpx solid rgba(136, 186, 220, 0.58);
+  box-shadow:
+    inset 0 2rpx 0 rgba(255, 255, 255, 0.96),
+    0 8rpx 20rpx rgba(62, 126, 163, 0.10),
+    0 1rpx 4rpx rgba(46, 65, 80, 0.04);
+}
+
+.btn-ai-press,
+.btn-ai:active {
+  transform: scale(0.975) translateY(1rpx);
+  opacity: 0.92;
+}
+
+.ai-ico {
+  width: 38rpx;
+  height: 38rpx;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2rpx 6rpx rgba(74, 155, 232, 0.24));
 }
 
 .btn-outline {
-  background: var(--card);
-  color: var(--action);
-  border: 2rpx solid var(--action);
+  background: linear-gradient(180deg, #ffffff 0%, #f1faf5 100%);
+  color: var(--ink);
+  border: 1rpx solid rgba(132, 198, 170, 0.68);
+  box-shadow:
+    inset 0 2rpx 0 #ffffff,
+    0 8rpx 20rpx rgba(46, 65, 80, 0.07),
+    0 2rpx 5rpx rgba(56, 168, 118, 0.08);
+}
+
+.btn-outline .btn-ico {
+  filter: drop-shadow(0 2rpx 5rpx rgba(46, 150, 102, 0.18));
 }
 
 .btn-outline:active {
-  background: var(--soft);
+  transform: scale(0.975) translateY(1rpx);
+  background: linear-gradient(180deg, #f5fbf8 0%, #e5f5ed 100%);
 }
 
 .btn-warn {
-  background: var(--card);
-  color: var(--danger);
-  border: 2rpx solid var(--danger);
+  background: linear-gradient(180deg, #fff6f8 0%, #fde4ea 100%);
+  color: #bc485b;
+  border: 1rpx solid rgba(232, 148, 166, 0.72);
+  box-shadow:
+    inset 0 2rpx 0 rgba(255, 255, 255, 0.96),
+    0 6rpx 16rpx rgba(196, 107, 107, 0.12),
+    0 1rpx 3rpx rgba(46, 65, 80, 0.04);
+}
+
+.btn-warn .btn-ico {
+  filter: drop-shadow(0 2rpx 5rpx rgba(196, 90, 108, 0.18));
 }
 
 .btn-warn:active {
-  background: rgba(196, 107, 107, 0.08);
+  transform: scale(0.975) translateY(1rpx);
+  background: linear-gradient(180deg, #fdecef 0%, #f9d5de 100%);
 }
 
 .btn-disabled {
-  background: var(--line);
+  background: linear-gradient(180deg, #eef4f8 0%, #e3edf4 100%);
   color: var(--muted);
+  border: 1rpx solid rgba(210, 224, 236, 0.85);
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.8);
 }
 
-/* 筛选胶囊 */
+/* 筛选胶囊：轻三维柔光圆胶囊 */
 .chip {
-  padding: 10rpx 24rpx;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  vertical-align: middle;
+  padding: 12rpx 28rpx;
   border-radius: 999rpx;
-  font-size: 22rpx;
-  font-weight: 400;
-  background: var(--card);
+  font-size: 24rpx;
+  font-weight: 500;
+  background: linear-gradient(180deg, #ffffff 0%, #f3f8fc 100%);
   color: var(--muted);
+  border: 1rpx solid rgba(212, 228, 240, 0.9);
+  box-shadow:
+    inset 0 2rpx 0 #ffffff,
+    0 4rpx 12rpx rgba(46, 65, 80, 0.05);
+  transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.16s ease;
+}
+
+.chip:active {
+  transform: scale(0.95);
+}
+
+.chip-ico {
+  width: 30rpx;
+  height: 30rpx;
+  flex-shrink: 0;
+  display: block;
+  filter: drop-shadow(0 2rpx 4rpx rgba(46, 65, 80, 0.12));
 }
 
 .chip-on {
-  background: var(--action);
+  background: linear-gradient(180deg, #569bc4 0%, #3e7ea3 100%);
   color: #ffffff;
   font-weight: 600;
+  border-color: rgba(48, 106, 140, 0.5);
+  box-shadow:
+    inset 0 2rpx 0 rgba(255, 255, 255, 0.40),
+    0 6rpx 16rpx rgba(62, 126, 163, 0.24);
 }
 
 /* 状态与属性标签胶囊 */
@@ -206,6 +320,13 @@ page {
   margin-bottom: 24rpx;
 }
 
+.empty-illust {
+  width: 212rpx;
+  height: 212rpx;
+  margin-bottom: 18rpx;
+  filter: drop-shadow(0 12rpx 24rpx rgba(46, 65, 80, 0.08));
+}
+
 .empty-text {
   font-size: 26rpx;
   font-weight: 400;
@@ -234,13 +355,33 @@ page {
 }
 
 .load-fail .retry {
-  margin-top: 20rpx;
-  padding: 12rpx 40rpx;
+  margin-top: 22rpx;
+  padding: 14rpx 40rpx;
   border-radius: 999rpx;
-  background: var(--soft);
-  color: var(--action);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  background: linear-gradient(180deg, #f4fafe 0%, #dfeffa 100%);
+  border: 1rpx solid rgba(160, 204, 232, 0.75);
+  box-shadow:
+    inset 0 2rpx 0 rgba(255, 255, 255, 0.96),
+    0 6rpx 16rpx rgba(62, 126, 163, 0.10);
+  color: #336d8e;
   font-size: 26rpx;
   font-weight: 600;
+  transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.load-fail .retry:active {
+  transform: scale(0.96);
+}
+
+.retry-ico {
+  width: 32rpx;
+  height: 32rpx;
+  flex-shrink: 0;
+  display: block;
 }
 
 .section-title {

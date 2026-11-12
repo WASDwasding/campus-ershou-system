@@ -142,6 +142,9 @@ Page({
   },
   setCat(e) {
     const id = Number(e.currentTarget.dataset.id) || 0
+    if (wx.vibrateShort) {
+      wx.vibrateShort({ type: 'light', fail() {} })
+    }
     this.setData({ categoryId: this.data.categoryId === id ? 0 : id })
     this.reload()
   },
@@ -152,6 +155,9 @@ Page({
     this.reload()
   },
   goNearby() {
+    if (wx.vibrateShort) {
+      wx.vibrateShort({ type: 'light', fail() {} })
+    }
     if (this.data.sort === 'nearby') return
     this.setData({ sort: 'nearby' })
     this.reload()
