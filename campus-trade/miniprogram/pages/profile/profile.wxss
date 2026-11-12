@@ -15,17 +15,14 @@
 }
 
 .ava {
-  width: 112rpx;
-  height: 112rpx;
+  width: 116rpx;
+  height: 116rpx;
   border-radius: 50%;
   flex-shrink: 0;
+  box-sizing: border-box;
   background: var(--soft);
-  color: var(--action);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 34rpx;
-  font-weight: 600;
+  border: 4rpx solid #ffffff;
+  box-shadow: 0 8rpx 22rpx rgba(46, 65, 80, 0.10);
 }
 
 .info {
@@ -87,6 +84,7 @@
 
 .menu {
   margin: 0 24rpx 20rpx;
+  overflow: hidden;
 }
 
 .menu-hd {
@@ -97,7 +95,7 @@
 }
 
 .mi {
-  padding: 26rpx 28rpx;
+  padding: 22rpx 28rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -105,10 +103,29 @@
   font-size: 30rpx;
   font-weight: 400;
   color: var(--ink);
+  transition: background-color 0.15s ease;
+}
+
+.mi-press {
+  background-color: rgba(232, 244, 250, 0.65);
 }
 
 .mi:last-child {
   border-bottom: none;
+}
+
+.mi-left {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  min-width: 0;
+}
+
+.mi-ico {
+  width: 56rpx;
+  height: 56rpx;
+  flex-shrink: 0;
+  filter: drop-shadow(0 4rpx 10rpx rgba(46, 65, 80, 0.11));
 }
 
 .mi-right {
@@ -123,7 +140,8 @@
 }
 
 .arr {
-  font-size: 26rpx;
+  font-size: 34rpx;
+  line-height: 1;
   color: var(--muted);
 }
 

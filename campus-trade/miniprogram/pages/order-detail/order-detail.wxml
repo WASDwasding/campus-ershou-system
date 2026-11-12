@@ -21,20 +21,44 @@
 
   <view class="actions">
     <!-- 主按钮：模拟付款、确认面交 -->
-    <view class="btn btn-primary" wx:if="{{can.PAY}}" bindtap="pay">模拟付款</view>
-    <view class="btn btn-primary" wx:if="{{can.CONFIRM_HANDOVER}}" bindtap="handover">确认已面交</view>
+    <view class="btn btn-primary" wx:if="{{can.PAY}}" bindtap="pay">
+      <image class="btn-ico" src="/images/btns/pri-buy.png" mode="aspectFit" />
+      <text>模拟付款</text>
+    </view>
+    <view class="btn btn-primary" wx:if="{{can.CONFIRM_HANDOVER}}" bindtap="handover">
+      <image class="btn-ico" src="/images/btns/pri-confirm.png" mode="aspectFit" />
+      <text>确认已面交</text>
+    </view>
 
     <!-- 次按钮：聊天、撤回申诉 -->
-    <view class="btn btn-ghost" wx:if="{{order.status === 'PAID' || order.status === 'DISPUTED'}}" bindtap="openChat">本单聊天</view>
-    <view class="btn btn-ghost" wx:if="{{order.status === 'COMPLETED' || order.status === 'CANCELLED'}}" bindtap="openChat">查看聊天记录</view>
-    <view class="btn btn-ghost" wx:if="{{can.WITHDRAW_DISPUTE}}" bindtap="withdraw">撤回申诉</view>
+    <view class="btn btn-ghost" wx:if="{{order.status === 'PAID' || order.status === 'DISPUTED'}}" bindtap="openChat">
+      <image class="btn-ico" src="/images/btns/chat-order.png" mode="aspectFit" />
+      <text>本单聊天</text>
+    </view>
+    <view class="btn btn-ghost" wx:if="{{order.status === 'COMPLETED' || order.status === 'CANCELLED'}}" bindtap="openChat">
+      <image class="btn-ico" src="/images/btns/chat-order.png" mode="aspectFit" />
+      <text>查看聊天记录</text>
+    </view>
+    <view class="btn btn-ghost" wx:if="{{can.WITHDRAW_DISPUTE}}" bindtap="withdraw">
+      <image class="btn-ico" src="/images/btns/retry-undo.png" mode="aspectFit" />
+      <text>撤回申诉</text>
+    </view>
 
-    <!-- 危险线框按钮：申诉、取消订单 -->
-    <view class="btn btn-warn" wx:if="{{can.OPEN_DISPUTE}}" bindtap="openDispute">申诉</view>
-    <view class="btn btn-warn" wx:if="{{can.CANCEL}}" bindtap="cancel">取消订单</view>
+    <!-- 柔樱警示立体按钮：申诉、取消订单 -->
+    <view class="btn btn-warn" wx:if="{{can.OPEN_DISPUTE}}" bindtap="openDispute">
+      <image class="btn-ico" src="/images/btns/warn-action.png" mode="aspectFit" />
+      <text>申诉</text>
+    </view>
+    <view class="btn btn-warn" wx:if="{{can.CANCEL}}" bindtap="cancel">
+      <image class="btn-ico" src="/images/btns/warn-action.png" mode="aspectFit" />
+      <text>取消订单</text>
+    </view>
   </view>
 </view>
 <view class="load-fail" wx:elif="{{error}}">
   <text>{{error}}</text>
-  <view class="retry" bindtap="load">重试</view>
+  <view class="retry" bindtap="load">
+    <image class="retry-ico" src="/images/btns/retry-undo.png" mode="aspectFit" />
+    <text>重试</text>
+  </view>
 </view>

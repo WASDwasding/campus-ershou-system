@@ -1,7 +1,7 @@
 <view class="page">
   <view class="hero">
     <view class="logo-wrap">
-      <image class="logo" src="/images/brand-mark.png" mode="aspectFit" />
+      <image class="logo" src="/images/app-logo-3d.png" mode="aspectFit" />
     </view>
     <view class="name">校园二手</view>
   </view>
@@ -16,9 +16,15 @@
       <input class="inp" type="number" maxlength="12" placeholder="8–12 位数字" value="{{studentNo}}" bindinput="onStudentNo" />
       <view class="label">密码</view>
       <input class="inp" password maxlength="64" placeholder="请输入密码" value="{{password}}" bindinput="onPassword" />
-      <view class="btn btn-primary submit-btn" bindtap="login">登录</view>
+      <view class="btn btn-primary submit-btn" bindtap="login">
+        <image class="btn-ico" src="/images/btns/pri-login.png" mode="aspectFit" />
+        <text>登录</text>
+      </view>
       <view class="or-line">或</view>
-      <view class="btn btn-outline wx-btn" bindtap="wxLogin">微信登录</view>
+      <view class="btn btn-outline wx-btn" bindtap="wxLogin">
+        <image class="btn-ico" src="/images/btns/wechat.png" mode="aspectFit" />
+        <text>微信登录</text>
+      </view>
     </block>
 
     <block wx:if="{{mode === 'register'}}">
@@ -28,7 +34,10 @@
       <input class="inp" maxlength="16" placeholder="1–16 字，中文、字母、数字、下划线" value="{{username}}" bindinput="onUsername" />
       <view class="label">邮箱</view>
       <input class="inp" maxlength="128" placeholder="用于接收验证码" value="{{email}}" bindinput="onEmail" />
-      <view class="btn btn-primary submit-btn" bindtap="sendCode">发送验证码</view>
+      <view class="btn btn-primary submit-btn" bindtap="sendCode">
+        <image class="btn-ico" src="/images/btns/pri-login.png" mode="aspectFit" />
+        <text>发送验证码</text>
+      </view>
     </block>
 
     <block wx:if="{{mode === 'code'}}">
@@ -36,7 +45,10 @@
       <view class="hint">验证码已发送到 {{emailMasked}}，10 分钟内有效。</view>
       <view class="label">验证码</view>
       <input class="inp" type="number" maxlength="6" placeholder="6 位数字" value="{{code}}" bindinput="onCode" />
-      <view class="btn btn-primary submit-btn" bindtap="verifyCode">下一步</view>
+      <view class="btn btn-primary submit-btn" bindtap="verifyCode">
+        <image class="btn-ico" src="/images/btns/pri-login.png" mode="aspectFit" />
+        <text>下一步</text>
+      </view>
       <view class="link {{cooldown ? 'off' : ''}}" bindtap="sendCode">{{cooldown ? '重新发送（' + cooldown + 's）' : '重新发送'}}</view>
       <view class="link" bindtap="showRegister">返回修改</view>
     </block>
@@ -48,7 +60,10 @@
       <input class="inp" password maxlength="64" placeholder="至少 8 位" value="{{password}}" bindinput="onPassword" />
       <view class="label">确认密码</view>
       <input class="inp" password maxlength="64" placeholder="再输入一次" value="{{confirm}}" bindinput="onConfirm" />
-      <view class="btn btn-primary submit-btn" bindtap="finishRegister">完成注册</view>
+      <view class="btn btn-primary submit-btn" bindtap="finishRegister">
+        <image class="btn-ico" src="/images/btns/pri-login.png" mode="aspectFit" />
+        <text>完成注册</text>
+      </view>
     </block>
   </view>
   <view class="foot-note">认证同学之间，当面交易。</view>

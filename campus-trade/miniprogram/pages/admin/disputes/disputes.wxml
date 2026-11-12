@@ -7,5 +7,8 @@
     <view class="m">{{item.reasonLabel}}</view>
     <view class="m">{{item.description}}</view>
   </view>
-  <view class="empty" wx:if="{{!list.length}}">没有申诉</view>
+  <view class="empty" wx:if="{{!list.length}}">
+    <image class="empty-illust" src="/images/empty/order.png" mode="aspectFit" />
+    <view class="empty-text">没有申诉</view>
+  </view>
 </view>

@@ -1,13 +1,19 @@
 <view class="page">
   <view class="bar">
     <input class="inp" focus maxlength="30" placeholder="标题、描述或同义叫法" placeholder-class="inp-ph" value="{{keyword}}" bindinput="onQ" confirm-type="search" bindconfirm="go" />
-    <view class="go" bindtap="go">搜索</view>
+    <view class="btn btn-primary go" bindtap="go">
+      <image class="btn-ico-sm" src="/images/btns/pri-search.png" mode="aspectFit" />
+      <text>搜索</text>
+    </view>
   </view>
   <view class="filters">
     <input class="mini" type="digit" placeholder="最低元" placeholder-class="mini-ph" value="{{minYuan}}" bindinput="onMin" />
     <input class="mini" type="digit" placeholder="最高元" placeholder-class="mini-ph" value="{{maxYuan}}" bindinput="onMax" />
     <picker class="mini pick" range="{{meetupNames}}" value="{{meetupIndex}}" bindchange="onMeetup">
-      <view class="pick-text">{{meetupNames[meetupIndex]}}</view>
+      <view class="pick-inner">
+        <image class="pin-ico" src="/images/btns/filter-pin.png" mode="aspectFit" />
+        <view class="pick-text">{{meetupNames[meetupIndex]}}</view>
+      </view>
     </picker>
   </view>
   <view class="card item" wx:for="{{list}}" wx:key="id" bindtap="open" data-id="{{item.id}}">
@@ -29,10 +35,13 @@
   </view>
   <view class="load-fail" wx:if="{{error && !loading}}">
     <text>{{error}}</text>
-    <view class="retry" bindtap="go">重试</view>
+    <view class="retry" bindtap="go">
+      <image class="retry-ico" src="/images/btns/retry-undo.png" mode="aspectFit" />
+      <text>重试</text>
+    </view>
   </view>
   <view class="empty" wx:elif="{{searched && !loading && !list.length}}">
-    <image class="empty-mark" src="/images/brand-mark.png" mode="aspectFit" />
+    <image class="empty-illust" src="/images/empty/goods.png" mode="aspectFit" />
     <view class="empty-text">没有找到相关商品</view>
   </view>
   <view class="hint empty" wx:if="{{loading}}">搜索中…</view>

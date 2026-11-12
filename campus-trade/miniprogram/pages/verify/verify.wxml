@@ -15,9 +15,15 @@
       <picker range="{{dormNames}}" bindchange="onDorm">
         <view class="inp">{{dormNames[dormIndex] || '请选择'}}</view>
       </picker>
-      <view class="btn btn-ghost" bindtap="card">{{fileId ? '证件照已上传' : '上传校园卡照片'}}</view>
+      <view class="btn btn-ghost" bindtap="card">
+        <image class="btn-ico" src="/images/btns/camera-upload.png" mode="aspectFit" />
+        <text>{{fileId ? '证件照已上传' : '上传校园卡照片'}}</text>
+      </view>
       <view class="hint">证件照只给审核使用，审核结束后按平台规则删除。学号使用注册时绑定的学号。</view>
-      <view class="btn btn-primary" bindtap="submit">提交认证</view>
+      <view class="btn btn-primary" bindtap="submit">
+        <image class="btn-ico" src="/images/btns/pri-confirm.png" mode="aspectFit" />
+        <text>提交认证</text>
+      </view>
     </block>
   </view>
 </view>

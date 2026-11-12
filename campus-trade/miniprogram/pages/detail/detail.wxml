@@ -2,8 +2,10 @@
   <page-nav
     title="商品详情"
     back="{{true}}"
-    rightText="{{item.id ? '举报' : ''}}"
-    bind:right="report"
+    leftText="{{item.id ? '举报' : ''}}"
+    leftIcon="{{item.id ? '/images/btns/warn-action.png' : ''}}"
+    leftTone="warn"
+    bind:left="report"
   />
 
   <view class="page" wx:if="{{item.id}}">
@@ -41,7 +43,10 @@
 
     <view class="card block">
       <view class="section-title">建议价</view>
-      <view class="btn btn-ghost quote-btn" bindtap="loadQuote">看建议价</view>
+      <view class="btn btn-ai quote-btn" hover-class="btn-ai-press" bindtap="loadQuote">
+        <image class="ai-ico" src="/images/icons/ai-sparkle.png" mode="aspectFit" />
+        <text>看建议价</text>
+      </view>
       <view class="quote-res" wx:if="{{quote.available}}">
         <text class="price">¥{{quote.priceText}}</text>
         <text class="pill pill-cream">{{quote.disclaimer || '仅供参考'}}</text>
@@ -52,29 +57,40 @@
 
     <view class="card block seller" bindtap="openSeller">
       <view class="seller-left">
-        <image wx:if="{{item.sellerAvatar}}" class="seller-ava" src="{{item.sellerAvatar}}" mode="aspectFill" />
-        <view wx:else class="seller-ava">{{item.sellerInitial}}</view>
+        <image class="seller-ava" src="{{item.sellerAvatar || '/images/default-avatar.png'}}" mode="aspectFill" binderror="onSellerAvatarErr" />
         <view class="seller-info">
           <view class="sn">{{item.sellerName}}</view>
           <view class="seller-sub">{{item.seller.verified ? '已认证' : '未认证'}}</view>
         </view>
       </view>
-      <text class="arr">></text>
+      <text class="arr">›</text>
     </view>
 
     <view class="hint removed" wx:if="{{item.removedReason}}">下架原因：{{item.removedReason}}</view>
     <view class="hint removed" wx:if="{{blockReason}}">{{blockReason}}</view>
 
     <view class="bar">
-      <view class="btn btn-primary grow" wx:if="{{item.viewer.activeOrderId}}" bindtap="openOrder">查看订单</view>
-      <view class="btn btn-primary grow" wx:elif="{{item.viewer.isMine}}" bindtap="edit">编辑</view>
-      <view class="btn btn-primary grow" wx:elif="{{item.viewer.canBuy}}" bindtap="buy">下单</view>
+      <view class="btn btn-ghost grow" wx:if="{{item.viewer.activeOrderId}}" bindtap="openOrder">
+        <image class="btn-ico" src="/images/btns/chat-order.png" mode="aspectFit" />
+        <text>查看订单</text>
+      </view>
+      <view class="btn btn-edit-soft grow" wx:elif="{{item.viewer.isMine}}" bindtap="edit">
+        <image class="btn-ico" src="/images/btns/op-edit.png" mode="aspectFit" />
+        <text>编辑</text>
+      </view>
+      <view class="btn btn-primary grow" wx:elif="{{item.viewer.canBuy}}" bindtap="buy">
+        <image class="btn-ico" src="/images/btns/pri-buy.png" mode="aspectFit" />
+        <text>下单</text>
+      </view>
       <view class="btn btn-disabled grow" wx:else>{{item.statusLabel || '暂不可下单'}}</view>
     </view>
   </view>
 
   <view class="load-fail" wx:elif="{{error}}">
     <text>{{error}}</text>
-    <view class="retry" bindtap="load">重试</view>
+    <view class="retry" bindtap="load">
+      <image class="retry-ico" src="/images/btns/retry-undo.png" mode="aspectFit" />
+      <text>重试</text>
+    </view>
   </view>
 </view>

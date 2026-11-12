@@ -14,7 +14,7 @@
 }
 
 .tabs .chip {
-  display: inline-block;
+  display: inline-flex;
   margin-right: 12rpx;
 }
 
@@ -44,9 +44,9 @@
 }
 
 .thumb-mark {
-  width: 56rpx;
-  height: 35rpx;
-  opacity: 0.35;
+  width: 60rpx;
+  height: 38rpx;
+  opacity: 0.62;
 }
 
 .mid {

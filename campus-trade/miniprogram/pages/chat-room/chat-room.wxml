@@ -6,8 +6,7 @@
 
       <view id="m{{item.id}}" class="msg {{item.mine ? 'mine' : 'peer'}}" wx:for="{{messages}}" wx:key="id">
         <block wx:if="{{!item.mine}}">
-          <image wx:if="{{peerAvatar}}" class="ava" src="{{peerAvatar}}" mode="aspectFill" binderror="onPeerAvatarErr" />
-          <view wx:else class="ava">{{peerInitial}}</view>
+          <image class="ava" src="{{peerAvatar || '/images/default-avatar.png'}}" mode="aspectFill" binderror="onPeerAvatarErr" />
           <view class="bubble">
             <text class="bubble-text">{{item.content}}</text>
           </view>
@@ -17,8 +16,7 @@
           <view class="bubble">
             <text class="bubble-text">{{item.content}}</text>
           </view>
-          <image wx:if="{{myAvatar}}" class="ava" src="{{myAvatar}}" mode="aspectFill" binderror="onMyAvatarErr" />
-          <view wx:else class="ava ava-mine">{{myInitial}}</view>
+          <image class="ava ava-mine" src="{{myAvatar || '/images/default-avatar.png'}}" mode="aspectFill" binderror="onMyAvatarErr" />
         </block>
       </view>
 
@@ -41,6 +39,9 @@
       placeholder="{{canSend ? '约定面交时间和校内地点' : hint}}"
       placeholder-class="input-placeholder"
     />
-    <view class="btn btn-primary send" bindtap="send">发送</view>
+    <view class="btn btn-primary send" bindtap="send">
+      <image class="btn-ico-sm" src="/images/btns/pri-send.png" mode="aspectFit" />
+      <text>发送</text>
+    </view>
   </view>
 </view>

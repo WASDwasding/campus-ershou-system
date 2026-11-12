@@ -1,8 +1,7 @@
 <view class="page" wx:if="{{ready}}">
   <view class="card box">
     <view class="user-top">
-      <image wx:if="{{profile.avatarUrl}}" class="ava" src="{{profile.avatarUrl}}" mode="aspectFill" />
-      <view wx:else class="ava">{{profile.initial}}</view>
+      <image class="ava" src="{{profile.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill" binderror="onAvatarErr" />
       <view class="info">
         <view class="name-row">
           <view class="n">{{profile.nickname || '同学'}}</view>
@@ -22,10 +21,13 @@
   </view>
   <view class="load-fail" wx:if="{{goodsError}}">
     <text>{{goodsError}}</text>
-    <view class="retry" bindtap="loadGoods">重试</view>
+    <view class="retry" bindtap="loadGoods">
+      <image class="retry-ico" src="/images/btns/retry-undo.png" mode="aspectFit" />
+      <text>重试</text>
+    </view>
   </view>
   <view class="empty" wx:elif="{{!goods.length}}">
-    <image class="empty-mark" src="/images/brand-mark.png" mode="aspectFit" />
+    <image class="empty-illust" src="/images/empty/goods.png" mode="aspectFit" />
     <view class="empty-text">还没有在售商品</view>
   </view>
 </view>

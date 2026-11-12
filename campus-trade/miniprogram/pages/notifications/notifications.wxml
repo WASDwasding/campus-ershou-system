@@ -1,8 +1,14 @@
 <view class="page">
   <page-nav title="通知" />
   <view class="row space pad">
-    <view class="chip {{unreadOnly ? 'chip-on' : ''}}" bindtap="toggle">只看未读</view>
-    <view class="chip" bindtap="readAll">全部已读</view>
+    <view class="chip {{unreadOnly ? 'chip-on' : ''}}" bindtap="toggle">
+      <image class="chip-ico" src="/images/btns/chip-unread.png" mode="aspectFit" />
+      <text>只看未读</text>
+    </view>
+    <view class="chip" bindtap="readAll">
+      <image class="chip-ico" src="/images/btns/chip-readall.png" mode="aspectFit" />
+      <text>全部已读</text>
+    </view>
   </view>
   <view class="card item {{item.read ? 'item-read' : ''}}" wx:for="{{list}}" wx:key="id" bindtap="open" data-i="{{index}}">
     <view class="hd">
@@ -14,10 +20,13 @@
   </view>
   <view class="load-fail" wx:if="{{error && !loading}}">
     <text>{{error}}</text>
-    <view class="retry" bindtap="load">重试</view>
+    <view class="retry" bindtap="load">
+      <image class="retry-ico" src="/images/btns/retry-undo.png" mode="aspectFit" />
+      <text>重试</text>
+    </view>
   </view>
   <view class="empty" wx:elif="{{!loading && !list.length}}">
-    <image class="empty-mark" src="/images/brand-mark.png" mode="aspectFit" />
+    <image class="empty-illust" src="/images/empty/msg.png" mode="aspectFit" />
     <view class="empty-text">没有新通知</view>
   </view>
   <view class="hint empty" wx:if="{{loading && !list.length}}">加载中…</view>

@@ -39,8 +39,17 @@
     <view class="label">结案说明（2–300 字，双方可见）</view>
     <textarea class="area" maxlength="300" value="{{remark}}" bindinput="onRemark" />
     <view class="hint" wx:if="{{!order.bothConfirmed}}">继续完成需要买卖双方都已确认面交。</view>
-    <view class="btn btn-primary" data-result="REJECT" bindtap="resolve">驳回</view>
-    <view class="btn btn-ghost" data-result="COMPLETE" bindtap="resolve">继续完成</view>
-    <view class="btn btn-warn" data-result="CANCEL" bindtap="resolve">取消订单</view>
+    <view class="btn btn-primary" data-result="REJECT" bindtap="resolve">
+      <image class="btn-ico" src="/images/btns/pri-confirm.png" mode="aspectFit" />
+      <text>驳回</text>
+    </view>
+    <view class="btn btn-ghost" data-result="COMPLETE" bindtap="resolve">
+      <image class="btn-ico" src="/images/btns/retry-undo.png" mode="aspectFit" />
+      <text>继续完成</text>
+    </view>
+    <view class="btn btn-warn" data-result="CANCEL" bindtap="resolve">
+      <image class="btn-ico" src="/images/btns/warn-action.png" mode="aspectFit" />
+      <text>取消订单</text>
+    </view>
   </view>
 </view>

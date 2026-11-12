@@ -1,1 +1,15 @@
 @import "../admin.wxss";
+
+.admin-hero {
+  display: flex;
+  justify-content: center;
+  padding: 48rpx 0 12rpx;
+}
+
+.admin-logo {
+  width: 144rpx;
+  height: 144rpx;
+  display: block;
+  filter: drop-shadow(0 14rpx 28rpx rgba(46, 65, 80, 0.12)) drop-shadow(0 4rpx 8rpx rgba(62, 126, 163, 0.08));
+}
+

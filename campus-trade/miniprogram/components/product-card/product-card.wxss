@@ -32,9 +32,10 @@
 }
 
 .cover-mark {
-  width: 120rpx;
-  height: 75rpx;
-  opacity: 0.35;
+  width: 128rpx;
+  height: 80rpx;
+  opacity: 0.62;
+  filter: drop-shadow(0 4rpx 10rpx rgba(62, 126, 163, 0.12));
 }
 
 .st {

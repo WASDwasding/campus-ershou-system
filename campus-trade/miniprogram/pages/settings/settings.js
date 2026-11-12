@@ -4,7 +4,7 @@ const { showError } = require('../../utils/request')
 const { chars, hasContact } = require('../../utils/format')
 
 Page({
-  data: { nickname: '', bio: '', dorms: [], dormNames: [], dormIndex: 0, avatarFileId: '' },
+  data: { nickname: '', bio: '', dorms: [], dormNames: [], dormIndex: 0, avatarFileId: '', avatarUrl: '' },
   onLoad(q) { this.from = q.from || '' },
   onShow() {
     api.buildings({ type: 'DORM' }).then((data) => {
@@ -16,13 +16,17 @@ Page({
         dormNames: dorms.map((d) => d.name),
         dormIndex,
         nickname: user.nickname || '',
-        bio: user.bio || ''
+        bio: user.bio || '',
+        avatarUrl: this.data.avatarFileId ? this.data.avatarUrl : (user.avatarUrl || '')
       })
     }).catch(showError)
   },
   onNick(e) { this.setData({ nickname: e.detail.value }) },
   onBio(e) { this.setData({ bio: e.detail.value }) },
   onDorm(e) { this.setData({ dormIndex: Number(e.detail.value) }) },
+  onAvatarErr() {
+    if (this.data.avatarUrl) this.setData({ avatarUrl: '' })
+  },
   avatar() {
     wx.chooseMedia({
       count: 1,
@@ -32,7 +36,10 @@ Page({
         if (!f) return
         if (f.size > 5242880) return wx.showToast({ title: '超过 5MB', icon: 'none' })
         api.upload(f.tempFilePath, 'AVATAR').then((data) => {
-          this.setData({ avatarFileId: data.fileId })
+          this.setData({
+            avatarFileId: data.fileId,
+            avatarUrl: (data && data.url) || f.tempFilePath
+          })
           wx.showToast({ title: '头像已上传', icon: 'success' })
         }).catch(showError)
       }

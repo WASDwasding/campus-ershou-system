@@ -10,17 +10,14 @@
 }
 
 .ava {
-  width: 112rpx;
-  height: 112rpx;
+  width: 116rpx;
+  height: 116rpx;
   border-radius: 50%;
   flex-shrink: 0;
+  box-sizing: border-box;
   background: var(--soft);
-  color: var(--action);
-  font-size: 34rpx;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border: 4rpx solid #ffffff;
+  box-shadow: 0 8rpx 22rpx rgba(46, 65, 80, 0.10);
 }
 
 .info {

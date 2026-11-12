@@ -45,6 +45,11 @@ Page({
   preview(e) {
     wx.previewImage({ current: e.currentTarget.dataset.src, urls: this.data.item.imageUrls })
   },
+  onSellerAvatarErr() {
+    if (this.data.item && this.data.item.sellerAvatar) {
+      this.setData({ 'item.sellerAvatar': '' })
+    }
+  },
   loadQuote() {
     api
       .quote(this.id)

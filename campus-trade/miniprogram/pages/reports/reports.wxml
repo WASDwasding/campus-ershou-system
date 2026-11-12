@@ -6,7 +6,7 @@
     <view class="m">{{item.timeText}}<text wx:if="{{item.handledText}}"> · 处理于 {{item.handledText}}</text></view>
   </view>
   <view class="empty" wx:if="{{!list.length}}">
-    <image class="empty-mark" src="/images/brand-mark.png" mode="aspectFit" />
+    <image class="empty-illust" src="/images/empty/order.png" mode="aspectFit" />
     <view class="empty-text">还没有举报</view>
   </view>
 </view>

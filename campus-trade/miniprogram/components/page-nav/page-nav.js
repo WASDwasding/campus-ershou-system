@@ -2,7 +2,12 @@ Component({
   properties: {
     title: { type: String, value: '' },
     back: { type: Boolean, value: false },
-    rightText: { type: String, value: '' }
+    leftText: { type: String, value: '' },
+    leftIcon: { type: String, value: '' },
+    leftTone: { type: String, value: '' },
+    rightText: { type: String, value: '' },
+    rightIcon: { type: String, value: '' },
+    rightTone: { type: String, value: '' }
   },
   data: {
     statusBarHeight: 20,
@@ -41,6 +46,9 @@ Component({
       } else {
         wx.switchTab({ url: '/pages/index/index' })
       }
+    },
+    onLeft() {
+      this.triggerEvent('left')
     },
     onRight() {
       this.triggerEvent('right')

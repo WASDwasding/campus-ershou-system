@@ -9,7 +9,13 @@
     <image wx:if="{{item.cardUrl}}" class="card-img" src="{{item.cardUrl}}" mode="aspectFit" bindtap="preview" />
   </view>
   <block wx:if="{{item.status === 'PENDING'}}">
-    <view class="btn btn-primary" bindtap="approve">通过</view>
-    <view class="btn btn-ghost" bindtap="reject">驳回</view>
+    <view class="btn btn-primary" bindtap="approve">
+      <image class="btn-ico" src="/images/btns/pri-confirm.png" mode="aspectFit" />
+      <text>通过</text>
+    </view>
+    <view class="btn btn-warn" bindtap="reject">
+      <image class="btn-ico" src="/images/btns/warn-action.png" mode="aspectFit" />
+      <text>驳回</text>
+    </view>
   </block>
 </view>

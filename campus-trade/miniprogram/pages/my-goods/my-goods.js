@@ -49,7 +49,11 @@ Page({
       showError(err)
     })
   },
-  open(e) { wx.navigateTo({ url: '/pages/detail/detail?id=' + e.detail.id }) },
+  open(e) {
+    const id = (e.detail && e.detail.id) || (e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id)
+    if (!id) return
+    wx.navigateTo({ url: '/pages/detail/detail?id=' + id })
+  },
   edit(e) {
     session.setEditGoods(e.currentTarget.dataset.id)
     wx.switchTab({ url: '/pages/publish/publish' })

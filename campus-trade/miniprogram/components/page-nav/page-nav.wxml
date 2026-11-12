@@ -1,14 +1,29 @@
 <view class="nav" style="padding-top: {{statusBarHeight}}px; height: {{statusBarHeight + navBarHeight}}px;">
   <view class="nav-inner" style="height: {{navBarHeight}}px;">
-    <view class="nav-back" wx:if="{{back}}" bindtap="onBack">
-      <view class="back-arrow"></view>
+    <view class="nav-left" wx:if="{{back || leftText}}">
+      <view class="nav-back" wx:if="{{back}}" catchtap="onBack">
+        <view class="back-arrow"></view>
+      </view>
+      <view
+        class="nav-action {{leftIcon ? 'nav-action-pill' : ''}} {{leftTone === 'warn' ? 'nav-action-warn' : ''}}"
+        wx:if="{{leftText}}"
+        catchtap="onLeft"
+      >
+        <image wx:if="{{leftIcon}}" class="nav-action-ico" src="{{leftIcon}}" mode="aspectFit" />
+        <text>{{leftText}}</text>
+      </view>
     </view>
+
     <view class="title">{{title}}</view>
+
     <view
-      class="nav-right"
+      class="nav-right nav-action {{rightIcon ? 'nav-action-pill' : ''}} {{rightTone === 'warn' ? 'nav-action-warn' : ''}}"
       wx:if="{{rightText}}"
       style="right: {{rightSafe}}px;"
-      bindtap="onRight"
-    >{{rightText}}</view>
+      catchtap="onRight"
+    >
+      <image wx:if="{{rightIcon}}" class="nav-action-ico" src="{{rightIcon}}" mode="aspectFit" />
+      <text>{{rightText}}</text>
+    </view>
   </view>
 </view>
