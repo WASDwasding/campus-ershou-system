@@ -1,3 +1,14 @@
 <view class="nav" style="padding-top: {{statusBarHeight}}px; height: {{statusBarHeight + navBarHeight}}px;">
-  <view class="title">{{title}}</view>
+  <view class="nav-inner" style="height: {{navBarHeight}}px;">
+    <view class="nav-back" wx:if="{{back}}" bindtap="onBack">
+      <view class="back-arrow"></view>
+    </view>
+    <view class="title">{{title}}</view>
+    <view
+      class="nav-right"
+      wx:if="{{rightText}}"
+      style="right: {{rightSafe}}px;"
+      bindtap="onRight"
+    >{{rightText}}</view>
+  </view>
 </view>

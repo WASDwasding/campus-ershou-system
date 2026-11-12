@@ -3,8 +3,14 @@ const { showError } = require('../../utils/request')
 const { unwrapList, formatTime } = require('../../utils/format')
 
 Page({
-  data: { list: [], unreadOnly: false },
-  onShow() { this.load() },
+  data: { list: [], unreadOnly: false, loading: false, error: '' },
+  onLoad() {
+    this._seq = 0
+  },
+  onShow() {
+    getApp().refreshBadges()
+    this.load()
+  },
   toggle() {
     this.setData({ unreadOnly: !this.data.unreadOnly })
     this.load()
@@ -12,13 +18,30 @@ Page({
   load() {
     const q = { page: 1, size: 20 }
     if (this.data.unreadOnly) q.unreadOnly = true
+    this._seq += 1
+    const seq = this._seq
+    this.setData({ loading: true, error: '' })
     api.notifications(q).then((data) => {
-      const list = unwrapList(data).list.map((n) => Object.assign({}, n, { timeText: formatTime(n.createdAt) }))
-      this.setData({ list })
-    }).catch(showError)
+      if (seq !== this._seq) return
+      const seen = {}
+      const list = []
+      unwrapList(data).list.forEach((n) => {
+        if (!n || (n.id && seen[n.id])) return
+        if (n.id) seen[n.id] = true
+        list.push(Object.assign({}, n, { timeText: formatTime(n.createdAt) }))
+      })
+      this.setData({ list, loading: false })
+    }).catch((err) => {
+      if (seq !== this._seq) return
+      this.setData({ list: [], loading: false, error: (err && err.message) || '加载失败' })
+      showError(err)
+    })
   },
   readAll() {
-    api.readNotifications({ all: true }).then(() => this.load()).catch(showError)
+    api.readNotifications({ all: true }).then(() => {
+      getApp().refreshBadges()
+      this.load()
+    }).catch(showError)
   },
   open(e) {
     const item = this.data.list[e.currentTarget.dataset.i]

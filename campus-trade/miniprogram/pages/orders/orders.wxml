@@ -3,15 +3,32 @@
     <view class="chip {{role === 'BUYER' ? 'chip-on' : ''}}" bindtap="setRole" data-id="BUYER">我买的</view>
     <view class="chip {{role === 'SELLER' ? 'chip-on' : ''}}" bindtap="setRole" data-id="SELLER">我卖的</view>
   </view>
-  <scroll-view scroll-x class="tabs">
+  <scroll-view scroll-x class="tabs status-tabs">
     <view class="chip {{status === item.value ? 'chip-on' : ''}}" wx:for="{{statuses}}" wx:key="value" bindtap="setStatus" data-id="{{item.value}}">{{item.label}}</view>
   </scroll-view>
+
   <view class="card item" wx:for="{{list}}" wx:key="id" bindtap="open" data-id="{{item.id}}">
+    <view class="thumb-box">
+      <image wx:if="{{item.coverUrl}}" class="thumb-img" src="{{item.coverUrl}}" mode="aspectFill" />
+      <image wx:else class="thumb-mark" src="/images/brand-mark.png" mode="aspectFit" />
+    </view>
     <view class="mid">
       <view class="t">{{item.goodsTitle}}</view>
-      <view class="m">{{item.statusLabel}} · {{item.orderNo}}</view>
+      <view class="st-row">
+        <text class="pill {{item.statusClass}}">{{item.statusLabel}}</text>
+        <text class="order-no">{{item.orderNo}}</text>
+      </view>
+      <view class="price amt">¥{{item.amountText}}</view>
     </view>
-    <view class="price">¥{{item.amountText}}</view>
   </view>
-  <view class="empty" wx:if="{{!list.length}}">暂无订单</view>
+
+  <view class="load-fail" wx:if="{{error && !loading}}">
+    <text>{{error}}</text>
+    <view class="retry" bindtap="load">重试</view>
+  </view>
+  <view class="empty" wx:elif="{{!loading && !list.length}}">
+    <image class="empty-mark" src="/images/brand-mark.png" mode="aspectFit" />
+    <view class="empty-text">还没有订单</view>
+  </view>
+  <view class="hint empty" wx:if="{{loading && !list.length}}">加载中…</view>
 </view>

@@ -1,6 +1,7 @@
 const api = require('../../utils/api')
-const { showError } = require('../../utils/request')
-const { presentGoods, fenToYuan, chars } = require('../../utils/format')
+const session = require('../../utils/session')
+const { showError, isBusinessError } = require('../../utils/request')
+const { presentGoods, fenToYuan, chars, clientId } = require('../../utils/format')
 
 function buyBlockReason(item) {
   const viewer = item.viewer || {}
@@ -15,25 +16,31 @@ function buyBlockReason(item) {
 }
 
 Page({
-  data: { item: {}, quote: null, blockReason: '' },
+  data: { item: {}, quote: null, blockReason: '', error: '' },
   onLoad(q) {
     this.id = q.id
+    this._seq = 0
   },
   onShow() {
     this.load()
   },
   load() {
-    api
-      .ensureMeta()
-      .catch(() => {})
-      .then(() => api.goodsDetail(this.id))
-      .then((g) => {
+    this._seq += 1
+    const seq = this._seq
+    this.setData({ error: '' })
+    Promise.all([api.ensureMeta(), api.goodsDetail(this.id)])
+      .then(([, g]) => {
+        if (seq !== this._seq) return
         const item = presentGoods(g)
         if (!item.viewer) item.viewer = {}
         if (!item.seller) item.seller = {}
         this.setData({ item, blockReason: buyBlockReason(item) })
       })
-      .catch(showError)
+      .catch((err) => {
+        if (seq !== this._seq) return
+        this.setData({ error: (err && err.message) || '加载失败' })
+        showError(err)
+      })
   },
   preview(e) {
     wx.previewImage({ current: e.currentTarget.dataset.src, urls: this.data.item.imageUrls })
@@ -57,24 +64,41 @@ Page({
       })
   },
   buy() {
+    if (this._buying) return
+    this._buying = true
     wx.showModal({
       title: '确认下单？',
       content: '将按当前标价生成待支付订单，15 分钟内完成模拟付款。建议价不能作为成交价。',
       success: (r) => {
-        if (!r.confirm) return
+        if (!r.confirm) {
+          this._buying = false
+          return
+        }
+        if (!this._orderKey) this._orderKey = clientId('ord')
+        wx.showLoading({ title: '下单中', mask: true })
         api
-          .createOrder(this.data.item.id)
+          .createOrder(this.data.item.id, this._orderKey)
           .then((order) => {
+            this._orderKey = ''
+            wx.hideLoading()
             const id = order.id || order.orderId
             wx.navigateTo({ url: '/pages/order-detail/order-detail?id=' + id })
           })
           .catch((err) => {
+            if (isBusinessError(err)) this._orderKey = ''
+            wx.hideLoading()
             if (err && err.data && err.data.myOrderId) {
               wx.navigateTo({ url: '/pages/order-detail/order-detail?id=' + err.data.myOrderId })
               return
             }
             showError(err)
           })
+          .finally(() => {
+            this._buying = false
+          })
+      },
+      fail: () => {
+        this._buying = false
       }
     })
   },
@@ -82,7 +106,7 @@ Page({
     wx.navigateTo({ url: '/pages/order-detail/order-detail?id=' + this.data.item.viewer.activeOrderId })
   },
   edit() {
-    getApp().globalData.editGoodsId = this.data.item.id
+    session.setEditGoods(this.data.item.id)
     wx.switchTab({ url: '/pages/publish/publish' })
   },
   openSeller() {

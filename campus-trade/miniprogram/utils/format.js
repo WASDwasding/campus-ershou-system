@@ -45,7 +45,8 @@ function labelOf(enumName, value) {
   } catch (e) {
     meta = null
   }
-  const list = meta && meta.enums && meta.enums[enumName]
+  if (!meta || !meta.enums) return ''
+  const list = meta.enums[enumName]
   if (!Array.isArray(list)) return '未知'
   const hit = list.find((x) => x && x.value === value)
   return hit ? hit.label : '未知'
@@ -79,6 +80,8 @@ function presentGoods(g) {
     statusLabel: labelOf('goodsStatus', g.status),
     meetupName: meetup.name || '',
     sellerName: seller.nickname || '同学',
+    sellerAvatar: seller.avatarUrl || '',
+    sellerInitial: (seller.nickname || '同').slice(0, 1),
     categoryName: (g.category && g.category.name) || '',
     aliasText: Array.isArray(g.aliases) ? g.aliases.filter(Boolean).join('、') : ''
   })
@@ -120,6 +123,7 @@ module.exports = {
   toOffsetIso,
   labelOf,
   imageUrl,
+  thumbFrom,
   presentGoods,
   unwrapList,
   hasContact,

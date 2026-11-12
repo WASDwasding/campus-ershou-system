@@ -1,19 +1,32 @@
 const { raw, upload } = require('./request')
-const { clientId } = require('./format')
+
+const MAX_FILE_SIZE = 5242880
 
 let metaTask = null
+let metaData = null
 
 function meta() {
   return raw({ url: '/api/meta', auth: false })
 }
 
+// onLaunch 里 getApp() 可能还拿不到实例，所以在请求返回时再写 globalData
+function keepMeta(data) {
+  const app = getApp()
+  if (app && app.globalData && !app.globalData.meta) app.globalData.meta = data
+}
+
 function ensureMeta() {
   const app = getApp()
-  if (app && app.globalData && app.globalData.meta) return Promise.resolve(app.globalData.meta)
+  const cached = (app && app.globalData && app.globalData.meta) || metaData
+  if (cached) {
+    keepMeta(cached)
+    return Promise.resolve(cached)
+  }
   if (metaTask) return metaTask
   metaTask = meta()
     .then((data) => {
-      if (app && app.globalData) app.globalData.meta = data
+      metaData = data
+      keepMeta(data)
       return data
     })
     .catch((err) => {
@@ -116,12 +129,12 @@ const api = {
   myGoods(status) {
     return raw({ url: '/api/me/goods', data: status ? { status } : {} })
   },
-  createOrder(goodsId) {
+  createOrder(goodsId, idempotencyKey) {
     return raw({
       url: '/api/orders',
       method: 'POST',
       data: { goodsId: Number(goodsId), quantity: 1 },
-      idempotencyKey: clientId('ord')
+      idempotencyKey
     })
   },
   order(id) {
@@ -148,12 +161,12 @@ const api = {
   sendOrderMessage(orderId, body) {
     return raw({ url: '/api/orders/' + orderId + '/messages', method: 'POST', data: body })
   },
-  createPayment(orderId) {
+  createPayment(orderId, idempotencyKey) {
     return raw({
       url: '/api/orders/' + orderId + '/payments',
       method: 'POST',
       data: { channel: 'MOCK' },
-      idempotencyKey: clientId('pay')
+      idempotencyKey
     })
   },
   payment(paymentNo) {
@@ -234,15 +247,40 @@ const api = {
   }
 }
 
-function pickFiles(purpose, max) {
+function pickFiles(purpose, max, kept) {
+  const ids = (kept || []).slice()
   return new Promise((resolve, reject) => {
+    if (ids.length >= max) {
+      resolve(ids)
+      return
+    }
     wx.chooseMedia({
-      count: max,
+      count: max - ids.length,
       mediaType: ['image'],
       sizeType: ['compressed'],
       success(res) {
         const files = res.tempFiles || []
-        const ids = []
+        const stop = (i, err) => {
+          wx.hideLoading()
+          const message = '第 ' + (i + 1) + ' 张' + (err.code === 'FILE_TOO_LARGE' ? '超过 5MB' : '上传失败：' + (err.message || '请重试'))
+          if (!ids.length) {
+            reject(Object.assign({}, err, { message }))
+            return
+          }
+          wx.showModal({
+            title: '有图片没传上',
+            content: message + '。已上传 ' + ids.length + ' 张，可以补传，或只用已上传的提交。',
+            confirmText: '补传',
+            cancelText: '用已上传',
+            success(r) {
+              if (r.confirm) pickFiles(purpose, max, ids).then(resolve, reject)
+              else resolve(ids)
+            },
+            fail() {
+              resolve(ids)
+            }
+          })
+        }
         const run = (i) => {
           if (i >= files.length) {
             wx.hideLoading()
@@ -250,31 +288,23 @@ function pickFiles(purpose, max) {
             return
           }
           const file = files[i]
-          if (file.size > 5242880) {
-            wx.hideLoading()
-            reject({ code: 'FILE_TOO_LARGE', message: '有图片超过 5MB' })
+          if (file.size > MAX_FILE_SIZE) {
+            stop(i, { code: 'FILE_TOO_LARGE' })
             return
           }
-          wx.showLoading({ title: '上传中' })
+          wx.showLoading({ title: '上传 ' + (i + 1) + '/' + files.length, mask: true })
           upload(file.tempFilePath, purpose)
             .then((data) => {
               ids.push(data.fileId)
               run(i + 1)
             })
-            .catch((err) => {
-              wx.hideLoading()
-              reject(err)
-            })
-        }
-        if (!files.length) {
-          resolve([])
-          return
+            .catch((err) => stop(i, err || {}))
         }
         run(0)
       },
       fail(err) {
         const msg = (err && err.errMsg) || ''
-        if (msg.indexOf('cancel') >= 0) resolve([])
+        if (msg.indexOf('cancel') >= 0) resolve(ids)
         else reject({ message: '没有选到图片' })
       }
     })

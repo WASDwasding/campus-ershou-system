@@ -32,23 +32,68 @@ function clearPing() {
   }
 }
 
+function clearRetry() {
+  if (retryTimer) {
+    clearTimeout(retryTimer)
+    retryTimer = null
+  }
+}
+
 function scheduleRetry() {
-  if (stopped || !session.token()) return
+  if (stopped || !session.token() || retryTimer) return
   const steps = [1000, 2000, 4000, 8000, 15000]
   const wait = steps[Math.min(attempt, steps.length - 1)]
   attempt += 1
-  if (retryTimer) clearTimeout(retryTimer)
-  retryTimer = setTimeout(connect, wait)
+  retryTimer = setTimeout(() => {
+    retryTimer = null
+    connect()
+  }, wait)
 }
 
 function connect() {
   if (!session.token() || socketOpen || stopped) return
   if (socketTask) return
-  const task = wx.connectSocket({
+  clearRetry()
+  let task = null
+  let failed = false
+  task = wx.connectSocket({
     url: wsUrl,
-    header: { Authorization: 'Bearer ' + session.token() }
+    header: { Authorization: 'Bearer ' + session.token() },
+    fail() {
+      failed = true
+      if (!task || socketTask !== task) return
+      socketTask = null
+      scheduleRetry()
+    }
   })
+  if (failed || !task) {
+    scheduleRetry()
+    return
+  }
   socketTask = task
+  let closeFallback = null
+  // onError 之后通常会有 onClose；同一个 task 只收尾一次
+  const finish = (res) => {
+    if (closeFallback) {
+      clearTimeout(closeFallback)
+      closeFallback = null
+    }
+    if (socketTask !== task) return
+    socketOpen = false
+    socketTask = null
+    clearPing()
+    if (res && res.code === 4403) {
+      stopped = true
+      return
+    }
+    if (res && res.code === 4401) {
+      stopped = true
+      session.clear()
+      wx.reLaunch({ url: '/pages/login/login' })
+      return
+    }
+    scheduleRetry()
+  }
   task.onOpen(() => {
     socketOpen = true
     attempt = 0
@@ -66,34 +111,24 @@ function connect() {
     }
     emit(msg)
   })
-  task.onClose((res) => {
-    socketOpen = false
-    socketTask = null
-    clearPing()
-    if (res && res.code === 4403) {
-      stopped = true
-      return
-    }
-    if (res && res.code === 4401) {
-      stopped = true
-      session.clear()
-      wx.reLaunch({ url: '/pages/login/login' })
-      return
-    }
-    scheduleRetry()
-  })
+  task.onClose(finish)
   task.onError(() => {
+    if (socketTask !== task) return
     socketOpen = false
-    socketTask = null
     clearPing()
-    scheduleRetry()
+    if (closeFallback) return
+    closeFallback = setTimeout(() => {
+      closeFallback = null
+      task.close({})
+      finish(null)
+    }, 5000)
   })
 }
 
 function close() {
   stopped = true
   clearPing()
-  if (retryTimer) clearTimeout(retryTimer)
+  clearRetry()
   if (socketTask) {
     socketTask.close({})
     socketTask = null

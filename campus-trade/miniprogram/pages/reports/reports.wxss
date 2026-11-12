@@ -1,5 +1,27 @@
-.item { margin: 24rpx 24rpx 0; padding: 20rpx; }
-.t { font-weight: 700; }
-.c { display: block; margin-top: 8rpx; }
-.m { color: #7d8f9c; font-size: 22rpx; margin-top: 8rpx; }
-.empty { padding: 48rpx 32rpx; color: #7d8f9c; }
+.page {
+  padding-bottom: 24rpx;
+}
+
+.item {
+  margin: 20rpx 24rpx 0;
+  padding: 24rpx;
+}
+
+.t {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.c {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 26rpx;
+  color: var(--ink);
+}
+
+.m {
+  color: var(--muted);
+  font-size: 22rpx;
+  margin-top: 8rpx;
+}

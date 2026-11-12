@@ -1,3 +1,12 @@
 @import "../admin.wxss";
-.mi { padding: 28rpx; border-bottom: 1rpx solid #e4eef5; }
-.mi:last-child { border-bottom: none; }
+
+.mi {
+  padding: 28rpx;
+  border-bottom: 1rpx solid var(--line);
+  font-size: 30rpx;
+  color: var(--ink);
+}
+
+.mi:last-child {
+  border-bottom: none;
+}

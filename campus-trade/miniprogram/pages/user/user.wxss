@@ -1,7 +1,64 @@
-.box { margin: 24rpx; padding: 28rpx; }
-.n { font-size: 36rpx; font-weight: 800; }
-.m { color: #7d8f9c; margin-top: 6rpx; }
-.pad { padding: 0 28rpx; }
-.grid { display: flex; flex-wrap: wrap; padding: 8rpx 16rpx; }
-.cell { width: 50%; box-sizing: border-box; padding: 10rpx; }
-.rev { margin: 12rpx 24rpx; padding: 20rpx; }
+.box {
+  margin: 24rpx;
+  padding: 28rpx;
+}
+
+.user-top {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.ava {
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--soft);
+  color: var(--action);
+  font-size: 34rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  flex-wrap: wrap;
+}
+
+.n {
+  font-size: 34rpx;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.m {
+  font-size: 22rpx;
+  color: var(--muted);
+  margin-top: 8rpx;
+}
+
+.pad {
+  padding: 8rpx 28rpx 0;
+}
+
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 8rpx 16rpx 24rpx;
+}
+
+.cell {
+  width: 50%;
+  box-sizing: border-box;
+  padding: 10rpx;
+}

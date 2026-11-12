@@ -4,10 +4,21 @@
     <view class="chip {{unreadOnly ? 'chip-on' : ''}}" bindtap="toggle">只看未读</view>
     <view class="chip" bindtap="readAll">全部已读</view>
   </view>
-  <view class="card item" wx:for="{{list}}" wx:key="id" bindtap="open" data-i="{{index}}">
-    <view class="t">{{item.title}}</view>
+  <view class="card item {{item.read ? 'item-read' : ''}}" wx:for="{{list}}" wx:key="id" bindtap="open" data-i="{{index}}">
+    <view class="hd">
+      <view class="dot" wx:if="{{!item.read}}"></view>
+      <view class="t">{{item.title}}</view>
+    </view>
     <text class="c">{{item.content}}</text>
-    <view class="m">{{item.timeText}} {{item.read ? '' : '· 未读'}}</view>
+    <view class="m">{{item.timeText}}</view>
   </view>
-  <view class="empty" wx:if="{{!list.length}}">暂无通知</view>
+  <view class="load-fail" wx:if="{{error && !loading}}">
+    <text>{{error}}</text>
+    <view class="retry" bindtap="load">重试</view>
+  </view>
+  <view class="empty" wx:elif="{{!loading && !list.length}}">
+    <image class="empty-mark" src="/images/brand-mark.png" mode="aspectFit" />
+    <view class="empty-text">没有新通知</view>
+  </view>
+  <view class="hint empty" wx:if="{{loading && !list.length}}">加载中…</view>
 </view>

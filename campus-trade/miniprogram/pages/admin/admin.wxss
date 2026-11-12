@@ -1,20 +1,103 @@
-.box { margin: 24rpx; padding: 28rpx; }
-.t { font-size: 32rpx; font-weight: 700; }
-.m { color: #7d8f9c; margin-top: 8rpx; font-size: 24rpx; }
-.label { margin: 16rpx 0 8rpx; color: #7d8f9c; }
-.inp, .area {
-  background: #f3f8fc;
-  border-radius: 14rpx;
-  padding: 18rpx 20rpx;
-  color: #2e4150;
+.box {
+  margin: 24rpx;
+  padding: 28rpx;
 }
-.area { width: 100%; min-height: 140rpx; box-sizing: border-box; }
-.page .btn { margin: 16rpx 24rpx; }
-.box .btn { margin: 16rpx 0 0; }
-.tabs { display: flex; gap: 12rpx; padding: 24rpx 24rpx 0; }
-.item { margin: 24rpx 24rpx 0; padding: 24rpx; }
-.card-img { width: 100%; height: 360rpx; border-radius: 16rpx; background: #e4eef5; }
-.shots { display: flex; flex-wrap: wrap; gap: 12rpx; margin-top: 16rpx; }
-.shot { width: 200rpx; height: 200rpx; border-radius: 12rpx; background: #e4eef5; }
-.copy { display: block; margin-top: 12rpx; color: #2e4150; line-height: 1.5; }
-.bubble { background: #f3f8fc; border-radius: 16rpx; padding: 16rpx 20rpx; margin-top: 12rpx; }
+
+.t {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.m {
+  color: var(--muted);
+  margin-top: 8rpx;
+  font-size: 22rpx;
+}
+
+.label {
+  margin: 16rpx 0 8rpx;
+  font-size: 22rpx;
+  color: var(--muted);
+}
+
+.inp {
+  display: block;
+  width: 100%;
+  height: 84rpx;
+  line-height: 84rpx;
+  padding: 0 24rpx;
+  box-sizing: border-box;
+  background: var(--soft);
+  border-radius: 16rpx;
+  font-size: 26rpx;
+  color: var(--ink);
+}
+
+.area {
+  display: block;
+  width: 100%;
+  min-height: 140rpx;
+  padding: 20rpx 24rpx;
+  line-height: 1.5;
+  box-sizing: border-box;
+  background: var(--soft);
+  border-radius: 16rpx;
+  font-size: 26rpx;
+  color: var(--ink);
+}
+
+.page .btn {
+  margin: 16rpx 24rpx;
+}
+
+.box .btn {
+  margin: 16rpx 0 0;
+}
+
+.tabs {
+  display: flex;
+  gap: 12rpx;
+  padding: 24rpx 24rpx 0;
+}
+
+.item {
+  margin: 24rpx 24rpx 0;
+  padding: 24rpx;
+}
+
+.card-img {
+  width: 100%;
+  height: 360rpx;
+  border-radius: 16rpx;
+  background: var(--line);
+}
+
+.shots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 16rpx;
+}
+
+.shot {
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 12rpx;
+  background: var(--line);
+}
+
+.copy {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.bubble {
+  background: var(--soft);
+  border-radius: 16rpx;
+  padding: 16rpx 20rpx;
+  margin-top: 12rpx;
+}

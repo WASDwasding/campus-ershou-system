@@ -1,7 +1,46 @@
-.tabs { white-space: nowrap; padding: 16rpx 24rpx; }
-.tabs .chip { display: inline-block; margin-right: 12rpx; }
-.row { display: flex; align-items: stretch; margin: 0 16rpx 12rpx; }
-.grow { flex: 1; }
-.ops { width: 120rpx; display: flex; flex-direction: column; justify-content: center; gap: 8rpx; }
-.op { background: #e8f4fa; color: #4f90b8; text-align: center; border-radius: 12rpx; padding: 8rpx 0; font-size: 24rpx; }
-.danger { background: #fdecec; color: #c45c5c; }
+.tabs {
+  white-space: nowrap;
+  padding: 16rpx 24rpx;
+}
+
+.tabs .chip {
+  display: inline-block;
+  margin-right: 12rpx;
+}
+
+.item-row {
+  display: flex;
+  align-items: stretch;
+  gap: 16rpx;
+  margin: 0 24rpx 16rpx;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.ops {
+  width: 132rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12rpx;
+}
+
+.op {
+  background: var(--soft);
+  color: var(--action);
+  text-align: center;
+  border-radius: 999rpx;
+  padding: 14rpx 0;
+  font-size: 26rpx;
+  font-weight: 600;
+  box-sizing: border-box;
+}
+
+.danger {
+  background: var(--card);
+  color: var(--danger);
+  border: 2rpx solid var(--danger);
+}
