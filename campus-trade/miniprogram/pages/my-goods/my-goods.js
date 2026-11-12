@@ -1,4 +1,5 @@
 const api = require('../../utils/api')
+const session = require('../../utils/session')
 const { showError } = require('../../utils/request')
 const { unwrapList, presentGoods } = require('../../utils/format')
 
@@ -14,10 +15,14 @@ Page({
       { value: 'OFF_SHELF', label: '已下架' },
       { value: 'REMOVED', label: '被下架' }
     ],
-    list: []
+    list: [],
+    loading: false,
+    error: ''
+  },
+  onLoad() {
+    this._seq = 0
   },
   onShow() {
-    api.ensureMeta().catch(() => {})
     this.load()
   },
   setStatus(e) {
@@ -25,13 +30,28 @@ Page({
     this.load()
   },
   load() {
-    api.myGoods(this.data.status).then((data) => {
-      this.setData({ list: unwrapList(data).list.map(presentGoods) })
-    }).catch(showError)
+    this._seq += 1
+    const seq = this._seq
+    this.setData({ loading: true, error: '' })
+    Promise.all([api.ensureMeta(), api.myGoods(this.data.status)]).then(([, data]) => {
+      if (seq !== this._seq) return
+      const seen = {}
+      const list = []
+      unwrapList(data).list.forEach((g) => {
+        if (!g || seen[g.id]) return
+        seen[g.id] = true
+        list.push(presentGoods(g))
+      })
+      this.setData({ list, loading: false })
+    }).catch((err) => {
+      if (seq !== this._seq) return
+      this.setData({ list: [], loading: false, error: (err && err.message) || '加载失败' })
+      showError(err)
+    })
   },
   open(e) { wx.navigateTo({ url: '/pages/detail/detail?id=' + e.detail.id }) },
   edit(e) {
-    getApp().globalData.editGoodsId = e.currentTarget.dataset.id
+    session.setEditGoods(e.currentTarget.dataset.id)
     wx.switchTab({ url: '/pages/publish/publish' })
   },
   off(e) { api.offShelf(e.currentTarget.dataset.id).then(() => this.load()).catch(showError) },

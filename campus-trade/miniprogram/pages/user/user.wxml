@@ -1,15 +1,31 @@
 <view class="page" wx:if="{{ready}}">
   <view class="card box">
-    <view class="n">{{profile.nickname || '同学'}}</view>
-    <view class="m" wx:if="{{profile.bio}}">{{profile.bio}}</view>
-    <view class="m">{{profile.verified ? '已认证' : '未认证'}}</view>
-    <view class="m">卖出 {{profile.soldCount || 0}} · 在售 {{profile.onSaleCount || 0}}</view>
-    <view class="m" wx:if="{{profile.relation}}">{{profile.relation.sameBuilding ? '同楼' : ''}} {{profile.relation.sameArea ? '同区' : ''}}</view>
+    <view class="user-top">
+      <image wx:if="{{profile.avatarUrl}}" class="ava" src="{{profile.avatarUrl}}" mode="aspectFill" />
+      <view wx:else class="ava">{{profile.initial}}</view>
+      <view class="info">
+        <view class="name-row">
+          <view class="n">{{profile.nickname || '同学'}}</view>
+          <text class="pill {{profile.verified ? 'pill-done' : 'pill-cream'}}">{{profile.verified ? '已认证' : '未认证'}}</text>
+        </view>
+        <view class="m" wx:if="{{profile.bio}}">{{profile.bio}}</view>
+        <view class="m">卖出 {{profile.soldCount || 0}} · 在售 {{profile.onSaleCount || 0}}</view>
+        <view class="m" wx:if="{{profile.relation && (profile.relation.sameBuilding || profile.relation.sameArea)}}">{{profile.relation.sameBuilding ? '同楼' : ''}}{{profile.relation.sameBuilding && profile.relation.sameArea ? ' · ' : ''}}{{profile.relation.sameArea ? '同区' : ''}}</view>
+      </view>
+    </view>
   </view>
   <view class="section-title pad">在售</view>
-  <view class="grid">
+  <view class="grid" wx:if="{{goods.length}}">
     <view class="cell" wx:for="{{goods}}" wx:key="id">
       <product-card item="{{item}}" bind:open="open" />
     </view>
+  </view>
+  <view class="load-fail" wx:if="{{goodsError}}">
+    <text>{{goodsError}}</text>
+    <view class="retry" bindtap="loadGoods">重试</view>
+  </view>
+  <view class="empty" wx:elif="{{!goods.length}}">
+    <image class="empty-mark" src="/images/brand-mark.png" mode="aspectFit" />
+    <view class="empty-text">还没有在售商品</view>
   </view>
 </view>

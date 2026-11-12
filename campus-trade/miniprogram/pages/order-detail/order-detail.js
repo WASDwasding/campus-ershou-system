@@ -1,6 +1,6 @@
 const api = require('../../utils/api')
-const { showError } = require('../../utils/request')
-const { fenToYuan, labelOf, formatTime, chars, hasContact } = require('../../utils/format')
+const { showError, isBusinessError } = require('../../utils/request')
+const { fenToYuan, labelOf, formatTime, chars, hasContact, clientId } = require('../../utils/format')
 
 function canMap(actions) {
   const can = {}
@@ -10,12 +10,30 @@ function canMap(actions) {
   return can
 }
 
+function orderStatusClass(status) {
+  if (status === 'COMPLETED') return 'pill-done'
+  if (status === 'CANCELLED') return 'pill-muted'
+  if (status === 'PAID') return 'pill-soft'
+  return 'pill-cream'
+}
+
 Page({
-  data: { order: {}, can: {} },
-  onLoad(q) { this.id = q.id },
+  data: { order: {}, can: {}, error: '' },
+  onLoad(q) {
+    this.id = q.id
+    this._seq = 0
+  },
   onShow() { this.load() },
   load() {
-    api.ensureMeta().catch(() => {}).then(() => api.order(this.id)).then((o) => {
+    this._seq += 1
+    const seq = this._seq
+    this.setData({ error: '' })
+    return Promise.all([api.ensureMeta(), api.order(this.id)]).then(([, o]) => {
+      if (seq !== this._seq) return
+      if (o.status !== 'PENDING_PAY') {
+        this._payKey = ''
+        this._paymentNo = ''
+      }
       const payment = o.payment || {}
       const handover = o.handover || {}
       const dispute = o.dispute || {}
@@ -29,6 +47,7 @@ Page({
           orderNo: o.orderNo,
           status: o.status,
           statusLabel: labelOf('orderStatus', o.status),
+          statusClass: orderStatusClass(o.status),
           goodsTitle: goods.title || '商品',
           amountText: fenToYuan(o.amount),
           myRole: o.myRole,
@@ -41,21 +60,71 @@ Page({
         },
         can: canMap(o.allowedActions)
       })
-    }).catch(showError)
+    }).catch((err) => {
+      if (seq !== this._seq) return
+      this.setData({ error: (err && err.message) || '加载失败' })
+      showError(err)
+    })
+  },
+  runAction(title, task) {
+    if (this._busy) return
+    this._busy = true
+    wx.showLoading({ title, mask: true })
+    task()
+      .then((toast) => {
+        wx.hideLoading()
+        if (toast) wx.showToast({ title: toast, icon: 'success' })
+        this.load()
+      })
+      .catch((err) => {
+        wx.hideLoading()
+        showError(err)
+      })
+      .finally(() => {
+        this._busy = false
+      })
   },
   pay() {
-    api.createPayment(this.id).then((pay) => api.mockPay(pay.paymentNo)).then(() => {
-      wx.showToast({ title: '模拟付款已提交', icon: 'success' })
-      this.load()
-    }).catch(showError)
+    this.runAction('付款中', () => {
+      let created
+      if (this._paymentNo) {
+        created = Promise.resolve(this._paymentNo)
+      } else {
+        if (!this._payKey) this._payKey = clientId('pay')
+        created = api.createPayment(this.id, this._payKey).then(
+          (pay) => {
+            this._payKey = ''
+            this._paymentNo = pay.paymentNo
+            return pay.paymentNo
+          },
+          (err) => {
+            if (isBusinessError(err)) this._payKey = ''
+            throw err
+          }
+        )
+      }
+      return created.then((paymentNo) =>
+        api.mockPay(paymentNo).then(
+          () => {
+            this._paymentNo = ''
+            return '模拟付款已提交'
+          },
+          (err) => {
+            if (isBusinessError(err)) this._paymentNo = ''
+            throw err
+          }
+        )
+      )
+    })
   },
   cancel() {
+    if (this._busy) return
     wx.showModal({
       title: '取消订单',
       content: '只有待支付可以取消。取消后商品回到在售。',
       success: (r) => {
         if (!r.confirm) return
-        api.cancelOrder(this.id).then(() => this.load()).catch(showError)
+        this.runAction('取消中', () => api.cancelOrder(this.id))
       }
     })
   },
@@ -63,7 +132,7 @@ Page({
     wx.navigateTo({ url: '/pages/chat-room/chat-room?orderId=' + this.id })
   },
   handover() {
-    api.handover(this.id).then(() => this.load()).catch(showError)
+    this.runAction('提交中', () => api.handover(this.id))
   },
   openDispute() {
     api.ensureMeta().then((meta) => {

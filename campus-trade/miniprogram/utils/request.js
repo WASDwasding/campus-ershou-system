@@ -2,6 +2,8 @@ const { baseUrl } = require('./config')
 const session = require('./session')
 const adminSession = require('./admin-session')
 
+const TOAST_MAX = 36
+
 function showError(err) {
   if (!err) {
     wx.showToast({ title: '请求失败', icon: 'none' })
@@ -47,9 +49,23 @@ function showError(err) {
     return
   }
   const fields = err.data && err.data.fieldErrors
-  const extra = Array.isArray(fields) && fields.length ? '：' + fields.map((f) => f.message).join('；') : ''
-  const msg = (err.message || '请求失败') + extra
-  wx.showToast({ title: msg.slice(0, 36), icon: 'none' })
+  const list = Array.isArray(fields) ? fields.map((f) => f && f.message).filter(Boolean) : []
+  const msg = err.message || '请求失败'
+  if (list.length || Array.from(msg).length > TOAST_MAX) {
+    wx.showModal({
+      title: list.length ? '请检查填写内容' : '提示',
+      content: list.length ? msg + '\n' + list.join('\n') : msg,
+      showCancel: false
+    })
+    return
+  }
+  wx.showToast({ title: msg, icon: 'none' })
+}
+
+// 服务端已经给出确定结论（不含 409 处理中和 5xx），同一幂等键不必再重试
+function isBusinessError(err) {
+  if (!err || !err.statusCode) return false
+  return err.statusCode < 500 && err.code !== 'CONFLICT'
 }
 
 function raw(options) {
@@ -135,4 +151,4 @@ function upload(filePath, purpose) {
   })
 }
 
-module.exports = { raw, upload, showError }
+module.exports = { raw, upload, showError, isBusinessError }

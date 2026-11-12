@@ -1,18 +1,28 @@
 page {
-  --blue: #7eb6d9;
-  --blue-deep: #4f90b8;
-  --pink: #f7c9d4;
-  --cream: #f6e7b4;
+  --bg: #f3f8fc;
+  --card: #ffffff;
   --ink: #2e4150;
   --muted: #7d8f9c;
-  --card: #ffffff;
-  --line: #e4eef5;
-  --field: #f3f8fc;
+  --action: #3e7ea3;
+  --action-press: #336b8b;
   --soft: #e8f4fa;
-  background: #f3f8fc;
+  --blue-deco: #7eb6d9;
+  --pink: #f7c9d4;
+  --cream: #f6e7b4;
+  --done: #d7efe0;
+  --danger: #c46b6b;
+  --line: #e4eef5;
+
+  /* 兼容历史变量名引用，统一收敛到新色板 */
+  --blue: var(--blue-deco);
+  --blue-deep: var(--action);
+  --field: var(--soft);
+
+  background: var(--bg);
   color: var(--ink);
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
-  font-size: 28rpx;
+  font-size: 26rpx;
+  font-weight: 400;
   line-height: 1.5;
 }
 
@@ -23,12 +33,14 @@ page {
 .card {
   background: var(--card);
   border-radius: 24rpx;
-  box-shadow: 0 8rpx 24rpx rgba(46, 65, 80, 0.06);
+  box-shadow: 0 8rpx 24rpx rgba(46, 65, 80, 0.05);
 }
 
+/* 按钮体系：主按钮、浅蓝次按钮、白底描边次按钮、危险线框按钮 */
 .btn {
   height: 88rpx;
   border-radius: 44rpx;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -37,73 +49,134 @@ page {
 }
 
 .btn-primary {
-  background: var(--blue);
-  color: #fff;
+  background: var(--action);
+  color: #ffffff;
 }
 
 .btn-primary:active {
-  background: var(--blue-deep);
+  background: var(--action-press);
 }
 
 .btn-ghost {
   background: var(--soft);
-  color: var(--blue-deep);
+  color: var(--action);
+}
+
+.btn-ghost:active {
+  opacity: 0.85;
+}
+
+.btn-outline {
+  background: var(--card);
+  color: var(--action);
+  border: 2rpx solid var(--action);
+}
+
+.btn-outline:active {
+  background: var(--soft);
 }
 
 .btn-warn {
-  background: var(--soft);
-  color: var(--blue-deep);
+  background: var(--card);
+  color: var(--danger);
+  border: 2rpx solid var(--danger);
+}
+
+.btn-warn:active {
+  background: rgba(196, 107, 107, 0.08);
 }
 
 .btn-disabled {
-  background: #d5dee6;
-  color: #fff;
+  background: var(--line);
+  color: var(--muted);
 }
 
+/* 筛选胶囊 */
 .chip {
-  padding: 8rpx 20rpx;
+  padding: 10rpx 24rpx;
   border-radius: 999rpx;
   font-size: 22rpx;
-  background: #fff;
-  color: var(--ink);
+  font-weight: 400;
+  background: var(--card);
+  color: var(--muted);
 }
 
 .chip-on {
-  background: var(--blue);
-  color: #fff;
+  background: var(--action);
+  color: #ffffff;
+  font-weight: 600;
 }
 
-.tag {
-  padding: 4rpx 14rpx;
+/* 状态与属性标签胶囊 */
+.tag,
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rpx 16rpx;
   border-radius: 999rpx;
   font-size: 22rpx;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.tag,
+.pill-pink {
   background: var(--pink);
   color: var(--ink);
 }
 
-.tag-ai {
+.tag-ai,
+.pill-cream {
   background: var(--cream);
   color: var(--ink);
-  padding: 4rpx 12rpx;
-  border-radius: 8rpx;
-  font-size: 20rpx;
+}
+
+.pill-soft {
+  background: var(--soft);
+  color: var(--action);
+}
+
+.pill-done {
+  background: var(--done);
+  color: var(--ink);
+}
+
+.pill-muted {
+  background: var(--line);
+  color: var(--muted);
 }
 
 .tag-ref {
   background: var(--pink);
   color: var(--ink);
-  padding: 4rpx 12rpx;
-  border-radius: 8rpx;
-  font-size: 20rpx;
+  padding: 4rpx 14rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
 }
 
 .muted {
   color: var(--muted);
 }
 
+.input-placeholder,
+.textarea-placeholder {
+  color: var(--muted);
+}
+
+/* 全站列表/卡片标准价格：34rpx 墨色 800；详情大价格用 .price-lg 44rpx */
 .price {
-  color: var(--blue-deep);
-  font-weight: 700;
+  color: var(--ink);
+  font-size: 34rpx;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.price-lg {
+  color: var(--ink);
+  font-size: 44rpx;
+  font-weight: 800;
+  line-height: 1.15;
 }
 
 .row {
@@ -115,25 +188,71 @@ page {
   justify-content: space-between;
 }
 
+/* 共用空状态：猫标 + 26rpx 次要色人话 + 可选次按钮 */
 .empty {
   padding: 120rpx 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   color: var(--muted);
 }
 
-.empty-emoji {
-  font-size: 72rpx;
-  margin-bottom: 16rpx;
+.empty-mark {
+  width: 120rpx;
+  height: 75rpx;
+  opacity: 0.4;
+  margin-bottom: 24rpx;
+}
+
+.empty-text {
+  font-size: 26rpx;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.btn.empty-btn {
+  margin-top: 32rpx;
+  height: 76rpx;
+  padding: 0 48rpx;
+  border-radius: 38rpx;
+  font-size: 26rpx;
+}
+
+.load-fail {
+  padding: 80rpx 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--muted);
+  font-size: 26rpx;
+}
+
+.load-fail-more {
+  padding: 24rpx 40rpx;
+}
+
+.load-fail .retry {
+  margin-top: 20rpx;
+  padding: 12rpx 40rpx;
+  border-radius: 999rpx;
+  background: var(--soft);
+  color: var(--action);
+  font-size: 26rpx;
+  font-weight: 600;
 }
 
 .section-title {
-  font-size: 32rpx;
-  font-weight: 700;
-  margin: 24rpx 0 16rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 16rpx;
 }
 
 .hint {
   font-size: 22rpx;
+  font-weight: 400;
   color: var(--muted);
 }
 
@@ -142,9 +261,10 @@ page {
   height: 32rpx;
   padding: 0 8rpx;
   border-radius: 16rpx;
-  background: var(--blue-deep);
-  color: #fff;
-  font-size: 20rpx;
+  background: var(--action);
+  color: #ffffff;
+  font-size: 22rpx;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;

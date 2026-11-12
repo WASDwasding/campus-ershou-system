@@ -26,9 +26,12 @@ Page({
     list: [],
     page: 1,
     hasMore: true,
-    loading: false
+    loading: false,
+    error: ''
   },
   onLoad() {
+    this._seq = 0
+    this._loading = false
     this.measureNav()
   },
   onShow() {
@@ -36,9 +39,11 @@ Page({
       wx.reLaunch({ url: '/pages/login/login' })
       return
     }
-    api.ensureMeta().catch(() => {})
+    getApp().refreshBadges()
     if (!this.data.categories.length) this.loadCategories()
-    if (!this.data.list.length) this.reload()
+    if (this._shown) wx.pageScrollTo({ scrollTop: 0, duration: 0 })
+    this._shown = true
+    this.reload()
   },
   onPullDownRefresh() {
     this.reload().finally(() => wx.stopPullDownRefresh())
@@ -68,13 +73,18 @@ Page({
     })
   },
   loadCategories() {
+    if (this._catLoading) return
+    this._catLoading = true
     api
       .categories()
       .then((data) => {
         const list = Array.isArray(data) ? data : (data && data.list) || []
         this.setData({ categories: list.map(decorateCategory) })
       })
-      .catch(() => {})
+      .catch(showError)
+      .finally(() => {
+        this._catLoading = false
+      })
   },
   query(page) {
     const q = { page: page, size: 20, sort: this.data.sort }
@@ -82,29 +92,51 @@ Page({
     return q
   },
   reload() {
-    this.setData({ page: 1, hasMore: true, list: [] })
+    this._seq += 1
+    this._loading = false
+    this.setData({ page: 1, hasMore: true, list: [], error: '' })
     return this.fetch(1, true)
   },
   loadMore() {
-    if (!this.data.hasMore || this.data.loading) return
+    if (!this.data.hasMore || this._loading) return
     this.fetch(this.data.page + 1, false)
   },
+  retry() {
+    if (this.data.list.length) this.loadMore()
+    else this.reload()
+  },
   fetch(page, replace) {
-    this.setData({ loading: true })
-    return api
-      .goods(this.query(page))
-      .then((data) => {
+    this._loading = true
+    this._seq += 1
+    const seq = this._seq
+    this.setData({ loading: true, error: '' })
+    return Promise.all([api.ensureMeta(), api.goods(this.query(page))])
+      .then(([, data]) => {
+        if (seq !== this._seq) return
         const box = unwrapList(data)
-        const rows = box.list.map(presentGoods)
+        const base = replace ? [] : this.data.list
+        const seen = {}
+        base.forEach((g) => {
+          seen[g.id] = true
+        })
+        const rows = []
+        box.list.forEach((g) => {
+          if (!g || seen[g.id]) return
+          seen[g.id] = true
+          rows.push(presentGoods(g))
+        })
+        this._loading = false
         this.setData({
-          list: replace ? rows : this.data.list.concat(rows),
+          list: base.concat(rows),
           page: page,
           hasMore: box.hasMore,
           loading: false
         })
       })
       .catch((err) => {
-        this.setData({ loading: false })
+        if (seq !== this._seq) return
+        this._loading = false
+        this.setData({ loading: false, error: (err && err.message) || '加载失败' })
         showError(err)
       })
   },
@@ -126,6 +158,9 @@ Page({
   },
   goSearch() {
     wx.navigateTo({ url: '/pages/search/search' })
+  },
+  goPublish() {
+    wx.switchTab({ url: '/pages/publish/publish' })
   },
   open(e) {
     wx.navigateTo({ url: '/pages/detail/detail?id=' + e.detail.id })

@@ -1,6 +1,52 @@
-.box { margin: 24rpx; padding: 28rpx; }
-.st { color: #4f90b8; font-weight: 700; }
-.t { font-size: 34rpx; font-weight: 800; margin: 8rpx 0; }
-.m { color: #7d8f9c; margin-top: 8rpx; }
-.page .btn { margin: 16rpx 24rpx; }
-.inp { background: #f3f8fc; border-radius: 14rpx; padding: 18rpx 20rpx; margin-bottom: 12rpx; color: #2e4150; }
+.page {
+  padding-bottom: 40rpx;
+}
+
+.box {
+  margin: 24rpx;
+  padding: 32rpx 28rpx;
+}
+
+.st-wrap {
+  margin-bottom: 16rpx;
+}
+
+.t {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.35;
+}
+
+.amt {
+  margin-top: 12rpx;
+}
+
+.meta-list {
+  margin-top: 24rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid var(--line);
+}
+
+.m {
+  font-size: 26rpx;
+  color: var(--muted);
+  margin-top: 8rpx;
+}
+
+.m:first-child {
+  margin-top: 0;
+}
+
+.stage-hint {
+  margin-top: 20rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid var(--line);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  margin: 24rpx;
+}

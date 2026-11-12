@@ -48,11 +48,19 @@
     >{{item.name}}</view>
   </view>
 
-  <view class="grid">
+  <view class="grid" wx:if="{{list.length}}">
     <view class="cell" wx:for="{{list}}" wx:key="id">
       <product-card item="{{item}}" bind:open="open" />
     </view>
   </view>
-  <view class="empty" wx:if="{{!loading && !list.length}}">还没有在售商品</view>
+  <view class="load-fail {{list.length ? 'load-fail-more' : ''}}" wx:if="{{error && !loading}}">
+    <text>{{list.length ? '更多商品没加载出来：' : ''}}{{error}}</text>
+    <view class="retry" bindtap="retry">重试</view>
+  </view>
+  <view class="empty" wx:elif="{{!loading && !list.length}}">
+    <image class="empty-mark" src="/images/brand-mark.png" mode="aspectFit" />
+    <view class="empty-text">还没有在售商品</view>
+    <view class="btn btn-ghost empty-btn" bindtap="goPublish">去发布</view>
+  </view>
   <view class="hint pad" wx:if="{{loading}}">加载中…</view>
 </view>

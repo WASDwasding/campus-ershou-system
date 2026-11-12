@@ -1,17 +1,21 @@
-<view class="page">
+<view class="page {{verified && (!publishBanned || goodsId) ? 'page-with-bar' : ''}}">
   <page-nav title="发布商品" />
+
   <view class="card box" wx:if="{{!verified}}">
     <view class="section-title">发布前需要校园认证</view>
     <view class="hint">登录后可以浏览。认证通过后才能上传商品图并发布。</view>
-    <view class="btn btn-primary" bindtap="goVerify">去认证</view>
+    <view class="btn btn-primary card-btn" bindtap="goVerify">去认证</view>
   </view>
+
   <view class="card box" wx:elif="{{publishBanned && !goodsId}}">
     <view class="section-title">不能再发布</view>
     <view class="hint">该账号因疑似欺诈被禁止发布商品，仍可以登录和购买。</view>
   </view>
+
   <block wx:else>
+    <!-- 卡片一：照片 -->
     <view class="card box">
-      <view class="section-title">商品图片</view>
+      <view class="section-title">照片</view>
       <view class="hint">1–9 张，JPEG / PNG / WebP，单张不超过 5 MB。第一张是封面。</view>
       <view class="photos">
         <view class="ph" wx:for="{{images}}" wx:key="fileId">
@@ -21,36 +25,57 @@
         <view class="ph add" wx:if="{{images.length < 9}}" bindtap="choose">＋</view>
       </view>
       <view class="label">补充说明（可选，给草稿用）</view>
-      <input class="inp" maxlength="200" placeholder="例如教材名称、成色" value="{{form.prompt}}" bindinput="setF" data-k="prompt" />
-      <view class="btn btn-ghost" bindtap="draft">生成草稿</view>
-      <view class="hint">草稿只填进还空着的项。失败时已填内容保留，仍可手填发布。</view>
+      <input class="inp" maxlength="200" placeholder="例如教材名称、成色" placeholder-class="inp-ph" value="{{form.prompt}}" bindinput="setF" data-k="prompt" />
+      <view class="btn btn-ghost card-btn" bindtap="draft">生成草稿</view>
+      <view class="hint draft-hint">草稿只填进还空着的项。失败时已填内容保留，仍可手填发布。</view>
     </view>
+
+    <!-- 卡片二：商品信息 -->
     <view class="card box">
-      <view class="label">标题（2–30 字）</view>
+      <view class="section-title">商品信息</view>
+      <view class="label first-label">标题（2–30 字）</view>
       <input class="inp" maxlength="30" value="{{form.title}}" bindinput="setF" data-k="title" />
+
       <view class="label">描述（1–500 字）</view>
       <textarea class="area" maxlength="500" value="{{form.description}}" bindinput="setF" data-k="description" />
+
       <view class="label">标价（元）</view>
-      <input class="inp" type="digit" value="{{form.priceYuan}}" bindinput="setF" data-k="priceYuan" placeholder="例如 15.00" />
+      <view class="price-field">
+        <text class="price-prefix">¥</text>
+        <input class="price-inp" type="digit" value="{{form.priceYuan}}" bindinput="setF" data-k="priceYuan" placeholder="0.00" placeholder-class="price-ph" />
+      </view>
+
       <view class="label">原价（元，可空）</view>
       <input class="inp" type="digit" value="{{form.originalYuan}}" bindinput="setF" data-k="originalYuan" />
+
       <view class="label">分类</view>
       <picker range="{{categoryNames}}" bindchange="onCat">
         <view class="inp pick">{{categoryNames[catIndex] || '请选择'}}</view>
       </picker>
+
       <view class="label">成色</view>
       <picker range="{{conditionNames}}" bindchange="onCond">
         <view class="inp pick">{{conditionNames[condIndex] || '请选择'}}</view>
       </picker>
+
       <view class="label">同义叫法（可选，最多 5 条，用逗号分隔）</view>
-      <input class="inp" placeholder="例如 高数，高等数学" value="{{form.aliasesText}}" bindinput="setF" data-k="aliasesText" />
-      <view class="label">面交地点</view>
+      <input class="inp" placeholder="例如 高数，高等数学" placeholder-class="inp-ph" value="{{form.aliasesText}}" bindinput="setF" data-k="aliasesText" />
+    </view>
+
+    <!-- 卡片三：怎么面交 -->
+    <view class="card box">
+      <view class="section-title">怎么面交</view>
+      <view class="label first-label">面交地点</view>
       <picker range="{{meetupNames}}" bindchange="onMeetup">
         <view class="inp pick">{{meetupNames[meetupIndex] || '请选择'}}</view>
       </picker>
+
       <view class="label">交易说明（100 字以内）</view>
       <input class="inp" maxlength="100" value="{{form.tradeNote}}" bindinput="setF" data-k="tradeNote" />
     </view>
-    <view class="btn btn-primary pub" bindtap="submit">{{goodsId ? '保存' : '发布'}}</view>
+
+    <view class="pub-bar">
+      <view class="btn btn-primary" bindtap="submit">{{goodsId ? '保存' : '发布'}}</view>
+    </view>
   </block>
 </view>

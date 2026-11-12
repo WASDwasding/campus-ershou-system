@@ -1,18 +1,23 @@
 <view class="pcard" bindtap="onTap">
   <view class="cover">
-    <image wx:if="{{item.coverThumbUrl || item.coverUrl}}" class="cover-img" src="{{item.coverThumbUrl || item.coverUrl}}" mode="aspectFill" />
-    <text wx:else class="emoji">📦</text>
-    <view class="st" wx:if="{{item.status && item.status !== 'ON_SALE' && item.statusLabel}}">{{item.statusLabel}}</view>
+    <view class="cover-inner">
+      <image wx:if="{{item.coverThumbUrl || item.coverUrl}}" class="cover-img" src="{{item.coverThumbUrl || item.coverUrl}}" mode="aspectFill" />
+      <image wx:else class="cover-mark" src="/images/brand-mark.png" mode="aspectFit" />
+    </view>
+    <view
+      wx:if="{{item.status && item.status !== 'ON_SALE' && item.statusLabel}}"
+      class="st {{item.status === 'SOLD' ? 'st-done' : (item.status === 'OFF_SHELF' || item.status === 'REMOVED' ? 'st-muted' : 'st-doing')}}"
+    >{{item.statusLabel}}</view>
   </view>
   <view class="body">
     <view class="title">{{item.title}}</view>
-    <view class="meta">
-      <text wx:if="{{item.meetupName}}">{{item.meetupName}}</text>
-      <text wx:if="{{item.meetupName && item.conditionLabel}}"> · </text>
-      <text wx:if="{{item.conditionLabel}}">{{item.conditionLabel}}</text>
+    <view class="meta-row">
+      <text class="meetup">{{item.meetupName || ''}}</text>
+      <text class="cond" wx:if="{{item.conditionLabel}}">{{item.conditionLabel}}</text>
     </view>
     <view class="foot">
       <text class="price">¥{{item.priceText}}</text>
+      <text class="orig" wx:if="{{item.originalPriceText}}">¥{{item.originalPriceText}}</text>
     </view>
   </view>
 </view>
