@@ -1,6 +1,6 @@
 <view class="pcard" bindtap="onTap">
   <view class="cover">
-    <image wx:if="{{item.coverThumbUrl || item.coverUrl}}" class="cover-img" src="{{item.coverThumbUrl || item.coverUrl}}" mode="aspectFill" />
+    <image wx:if="{{item.coverThumbUrl || item.coverUrl}}" class="cover-img" src="{{item.coverThumbUrl || item.coverUrl}}" mode="aspectFill" lazy-load />
     <text wx:else class="emoji">📦</text>
     <view class="st" wx:if="{{item.status && item.status !== 'ON_SALE' && item.statusLabel}}">{{item.statusLabel}}</view>
   </view>

@@ -546,7 +546,7 @@ public class GoodsService {
     }
 
     private Map<String, Object> base(GoodsRow goods, Catalog catalog, List<GoodsImageRow> images) {
-        String cover = images.isEmpty() ? null : fileUrls.publicUrl(images.get(0).getFileId());
+        String cover = images.isEmpty() ? null : fileUrls.thumbUrl(images.get(0).getFileId());
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("id", goods.getId());
         data.put("title", goods.getTitle());

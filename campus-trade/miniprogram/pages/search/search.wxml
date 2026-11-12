@@ -11,7 +11,7 @@
     </picker>
   </view>
   <view class="item" wx:for="{{list}}" wx:key="id" bindtap="open" data-id="{{item.id}}">
-    <image wx:if="{{item.coverThumbUrl || item.coverUrl}}" class="thumb" src="{{item.coverThumbUrl || item.coverUrl}}" mode="aspectFill" />
+    <image wx:if="{{item.coverThumbUrl || item.coverUrl}}" class="thumb" src="{{item.coverThumbUrl || item.coverUrl}}" mode="aspectFill" lazy-load />
     <view class="mid">
       <view class="t">{{item.title}}</view>
       <view class="m">{{item.meetupName}} · {{item.conditionLabel}}</view>

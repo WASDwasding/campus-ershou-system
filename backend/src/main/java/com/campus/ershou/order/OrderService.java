@@ -512,7 +512,7 @@ public class OrderService {
         Map<String, Object> goods = new LinkedHashMap<>();
         goods.put("id", order.getGoodsId());
         goods.put("title", order.getGoodsTitle());
-        goods.put("coverUrl", order.getGoodsCoverFileId() == null ? null : fileUrls.publicUrl(order.getGoodsCoverFileId()));
+        goods.put("coverUrl", order.getGoodsCoverFileId() == null ? null : fileUrls.thumbUrl(order.getGoodsCoverFileId()));
         data.put("goods", goods);
         data.put("expireAt", Times.at(order.getExpireAt()));
         data.put("createdAt", Times.at(order.getCreatedAt()));
