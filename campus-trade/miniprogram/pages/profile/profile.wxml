@@ -1,32 +1,67 @@
 <view class="page">
   <page-nav title="我的" />
   <block wx:if="{{user}}">
-  <view class="hero">
-    <image wx:if="{{user.avatarUrl}}" class="ava" src="{{user.avatarUrl}}" mode="aspectFill" />
-    <view wx:else class="ava">{{user.nickname0}}</view>
-    <view class="info">
-      <view class="n">{{user.nickname || '未命名'}}</view>
-      <view class="m">{{user.verifyLabel}} · {{user.studentNoMasked || '未绑定学号'}}</view>
-      <view class="m" wx:if="{{user.college}}">{{user.college}}</view>
-      <view class="m" wx:if="{{user.dormName}}">宿舍 {{user.dormName}}</view>
-      <view class="m" wx:if="{{user.publishBanned}}">已禁止再发布，仍可登录和购买</view>
+    <view class="card profile-card">
+      <view class="profile-top">
+        <image wx:if="{{user.avatarUrl}}" class="ava" src="{{user.avatarUrl}}" mode="aspectFill" />
+        <view wx:else class="ava">{{user.nickname0}}</view>
+        <view class="info">
+          <view class="name-row">
+            <view class="n">{{user.nickname || '未命名'}}</view>
+            <text class="pill {{user.verifyStatus === 'VERIFIED' ? 'pill-done' : 'pill-cream'}}">{{user.verifyLabel}}</text>
+          </view>
+          <view class="m">{{user.studentNoMasked || '未绑定学号'}}</view>
+          <view class="m" wx:if="{{user.campusLine}}">{{user.campusLine}}</view>
+          <view class="ban-tip" wx:if="{{user.publishBanned}}">已禁止再发布，仍可登录和购买</view>
+        </view>
+      </view>
+      <view class="stats">
+        <view class="s"><text class="num">{{stats.onSale || 0}}</text>在售</view>
+        <view class="s"><text class="num">{{stats.sold || 0}}</text>卖出</view>
+        <view class="s"><text class="num">{{stats.pending || 0}}</text>待支付</view>
+        <view class="s"><text class="num">{{stats.selling || 0}}</text>进行中</view>
+      </view>
     </view>
-  </view>
-  <view class="stats">
-    <view class="s"><text class="num">{{stats.onSale || 0}}</text>在售</view>
-    <view class="s"><text class="num">{{stats.sold || 0}}</text>卖出</view>
-    <view class="s"><text class="num">{{stats.pending || 0}}</text>待支付</view>
-    <view class="s"><text class="num">{{stats.selling || 0}}</text>进行中</view>
-  </view>
-  <view class="menu card">
-    <view class="mi" bindtap="go" data-url="/pages/verify/verify">校园认证</view>
-    <view class="mi" bindtap="go" data-url="/pages/settings/settings">编辑资料</view>
-    <view class="mi" bindtap="go" data-url="/pages/my-goods/my-goods">我的商品</view>
-    <view class="mi" bindtap="go" data-url="/pages/orders/orders">买入和卖出订单</view>
-    <view class="mi" bindtap="go" data-url="/pages/reports/reports">我的举报</view>
-    <view class="mi" wx:if="{{!user.wxBound}}" bindtap="bindWx">绑定微信</view>
-    <view class="mi" wx:else>微信已绑定</view>
-  </view>
-  <view class="btn btn-ghost out" bindtap="logout">退出登录</view>
+
+    <view class="card menu">
+      <view class="menu-hd">交易</view>
+      <view class="mi" bindtap="go" data-url="/pages/my-goods/my-goods">
+        <text class="mi-label">我的商品</text>
+        <text class="arr">></text>
+      </view>
+      <view class="mi" bindtap="go" data-url="/pages/orders/orders">
+        <text class="mi-label">买入和卖出订单</text>
+        <text class="arr">></text>
+      </view>
+      <view class="mi" bindtap="go" data-url="/pages/reports/reports">
+        <text class="mi-label">我的举报</text>
+        <text class="arr">></text>
+      </view>
+    </view>
+
+    <view class="card menu">
+      <view class="menu-hd">账号</view>
+      <view class="mi" bindtap="go" data-url="/pages/verify/verify">
+        <text class="mi-label">校园认证</text>
+        <text class="arr">></text>
+      </view>
+      <view class="mi" bindtap="go" data-url="/pages/settings/settings">
+        <text class="mi-label">编辑资料</text>
+        <text class="arr">></text>
+      </view>
+      <view class="mi" wx:if="{{!user.wxBound}}" bindtap="bindWx">
+        <text class="mi-label">绑定微信</text>
+        <text class="arr">></text>
+      </view>
+      <view class="mi" wx:else>
+        <text class="mi-label">绑定微信</text>
+        <view class="mi-right">
+          <text class="mi-sub">已绑定</text>
+          <text class="arr">></text>
+        </view>
+      </view>
+    </view>
+
+    <view class="btn btn-warn out" bindtap="logout">退出登录</view>
   </block>
 </view>

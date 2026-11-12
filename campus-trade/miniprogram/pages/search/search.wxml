@@ -1,22 +1,39 @@
 <view class="page">
   <view class="bar">
-    <input class="inp" focus maxlength="30" placeholder="标题、描述或同义叫法" value="{{keyword}}" bindinput="onQ" confirm-type="search" bindconfirm="go" />
+    <input class="inp" focus maxlength="30" placeholder="标题、描述或同义叫法" placeholder-class="inp-ph" value="{{keyword}}" bindinput="onQ" confirm-type="search" bindconfirm="go" />
     <view class="go" bindtap="go">搜索</view>
   </view>
   <view class="filters">
-    <input class="mini" type="digit" placeholder="最低元" value="{{minYuan}}" bindinput="onMin" />
-    <input class="mini" type="digit" placeholder="最高元" value="{{maxYuan}}" bindinput="onMax" />
+    <input class="mini" type="digit" placeholder="最低元" placeholder-class="mini-ph" value="{{minYuan}}" bindinput="onMin" />
+    <input class="mini" type="digit" placeholder="最高元" placeholder-class="mini-ph" value="{{maxYuan}}" bindinput="onMax" />
     <picker class="mini pick" range="{{meetupNames}}" value="{{meetupIndex}}" bindchange="onMeetup">
       <view class="pick-text">{{meetupNames[meetupIndex]}}</view>
     </picker>
   </view>
-  <view class="item" wx:for="{{list}}" wx:key="id" bindtap="open" data-id="{{item.id}}">
-    <image wx:if="{{item.coverThumbUrl || item.coverUrl}}" class="thumb" src="{{item.coverThumbUrl || item.coverUrl}}" mode="aspectFill" lazy-load />
+  <view class="card item" wx:for="{{list}}" wx:key="id" bindtap="open" data-id="{{item.id}}">
+    <view class="thumb-box">
+      <image wx:if="{{item.coverThumbUrl || item.coverUrl}}" class="thumb" src="{{item.coverThumbUrl || item.coverUrl}}" mode="aspectFill" lazy-load />
+      <image wx:else class="thumb-mark" src="/images/brand-mark.png" mode="aspectFit" />
+    </view>
     <view class="mid">
       <view class="t">{{item.title}}</view>
-      <view class="m">{{item.meetupName}} · {{item.conditionLabel}}</view>
+      <view class="meta-row">
+        <text class="m" wx:if="{{item.meetupName}}">{{item.meetupName}}</text>
+        <text class="tag" wx:if="{{item.conditionLabel}}">{{item.conditionLabel}}</text>
+      </view>
+      <view class="price-row">
+        <text class="price">¥{{item.priceText}}</text>
+        <text class="orig" wx:if="{{item.originalPriceText}}">¥{{item.originalPriceText}}</text>
+      </view>
     </view>
-    <view class="price">¥{{item.priceText}}</view>
   </view>
-  <view class="empty" wx:if="{{searched && !list.length}}">没有匹配的在售商品</view>
+  <view class="load-fail" wx:if="{{error && !loading}}">
+    <text>{{error}}</text>
+    <view class="retry" bindtap="go">重试</view>
+  </view>
+  <view class="empty" wx:elif="{{searched && !loading && !list.length}}">
+    <image class="empty-mark" src="/images/brand-mark.png" mode="aspectFit" />
+    <view class="empty-text">没有找到相关商品</view>
+  </view>
+  <view class="hint empty" wx:if="{{loading}}">搜索中…</view>
 </view>

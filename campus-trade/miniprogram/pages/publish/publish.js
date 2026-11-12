@@ -3,6 +3,13 @@ const session = require('../../utils/session')
 const { showError } = require('../../utils/request')
 const { yuanToFen, fenToYuan, chars, hasContact, imageUrl } = require('../../utils/format')
 
+const MAX_IMAGES = 9
+const MAX_FILE_SIZE = 5242880
+
+function emptyForm() {
+  return { title: '', description: '', priceYuan: '', originalYuan: '', tradeNote: '', aliasesText: '', prompt: '' }
+}
+
 Page({
   data: {
     verified: false,
@@ -18,24 +25,26 @@ Page({
     meetups: [],
     meetupNames: [],
     meetupIndex: 0,
-    form: { title: '', description: '', priceYuan: '', originalYuan: '', tradeNote: '', aliasesText: '', prompt: '' }
+    form: emptyForm()
   },
   onLoad() {},
+  onHide() {
+    if (this._picking) this._pickerHid = true
+  },
   onShow() {
     if (!session.token()) {
       wx.reLaunch({ url: '/pages/login/login' })
       return
     }
-    const app = getApp()
-    const editId = (app.globalData && app.globalData.editGoodsId) || ''
-    if (app.globalData) app.globalData.editGoodsId = ''
-    if (!editId && this.wasEditing) {
-      this.setData({
-        images: [],
-        form: { title: '', description: '', priceYuan: '', originalYuan: '', tradeNote: '', aliasesText: '', prompt: '' }
-      })
+    // 选图会让页面 onHide/onShow 一次，这不是重新进入发布页
+    if (this._pickerHid) {
+      this._pickerHid = false
+      return
     }
-    this.wasEditing = !!editId
+    const editId = session.takeEditGoods()
+    if (editId || this.editId) {
+      this.setData({ images: [], catIndex: 0, condIndex: 0, meetupIndex: 0, form: emptyForm() })
+    }
     this.editId = editId
     this.setData({ goodsId: editId })
     const user = session.user()
@@ -142,38 +151,49 @@ Page({
       })
   },
   choose() {
+    if (this._uploading) return
+    const left = MAX_IMAGES - this.data.images.length
+    if (left <= 0) return wx.showToast({ title: '最多 ' + MAX_IMAGES + ' 张', icon: 'none' })
+    this._picking = true
     wx.chooseMedia({
-      count: 9 - this.data.images.length,
+      count: left,
       mediaType: ['image'],
       sizeType: ['compressed'],
       success: (res) => {
         const files = res.tempFiles || []
-        const next = this.data.images.slice()
+        if (!files.length) return
+        this._uploading = true
+        const stop = (i, reason) => {
+          wx.hideLoading()
+          this._uploading = false
+          wx.showToast({ title: '第 ' + (i + 1) + ' 张' + reason, icon: 'none' })
+        }
         const run = (i) => {
-          if (i >= files.length) {
-            this.setData({ images: next.slice(0, 9) })
+          if (i >= files.length || this.data.images.length >= MAX_IMAGES) {
             wx.hideLoading()
+            this._uploading = false
             return
           }
           const f = files[i]
-          if (f.size > 5242880) {
-            wx.showToast({ title: '有图片超过 5MB', icon: 'none' })
-            run(i + 1)
+          if (f.size > MAX_FILE_SIZE) {
+            stop(i, '超过 5MB，已保留前面的图片')
             return
           }
-          wx.showLoading({ title: '上传中' })
+          wx.showLoading({ title: '上传 ' + (i + 1) + '/' + files.length, mask: true })
           api
             .upload(f.tempFilePath, 'GOODS')
             .then((data) => {
-              next.push({ fileId: data.fileId, url: data.url || f.tempFilePath })
+              this.setData({ images: this.data.images.concat([{ fileId: data.fileId, url: data.url || f.tempFilePath }]) })
               run(i + 1)
             })
             .catch((err) => {
-              wx.hideLoading()
-              showError(err)
+              stop(i, '上传失败：' + ((err && err.message) || '请重试'))
             })
         }
         run(0)
+      },
+      complete: () => {
+        this._picking = false
       }
     })
   },
@@ -235,7 +255,7 @@ Page({
           this.setData({
             goodsId: '',
             images: [],
-            form: { title: '', description: '', priceYuan: '', originalYuan: '', tradeNote: '', aliasesText: '', prompt: '' }
+            form: emptyForm()
           })
         }, 400)
       })

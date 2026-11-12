@@ -15,11 +15,16 @@ Page({
     api.me().then((user) => {
       session.setSession(session.token(), user)
       const dorm = user.dormBuilding || {}
+      const college = user.college || ''
+      const dormName = dorm.name || ''
+      const verifyLabel = labelOf('verifyStatus', user.verifyStatus)
       this.setData({
         user: Object.assign({}, user, {
+          college,
           nickname0: (user.nickname || '同').slice(0, 1),
-          verifyLabel: labelOf('verifyStatus', user.verifyStatus) === '未知' ? user.verifyStatus : labelOf('verifyStatus', user.verifyStatus),
-          dormName: dorm.name || ''
+          verifyLabel: verifyLabel && verifyLabel !== '未知' ? verifyLabel : (user.verifyStatus || ''),
+          dormName,
+          campusLine: [college, dormName ? '宿舍 ' + dormName : ''].filter(Boolean).join(' · ')
         })
       })
     }).catch(showError)
@@ -33,7 +38,7 @@ Page({
           selling: s.sellingOrderCount || 0
         }
       })
-    }).catch(() => {})
+    }).catch(showError)
   },
   go(e) { wx.navigateTo({ url: e.currentTarget.dataset.url }) },
   bindWx() {

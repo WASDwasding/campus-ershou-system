@@ -9,17 +9,23 @@ App({
   },
   onLaunch() {
     this.globalData.user = session.user()
-    if (session.token()) {
-      socket.connect()
-      api.ensureMeta().catch(() => {})
-      this.refreshMe()
-    }
+    if (session.token()) this.refreshMe()
   },
   onShow() {
     if (session.token()) {
       socket.connect()
+      this.prefetchMeta()
       this.refreshBadges()
     }
+  },
+  prefetchMeta() {
+    if (this.globalData.meta) return
+    api
+      .ensureMeta()
+      .then((meta) => {
+        this.globalData.meta = meta
+      })
+      .catch(() => {})
   },
   refreshMe() {
     return api

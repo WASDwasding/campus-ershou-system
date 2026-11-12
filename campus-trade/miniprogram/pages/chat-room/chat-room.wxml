@@ -1,14 +1,46 @@
-<view class="page">
-  <scroll-view class="msgs" scroll-y scroll-into-view="{{anchor}}">
-    <view class="more" wx:if="{{hasMore}}" bindtap="older">更早的消息</view>
-    <view class="hint pad" wx:if="{{hint}}">{{hint}}</view>
-    <view id="m{{item.id}}" class="msg {{item.mine ? 'mine' : 'peer'}}" wx:for="{{messages}}" wx:key="id">
-      <view class="bubble"><text>{{item.content}}</text></view>
+<view class="page" style="{{kbHeight ? 'padding-bottom: ' + kbHeight + 'px;' : ''}}">
+  <scroll-view class="msgs" scroll-y scroll-into-view="{{anchor}}" bindtap="dismissKeyboard">
+    <view class="msgs-inner">
+      <view class="more" wx:if="{{hasMore}}" catchtap="older">更早的消息</view>
+      <view class="hint pad" wx:if="{{hint}}">{{hint}}</view>
+
+      <view id="m{{item.id}}" class="msg {{item.mine ? 'mine' : 'peer'}}" wx:for="{{messages}}" wx:key="id">
+        <block wx:if="{{!item.mine}}">
+          <image wx:if="{{peerAvatar}}" class="ava" src="{{peerAvatar}}" mode="aspectFill" binderror="onPeerAvatarErr" />
+          <view wx:else class="ava">{{peerInitial}}</view>
+          <view class="bubble">
+            <text class="bubble-text">{{item.content}}</text>
+          </view>
+        </block>
+
+        <block wx:else>
+          <view class="bubble">
+            <text class="bubble-text">{{item.content}}</text>
+          </view>
+          <image wx:if="{{myAvatar}}" class="ava" src="{{myAvatar}}" mode="aspectFill" binderror="onMyAvatarErr" />
+          <view wx:else class="ava ava-mine">{{myInitial}}</view>
+        </block>
+      </view>
+
+      <view id="end" class="end-anchor"></view>
     </view>
-    <view id="end"></view>
   </scroll-view>
-  <view class="inputbar safe-bottom">
-    <input class="inp" maxlength="500" value="{{text}}" bindinput="onText" confirm-type="send" bindconfirm="send" disabled="{{!canSend}}" placeholder="{{canSend ? '约定面交时间和校内地点' : hint}}" />
+
+  <view class="inputbar {{kbHeight ? 'kb-open' : ''}}" catchtouchmove="noop">
+    <input
+      class="inp"
+      maxlength="500"
+      value="{{text}}"
+      bindinput="onText"
+      confirm-type="send"
+      bindconfirm="send"
+      adjust-position="{{false}}"
+      hold-keyboard="{{true}}"
+      bindkeyboardheightchange="onKeyboard"
+      disabled="{{!canSend}}"
+      placeholder="{{canSend ? '约定面交时间和校内地点' : hint}}"
+      placeholder-class="input-placeholder"
+    />
     <view class="btn btn-primary send" bindtap="send">发送</view>
   </view>
 </view>

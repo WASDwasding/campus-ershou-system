@@ -1,47 +1,80 @@
-<view class="page" wx:if="{{item.id}}">
-  <view class="cover">
-    <swiper wx:if="{{item.imageUrls.length}}" class="sw" indicator-dots>
-      <swiper-item wx:for="{{item.imageThumbs}}" wx:key="*this" wx:for-item="img" wx:for-index="i">
-        <image src="{{img}}" mode="aspectFill" class="img" lazy-load bindtap="preview" data-src="{{item.imageUrls[i]}}" />
-      </swiper-item>
-    </swiper>
-    <text wx:else class="big">📦</text>
-  </view>
-  <view class="card main">
-    <view class="row space">
-      <view class="price lg">¥{{item.priceText}}</view>
-      <view class="tag">{{item.conditionLabel}}</view>
+<view class="wrap">
+  <page-nav
+    title="商品详情"
+    back="{{true}}"
+    rightText="{{item.id ? '举报' : ''}}"
+    bind:right="report"
+  />
+
+  <view class="page" wx:if="{{item.id}}">
+    <view class="cover">
+      <swiper
+        wx:if="{{item.imageUrls.length}}"
+        class="sw"
+        indicator-dots="{{item.imageUrls.length > 1}}"
+        indicator-color="rgba(46, 65, 80, 0.2)"
+        indicator-active-color="#3E7EA3"
+      >
+        <swiper-item wx:for="{{item.imageThumbs}}" wx:key="*this" wx:for-item="img" wx:for-index="i">
+          <image src="{{img}}" mode="aspectFill" class="img" lazy-load bindtap="preview" data-src="{{item.imageUrls[i]}}" />
+        </swiper-item>
+      </swiper>
+      <image wx:else class="cover-mark" src="/images/brand-mark.png" mode="aspectFit" />
     </view>
-    <view class="title">{{item.title}}</view>
-    <view class="muted">{{item.categoryName}} · {{item.meetupName}} · {{item.statusLabel}}</view>
-    <view class="muted" wx:if="{{item.originalPriceText}}">原价 ¥{{item.originalPriceText}}</view>
-  </view>
-  <view class="card block">
-    <view class="section-title">描述</view>
-    <text>{{item.description || '卖家没有填写描述'}}</text>
-    <view class="hint" wx:if="{{item.tradeNote}}">交易说明：{{item.tradeNote}}</view>
-    <view class="hint" wx:if="{{item.aliasText}}">也叫：{{item.aliasText}}</view>
-  </view>
-  <view class="card block">
-    <view class="section-title">建议价</view>
-    <view class="btn btn-ghost" bindtap="loadQuote">看建议价</view>
-    <view wx:if="{{quote.available}}">¥{{quote.priceText}}　{{quote.disclaimer}}</view>
-    <view wx:elif="{{quote}}" class="hint">{{quote.hint}}</view>
-    <view class="hint">建议价不能作为成交价，下单仍按卖家标价。</view>
-  </view>
-  <view class="card block seller" bindtap="openSeller">
-    <view>
-      <view class="sn">{{item.sellerName}}</view>
-      <view class="muted">{{item.seller.verified ? '已认证' : '未认证'}}</view>
+
+    <view class="card main">
+      <view class="price-row">
+        <text class="price-lg">¥{{item.priceText}}</text>
+        <text class="tag" wx:if="{{item.conditionLabel}}">{{item.conditionLabel}}</text>
+        <text class="orig-price" wx:if="{{item.originalPriceText}}">¥{{item.originalPriceText}}</text>
+      </view>
+      <view class="title">{{item.title}}</view>
+      <view class="attrs">{{item.categoryName || ''}}{{item.categoryName && item.meetupName ? ' · ' : ''}}{{item.meetupName || ''}}{{(item.categoryName || item.meetupName) && item.statusLabel ? ' · ' : ''}}{{item.statusLabel || ''}}</view>
     </view>
-    <text class="muted">主页</text>
+
+    <view class="card block">
+      <view class="section-title">描述</view>
+      <text class="desc">{{item.description || '卖家没有填写描述'}}</text>
+      <view class="hint extra-line" wx:if="{{item.tradeNote}}">交易说明：{{item.tradeNote}}</view>
+      <view class="hint extra-line" wx:if="{{item.aliasText}}">也叫：{{item.aliasText}}</view>
+    </view>
+
+    <view class="card block">
+      <view class="section-title">建议价</view>
+      <view class="btn btn-ghost quote-btn" bindtap="loadQuote">看建议价</view>
+      <view class="quote-res" wx:if="{{quote.available}}">
+        <text class="price">¥{{quote.priceText}}</text>
+        <text class="pill pill-cream">{{quote.disclaimer || '仅供参考'}}</text>
+      </view>
+      <view wx:elif="{{quote}}" class="hint quote-hint">{{quote.hint}}</view>
+      <view class="hint quote-note">建议价不能作为成交价，下单仍按卖家标价。</view>
+    </view>
+
+    <view class="card block seller" bindtap="openSeller">
+      <view class="seller-left">
+        <image wx:if="{{item.sellerAvatar}}" class="seller-ava" src="{{item.sellerAvatar}}" mode="aspectFill" />
+        <view wx:else class="seller-ava">{{item.sellerInitial}}</view>
+        <view class="seller-info">
+          <view class="sn">{{item.sellerName}}</view>
+          <view class="seller-sub">{{item.seller.verified ? '已认证' : '未认证'}}</view>
+        </view>
+      </view>
+      <text class="arr">></text>
+    </view>
+
+    <view class="hint removed" wx:if="{{item.removedReason}}">下架原因：{{item.removedReason}}</view>
+    <view class="hint removed" wx:if="{{blockReason}}">{{blockReason}}</view>
+
+    <view class="bar">
+      <view class="btn btn-primary grow" wx:if="{{item.viewer.activeOrderId}}" bindtap="openOrder">查看订单</view>
+      <view class="btn btn-primary grow" wx:elif="{{item.viewer.isMine}}" bindtap="edit">编辑</view>
+      <view class="btn btn-primary grow" wx:elif="{{item.viewer.canBuy}}" bindtap="buy">下单</view>
+      <view class="btn btn-disabled grow" wx:else>{{item.statusLabel || '暂不可下单'}}</view>
+    </view>
   </view>
-  <view class="hint removed" wx:if="{{item.removedReason}}">下架原因：{{item.removedReason}}</view>
-  <view class="hint removed" wx:if="{{blockReason}}">{{blockReason}}</view>
-  <view class="bar safe-bottom">
-    <view class="btn btn-ghost" bindtap="report">举报</view>
-    <view class="btn btn-primary grow" wx:if="{{item.viewer.canBuy}}" bindtap="buy">下单</view>
-    <view class="btn btn-ghost grow" wx:if="{{item.viewer.activeOrderId}}" bindtap="openOrder">查看订单</view>
-    <view class="btn btn-ghost grow" wx:if="{{item.viewer.isMine}}" bindtap="edit">编辑</view>
+
+  <view class="load-fail" wx:elif="{{error}}">
+    <text>{{error}}</text>
+    <view class="retry" bindtap="load">重试</view>
   </view>
 </view>

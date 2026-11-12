@@ -2,7 +2,7 @@
   <scroll-view scroll-x class="tabs">
     <view class="chip {{status === item.value ? 'chip-on' : ''}}" wx:for="{{statuses}}" wx:key="value" bindtap="setStatus" data-id="{{item.value}}">{{item.label}}</view>
   </scroll-view>
-  <view class="row" wx:for="{{list}}" wx:key="id">
+  <view class="item-row" wx:for="{{list}}" wx:key="id">
     <view class="grow">
       <product-card item="{{item}}" bind:open="open" />
     </view>
@@ -13,5 +13,13 @@
       <view class="op danger" wx:if="{{item.status === 'ON_SALE' || item.status === 'OFF_SHELF'}}" catchtap="del" data-id="{{item.id}}">删除</view>
     </view>
   </view>
-  <view class="empty" wx:if="{{!list.length}}">这个状态下没有商品</view>
+  <view class="load-fail" wx:if="{{error && !loading}}">
+    <text>{{error}}</text>
+    <view class="retry" bindtap="load">重试</view>
+  </view>
+  <view class="empty" wx:elif="{{!loading && !list.length}}">
+    <image class="empty-mark" src="/images/brand-mark.png" mode="aspectFit" />
+    <view class="empty-text">这个状态下没有商品</view>
+  </view>
+  <view class="hint empty" wx:if="{{loading && !list.length}}">加载中…</view>
 </view>

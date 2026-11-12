@@ -11,17 +11,25 @@ Page({
     meetupNames: ['全部面交点'],
     meetupIndex: 0,
     list: [],
-    searched: false
+    searched: false,
+    loading: false,
+    error: ''
+  },
+  onLoad() {
+    this._seq = 0
   },
   onShow() {
-    if (this.data.meetups.length) return
+    if (this.data.meetups.length || this._meetupLoading) return
+    this._meetupLoading = true
     api.buildings({ meetupOnly: true }).then((data) => {
       const meetups = Array.isArray(data) ? data : (data && data.list) || []
       this.setData({
         meetups,
         meetupNames: ['全部面交点'].concat(meetups.map((b) => b.name))
       })
-    }).catch(() => {})
+    }).catch(showError).finally(() => {
+      this._meetupLoading = false
+    })
   },
   onQ(e) { this.setData({ keyword: e.detail.value }) },
   onMin(e) { this.setData({ minYuan: e.detail.value }) },
@@ -47,12 +55,25 @@ Page({
     }
     const meetup = this.data.meetupIndex > 0 ? this.data.meetups[this.data.meetupIndex - 1] : null
     if (meetup) q.meetupBuildingId = meetup.id
-    api
-      .ensureMeta()
-      .catch(() => {})
-      .then(() => api.goods(q))
-      .then((data) => this.setData({ list: unwrapList(data).list.map(presentGoods), searched: true }))
-      .catch(showError)
+    this._seq += 1
+    const seq = this._seq
+    this.setData({ loading: true, error: '' })
+    Promise.all([api.ensureMeta(), api.goods(q)])
+      .then(([, data]) => {
+        if (seq !== this._seq) return
+        const seen = {}
+        const list = unwrapList(data).list.filter((g) => {
+          if (!g || seen[g.id]) return false
+          seen[g.id] = true
+          return true
+        })
+        this.setData({ list: list.map(presentGoods), searched: true, loading: false })
+      })
+      .catch((err) => {
+        if (seq !== this._seq) return
+        this.setData({ list: [], searched: true, loading: false, error: (err && err.message) || '搜索失败' })
+        showError(err)
+      })
   },
   open(e) {
     wx.navigateTo({ url: '/pages/detail/detail?id=' + e.currentTarget.dataset.id })

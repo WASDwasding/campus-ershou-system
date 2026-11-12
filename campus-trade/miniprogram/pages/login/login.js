@@ -13,7 +13,6 @@ function chars(text) {
 Page({
   data: {
     mode: 'login',
-    healthText: '正在连接服务器…',
     studentNo: '',
     username: '',
     email: '',
@@ -21,7 +20,6 @@ Page({
     confirm: '',
     code: '',
     emailMasked: '',
-    debugCode: '',
     cooldown: 0
   },
   onLoad() {
@@ -31,10 +29,7 @@ Page({
     }
     api
       .health()
-      .then((h) => {
-        this.setData({ healthText: h && h.status === 'UP' ? '服务器正常' : '服务器状态未知' })
-      })
-      .catch(() => this.setData({ healthText: '暂时连不上服务器' }))
+      .catch(() => wx.showToast({ title: '暂时连不上服务器', icon: 'none' }))
   },
   onUnload() {
     this.clearCooldown()
@@ -117,8 +112,7 @@ Page({
           mode: 'code',
           email,
           emailMasked: (data && data.emailMasked) || email,
-          debugCode: (data && data.debugCode) || '',
-          code: (data && data.debugCode) || this.data.code
+          code: ''
         })
         this.startCooldown(60)
       })
