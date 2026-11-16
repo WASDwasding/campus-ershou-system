@@ -89,6 +89,14 @@
   margin-top: 20rpx;
 }
 
+.quote-reason {
+  margin-top: 16rpx;
+  font-size: 26rpx;
+  line-height: 1.55;
+  color: var(--ink, #2e4150);
+  white-space: pre-wrap;
+}
+
 .quote-hint {
   margin-top: 16rpx;
 }

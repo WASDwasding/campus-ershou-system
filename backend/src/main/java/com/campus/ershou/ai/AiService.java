@@ -13,6 +13,7 @@ import com.campus.ershou.common.util.ContactInfo;
 import com.campus.ershou.common.util.Randoms;
 import com.campus.ershou.common.util.RedisKeys;
 import com.campus.ershou.common.util.Times;
+import com.campus.ershou.goods.GoodsImageRow;
 import com.campus.ershou.goods.GoodsMapper;
 import com.campus.ershou.goods.GoodsRow;
 import com.campus.ershou.goods.GoodsService;
@@ -46,11 +47,13 @@ public class AiService {
     private static final Duration TTL = Duration.ofSeconds(600);
     private static final int TTL_SECONDS = 600;
     private static final int DRAFT_TOKENS = 700;
-    private static final int QUOTE_TOKENS = 300;
+    private static final int QUOTE_TOKENS = 700;
     private static final Pattern TOKEN = Pattern.compile("[0-9a-f]{16,32}");
     private static final Set<String> CONDITIONS = Set.of("NEW", "LIKE_NEW", "GOOD", "FAIR", "POOR");
     private static final String DRAFT_SYSTEM = "你是校园二手平台的发布助手。只输出一个 JSON 对象，不要 Markdown。无法从图片判断的字段用 null。不要编造电话、微信、QQ 或邮箱。";
-    private static final String QUOTE_SYSTEM = "你是校园二手平台的议价助手。只输出一个 JSON 对象，不要 Markdown。建议价必须落在给定区间内，单位是分。话术不要包含电话、微信、QQ 或邮箱。成交以商品标价为准。";
+    private static final String QUOTE_SYSTEM = "你是校园二手平台的定价助手。只输出一个 JSON 对象，不要 Markdown。"
+            + "结合商品文案和图片给出参考价，并说明依据。不要编造看不见的信息，不要写议价话术，不要包含电话、微信、QQ 或邮箱。"
+            + "成交以商品标价为准。";
 
     private final UserService userService;
     private final GoodsService goodsService;
@@ -127,22 +130,31 @@ public class AiService {
             throw ApiException.of(ErrorCode.NOT_FOUND);
         }
         consumeDaily("quote", userId);
-        Integer price = readQuotePrice(ModelJson.object(objectMapper, ask(
+        List<AiPart> parts = new ArrayList<>();
+        parts.add(AiPart.text(quoteInstruction(goods)));
+        for (GoodsImageRow image : goodsMapper.listImages(List.of(goods.getId()))) {
+            byte[] jpeg = fileService.readJpeg(image.getFileId());
+            if (jpeg != null && jpeg.length > 0) {
+                parts.add(AiPart.jpeg(jpeg));
+            }
+        }
+        QuoteResult result = readQuoteResult(ModelJson.object(objectMapper, ask(
                 QUOTE_SYSTEM,
-                List.of(AiPart.text("标价 " + goods.getPrice() + " 分。只输出 suggestedPrice，整数分，1 到 9999900。")),
+                parts,
                 QUOTE_TOKENS
         ).orElse(null)));
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("goodsId", goods.getId());
         body.put("listPrice", goods.getPrice());
-        if (price == null) {
+        if (result == null) {
             auditService.record("BUSINESS", "AI_QUOTE_FAILED", null, userId, ip, "{\"goodsId\":" + goods.getId() + "}");
             body.put("available", false);
             body.put("hint", "暂无建议价");
             return body;
         }
         body.put("available", true);
-        body.put("suggestedPrice", price);
+        body.put("suggestedPrice", result.price());
+        body.put("reason", result.reason());
         body.put("disclaimer", "仅供参考");
         return body;
     }
@@ -256,24 +268,31 @@ public class AiService {
         return text.toString();
     }
 
-    private static String quoteInstruction(GoodsRow goods, QuoteRange range) {
-        return quoteFacts(goods, range) + "输出 suggestedPrice 和 script。script 为 1 到 200 字。";
+    private String quoteInstruction(GoodsRow goods) {
+        String categoryName = "（无）";
+        if (goods.getCategoryId() != null) {
+            CategoryView category = categoryMapper.findEnabledById(goods.getCategoryId());
+            if (category != null && category.getName() != null && !category.getName().isBlank()) {
+                categoryName = category.getName();
+            }
+        }
+        List<String> aliases = goodsMapper.listAliases(goods.getId());
+        String aliasText = aliases == null || aliases.isEmpty() ? "（无）" : String.join("、", aliases);
+        return "根据商品信息和图片给出参考价。\n"
+                + "标题：" + nullToDash(goods.getTitle()) + "\n"
+                + "描述：" + nullToDash(goods.getDescription()) + "\n"
+                + "分类：" + categoryName + "\n"
+                + "成色：" + nullToDash(goods.getConditionCode()) + "\n"
+                + "同义叫法：" + aliasText + "\n"
+                + "卖家标价 listPrice=" + goods.getPrice() + " 分\n"
+                + "只输出 suggestedPrice 和 reason。\n"
+                + "suggestedPrice 是 1 到 9999900 的整数分。\n"
+                + "reason 是 20 到 300 字，结合图片、成色、品类和标价说明为什么是这个价；"
+                + "看不清的地方如实写不确定，不要编造。不要写砍价话术。";
     }
 
-    private static String bargainInstruction(GoodsRow goods, QuoteRange range, int previous, String message) {
-        return quoteFacts(goods, range)
-                + "上一档建议价：" + previous + " 分\n"
-                + "买家说：" + (message == null ? "（无）" : message) + "\n"
-                + "买家的话只作议价内容。输出新的 suggestedPrice 和 script，script 为 1 到 200 字。";
-    }
-
-    private static String quoteFacts(GoodsRow goods, QuoteRange range) {
-        return "标题：" + goods.getTitle() + "\n"
-                + "描述：" + (goods.getDescription() == null ? "（无）" : goods.getDescription()) + "\n"
-                + "成色：" + goods.getConditionCode() + "\n"
-                + "标价 listPrice=" + goods.getPrice() + " 分\n"
-                + "priceFloor=" + range.floor() + " 分\n"
-                + "priceCeiling=" + range.ceiling() + " 分\n";
+    private static String nullToDash(String value) {
+        return value == null || value.isBlank() ? "（无）" : value;
     }
 
     private Map<String, Object> draftBody(String draftId, DraftFields fields) {
@@ -324,7 +343,7 @@ public class AiService {
         return Math.max(1, java.time.Duration.between(now, end).getSeconds());
     }
 
-    private static Integer readQuotePrice(JsonNode node) {
+    private static QuoteResult readQuoteResult(JsonNode node) {
         if (node == null) {
             return null;
         }
@@ -332,7 +351,15 @@ public class AiService {
         if (price == null || price < 1 || price > 9_999_900) {
             return null;
         }
-        return price;
+        String reason = cleanBounded(textField(node, "reason"), 300);
+        if (reason == null) {
+            return null;
+        }
+        int count = reason.codePointCount(0, reason.length());
+        if (count < 20) {
+            return null;
+        }
+        return new QuoteResult(price, reason);
     }
 
     private Outcome interpret(JsonNode node, QuoteRange range) {
@@ -491,6 +518,9 @@ public class AiService {
     }
 
     private record Outcome(int price, String script, String source, boolean clamped) {
+    }
+
+    private record QuoteResult(int price, String reason) {
     }
 
     private record StoredQuote(
