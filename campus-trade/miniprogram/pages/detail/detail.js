@@ -54,18 +54,19 @@ Page({
     api
       .quote(this.id)
       .then((q) => {
-        const available = !!(q && q.available && q.suggestedPrice != null)
+        const available = !!(q && q.available && q.suggestedPrice != null && q.reason)
         this.setData({
           quote: {
             available,
             priceText: available ? fenToYuan(q.suggestedPrice) : '',
+            reason: available ? q.reason : '',
             hint: (q && (q.hint || q.disclaimer)) || '暂无建议价',
             disclaimer: (q && q.disclaimer) || '仅供参考'
           }
         })
       })
       .catch(() => {
-        this.setData({ quote: { available: false, priceText: '', hint: '暂无建议价', disclaimer: '仅供参考' } })
+        this.setData({ quote: { available: false, priceText: '', reason: '', hint: '暂无建议价', disclaimer: '仅供参考' } })
       })
   },
   buy() {

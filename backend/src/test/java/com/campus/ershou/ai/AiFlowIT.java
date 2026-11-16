@@ -216,13 +216,13 @@ class AiFlowIT {
     }
 
     @Test
-    void quoteClampsOutOfRangeAndKeepsInRangeModelPrice() throws Exception {
+    void quoteReturnsReasonAndRejectsContactReason() throws Exception {
         String sellerToken = login(SELLER_NO);
         String buyerToken = login(BUYER_NO);
         long goodsId = createGoods(sellerToken);
 
         reply("""
-                {"suggestedPrice":100,"script":"可以便宜"}
+                {"suggestedPrice":100,"reason":"成色一般，外壳有使用痕迹，校园二手里同类耳机常见价位偏低。"}
                 """);
         mockMvc.perform(post("/api/ai/quotes")
                         .header("Authorization", "Bearer " + buyerToken)
@@ -230,30 +230,36 @@ class AiFlowIT {
                         .content("{\"goodsId\":" + goodsId + "}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.available").value(true))
-                .andExpect(jsonPath("$.data.suggestedPrice").value(100));
+                .andExpect(jsonPath("$.data.suggestedPrice").value(100))
+                .andExpect(jsonPath("$.data.reason").value("成色一般，外壳有使用痕迹，校园二手里同类耳机常见价位偏低。"))
+                .andExpect(jsonPath("$.data.disclaimer").value("仅供参考"));
         assertThat(failedQuoteCount(buyerId)).isZero();
 
         reply("""
-                {"suggestedPrice":1200,"script":"请加微信 abcdef"}
+                {"suggestedPrice":1200,"reason":"成色不错，请加微信 abcdef 再细聊价格。"}
                 """);
         mockMvc.perform(post("/api/ai/quotes")
                         .header("Authorization", "Bearer " + buyerToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"goodsId\":" + goodsId + "}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.available").value(true))
-                .andExpect(jsonPath("$.data.suggestedPrice").value(1200))
-                .andExpect(jsonPath("$.data.disclaimer").value("仅供参考"));
+                .andExpect(jsonPath("$.data.available").value(false))
+                .andExpect(jsonPath("$.data.hint").value("暂无建议价"))
+                .andExpect(jsonPath("$.data.suggestedPrice").doesNotExist())
+                .andExpect(jsonPath("$.data.reason").doesNotExist());
+        assertThat(failedQuoteCount(buyerId)).isEqualTo(1);
 
         reply("""
-                {"suggestedPrice":1200,"script":"可以小刀，当面看货"}
+                {"suggestedPrice":1200,"reason":"短"}
                 """);
         mockMvc.perform(post("/api/ai/quotes")
                         .header("Authorization", "Bearer " + buyerToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"goodsId\":" + goodsId + "}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.suggestedPrice").value(1200));
+                .andExpect(jsonPath("$.data.available").value(false))
+                .andExpect(jsonPath("$.data.hint").value("暂无建议价"));
+        assertThat(failedQuoteCount(buyerId)).isEqualTo(2);
     }
 
     @Test

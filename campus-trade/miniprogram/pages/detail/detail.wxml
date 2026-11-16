@@ -51,6 +51,7 @@
         <text class="price">¥{{quote.priceText}}</text>
         <text class="pill pill-cream">{{quote.disclaimer || '仅供参考'}}</text>
       </view>
+      <view class="quote-reason" wx:if="{{quote.available && quote.reason}}">{{quote.reason}}</view>
       <view wx:elif="{{quote}}" class="hint quote-hint">{{quote.hint}}</view>
       <view class="hint quote-note">建议价不能作为成交价，下单仍按卖家标价。</view>
     </view>
